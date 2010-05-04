@@ -79,8 +79,8 @@ def standardOptionsCheck(options, usage):
         os.mkdir(options.outDir)
 
 def cycleBranchCommandBuilder(nt, nxt, branchString, stepSize, workingDir, parentDir, gParamsDir, seed, logBranch, isTestTree):
-    import eval.lib.libSimTree as LST
-    import eval.lib.libSimControl as LSC
+    import simulation.lib.libSimTree as LST
+    import simulation.lib.libSimControl as LSC
     import os
     programs = ['simCtrl_cycleMain_1.py']
     LSC.verifyPrograms(programs)
@@ -136,8 +136,8 @@ def commandRecorder(cmd, dir):
 
 def treeBranchCommandBuilder(nt, branchStr, options, commonParent, gParamsDir):
     from sonLib.bioio import printBinaryTree
-    import eval.lib.libSimTree as LST
-    import eval.lib.libSimControl as LSC
+    import simulation.lib.libSimTree as LST
+    import simulation.lib.libSimControl as LSC
     programs = ['simCtrl_simTree.py']
     LSC.verifyPrograms(programs)
     SIMTREE_PY = programs[0]
