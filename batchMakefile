@@ -1,0 +1,127 @@
+SHELL:=/bin/bash
+SIMTREE:=simCtrl_simTree.py
+RUNSIM:=simCtrl_runSim.py
+GPARAMS:=/cluster/home/dearl/evolver/myToy/gParams/
+TOY_ROOT:=/cluster/home/dearl/evolver/myToy/root/
+AVG_ROOT:=/cluster/home/dearl/simTreeWorking/avgRoot/
+TREE_AVG_PRIMATES:=((evoGorGor1:0.008825,(evoHg19:0.0067,evoPanTro2:0.006667)evoHg19-evoPanTro2:0.00225)eG-eH-eC:0.00968,evoPonAbe2:0.018318);
+TREE_AVG_MAMMALS:=((evoBosTau4:0.18908,evoCanFam2:0.16303)evoBosTau4-evoCanFam2:0.032898,(evoHg19:0.144018,(evoMm9:0.084509,evoRn4:0.091589)evoMm9-evoRn4:0.271974)eH-eM-eR:0.020593);
+STEP_AVG_PRIMATES:=0.0005
+STEP_AVG_MAMMALS:=0.01
+AVG_PRIMATES_JOBTREE:=/hive/users/dearl/simTreeWorking/jobTreeAvgPrimates
+AVG_MAMMALS_JOBTREE:=/hive/users/dearl/simTreeWorking/jobTreeAvgMammals_2
+TREE_CANCERTEAM:=(Jing:0.01, (Steve:0.003, (Zack:.005, Chris:.009)Zack-Chris:.001)S-Z-C:0.001)All:.002;
+TREE_UTENSILSET:=(Fork:0.01, (Knife:0.003, (Spoon:.005, Ladle:.009)Spoon-Ladle:.001)K-S-L:0.001)All:.002;
+TREE_PRIMATES:=((human:0.006690,chimp:0.007571)human-chimp:0.024272,(colobus_monkey:0.015404,(baboon:0.008258,macaque:0.028617)baboon-macaque:0.008519)-colo-bab-mac:0.022120)all:0.023960;
+WORKING_JOBTREE:=/hive/users/dearl/simTreeWorking/myTree
+PRIMATE_JOBTREE:=/hive/users/dearl/simTreeWorking/primateJobTree
+OUT_AVG_PRIMATES:=/hive/users/dearl/simTreeWorking/AVG_PRIMATES/
+OUT_AVG_MAMMALS:=/hive/users/dearl/simTreeWorking/AVG_MAMMALS/
+OUT_CANCERTEAM:=/hive/users/dearl/simTreeWorking/cancerTeamTest
+CANCER_JOBTREE:=/hive/users/dearl/simTreeWorking/cancerJobTree
+CANCER_NETDISK:=/hive/users/dearl/simTreeWorking/cancerNetDisk
+UTENSILSET_JOBTREE:=/hive/users/dearl/simTreeWorking/utensilJobTree
+UTENSILSET_NETDISK:=/hive/users/dearl/simTreeWorking/utensilNetDisk
+OUT_UTENSILSET:=/hive/users/dearl/simTreeWorking/utensilTest
+default:
+	cat Makefile
+##############################
+# README - dent earl, 9 december 2009
+#  This file is used for repetitive tests. There are four types of tests,
+#   - Production tests, which are full scale simulations using toy data input. Uses either
+#     parasol or standAlone, depending.
+#   - Parasol (cluster) tests, which use jobTree.py and uses mkdir as a standin for a cycle
+#   - Single Machine tests, which use jobTree.py and uses mkdir as a standin for a cycle
+#   - Stand Alone tests, which do NOT use jobTree.py and uses mkdir as a standin for a cycle
+#
+#  There are two data types for the tests,
+#   - Primate tests, which simulate a set of genomes based on a primate tree
+#   - Cancer tests, which simulate a set of genomes based on an absurdist tree that uses
+#     our cancer genome research team members as a set of names. Before using the Cancer
+#     team as my demo set I was using fruits and vegetables, but I think the Cancer team is
+#     more fun.
+#
+##############################
+
+##############################
+# PRODUCTION
+##############################
+avgPrimates:
+	jobTree.py --jobTree ${AVG_PRIMATES_JOBTREE} --batchSystem=parasol --command="${RUNSIM} --parent ${AVG_ROOT} --params ${GPARAMS} --tree '${TREE_AVG_PRIMATES}' --step ${STEP_AVG_PRIMATES} --out ${OUT_AVG_PRIMATES} --jobFile JOB_FILE --saveParent --seed 31337" --logDebug --retryCount 0
+avgMammals:
+	jobTree.py --jobTree ${AVG_MAMMALS_JOBTREE}  --batchSystem=parasol --command="${RUNSIM} --parent ${AVG_ROOT} --params ${GPARAMS} --tree '${TREE_AVG_MAMMALS}'  --step ${STEP_AVG_MAMMALS}  --out ${OUT_AVG_MAMMALS}  --jobFile JOB_FILE --saveParent --seed 1337" --logDebug --retryCount 4
+primate:
+	jobTree.py --jobTree ${PRIMATE_JOBTREE} --batchSystem=parasol --command="${RUNSIM} --parent ${TOY_ROOT} --params ${GPARAMS} --tree '${TREE_PRIMATES}' --step 0.0005 --out /hive/users/dearl/simTreeWorking/primateRun/ --jobFile JOB_FILE --logBranch" --logDebug --retryCount 4
+cancerTeam:
+	jobTree.py --jobTree ${CANCER_JOBTREE} --batchSystem=parasol --command="${RUNSIM} --parent ${TOY_ROOT} --params ${GPARAMS} --tree '${TREE_CANCERTEAM}' --step 0.001 --out ${OUT_CANCERTEAM} --jobFile JOB_FILE --logBranch --saveParent --seed 1" --logDebug --retryCount 0
+utensilSet:
+	jobTree.py --jobTree ${UTENSILSET_JOBTREE} --batchSystem=parasol --command="${RUNSIM} --parent ${TOY_ROOT} --params ${GPARAMS} --tree '${TREE_UTENSILSET}' --step 0.001 --out ${OUT_UTENSILSET} --jobFile JOB_FILE --logBranch --saveParent --seed 1" --logDebug --retryCount 0
+aloneCancer:
+	./simTreeStandAlone.py --parent ${TOY_ROOT} --out /cluster/home/dearl/simTreeWorking/standAloneCancer/ --params ${GPARAMS} --tree '${TREE_CANCERTEAM}' --step 0.004 --logBranch
+
+##############################
+# PARASOL TESTS (jobTree)
+##############################
+testSimplePathParasol:
+	jobTree.py --jobTree ${WORKING_JOBTREE} --batchSystem=parasol --command="${RUNSIM}  --parent ${TOY_ROOT} --params ${GPARAMS} --tree 'Chris:.005;' --out /hive/users/dearl/simTreeWorking/yeeOldeTest --step 0.001 --jobFile JOB_FILE --logBranch --testTree" --logDebug --retryCount 1
+testSimpleBranchParasol:
+	jobTree.py --jobTree ${WORKING_JOBTREE} --batchSystem=parasol --command="${RUNSIM}  --parent ${TOY_ROOT} --params ${GPARAMS} --tree '(Chris:.004, Zack:0.002)CZ:.003;' --out yeeOldeTest --step 0.001 --jobFile JOB_FILE --logBranch --testTree" --logDebug --retryCount 1
+testMediumBranchParasol:
+	jobTree.py --jobTree ${WORKING_JOBTREE} --batchSystem=parasol --command="${RUNSIM}  --parent ${TOY_ROOT} --params ${GPARAMS} --tree '(Steve:0.003, (Zack:.005, Chris:.009):.001):.002;' --out yeeOldeTest --step 0.001 --jobFile JOB_FILE --logBranch --testTree" --logDebug --retryCount 1
+testCancerTeamParasol:
+	jobTree.py --jobTree ${WORKING_JOBTREE} --batchSystem=parasol --command="${RUNSIM}  --parent ${TOY_ROOT} --params ${GPARAMS} --tree '${TREE_CANCERTEAM}' --step 0.001 --out /hive/users/dearl/simTreeWorking/cancerTeamTest --jobFile JOB_FILE --testTree --logBranch " --logDebug --retryCount 1
+testPrimatesParasol:
+	jobTree.py --jobTree ${WORKING_JOBTREE} --batchSystem=parasol --command="${RUNSIM}  --parent ${TOY_ROOT} --params ${GPARAMS} --tree '${TREE_PRIMATES}' --step 0.0005 --out /hive/users/dearl/simTreeWorking/primateRun/ --jobFile JOB_FILE --logBranch --testTree" --logDebug --retryCount 1
+
+##############################
+# SINGLE MACHINE TESTS (jobTree)
+##############################
+testSimplePathSingle:
+	jobTree.py --jobTree ${WORKING_JOBTREE} --batchSystem=single_machine --command="${RUNSIM}  --parent ${TOY_ROOT} --params ${GPARAMS} --tree 'Chris:.005;' --out yeeOldeTest --step 0.001 --jobFile JOB_FILE --logBranch --testTree" --logDebug --retryCount 1 # test rmtree()
+testSimpleBranchSingle:
+	jobTree.py --jobTree ${WORKING_JOBTREE} --batchSystem=single_machine --command="${RUNSIM}  --parent ${TOY_ROOT} --params ${GPARAMS} --tree '(Chris:.004, Zack:0.002)CZ:.003;' --out yeeOldeTest --step 0.001 --jobFile JOB_FILE --logBranch --testTree" --logDebug --retryCount 1 # test rmtree()
+testMediumBranchSingle:
+	jobTree.py --jobTree ${WORKING_JOBTREE} --batchSystem=single_machine --command="${RUNSIM}  --parent ${TOY_ROOT} --params ${GPARAMS} --tree '(Steve:0.003, (Zack:.005, Chris:.009):.001):.002;' --out yeeOldeTest --step 0.001 --jobFile JOB_FILE --logBranch --testTree" --logDebug --retryCount 1
+testCancerTeamSingle:
+	jobTree.py --jobTree ${WORKING_JOBTREE} --batchSystem=single_machine --command="${RUNSIM}  --parent ${TOY_ROOT} --params ${GPARAMS} --tree '${TREE_CANCERTEAM}' --step 0.001 --out cancerTeamTest --jobFile JOB_FILE --testTree --logBranch" --logDebug --retryCount 1
+testPrimatesSingle:
+	jobTree.py --jobTree ${WORKING_JOBTREE} --batchSystem=single_machine --command="${RUNSIM}  --parent ${TOY_ROOT} --params ${GPARAMS} --tree '${TREE_PRIMATES}' --step 0.0005 --out /hive/users/dearl/simTreeWorking/primateRun/ --jobFile JOB_FILE --logBranch --testTree" --logDebug --retryCount 1
+
+##############################
+# STAND ALONE TESTS (no jobTree)
+##############################
+testAloneCancer:
+	simCtrl_simTreeStandAlone.py --parent ${TOY_ROOT} --out /cluster/home/dearl/simTreeWorking/standAloneTest/ --params ${GPARAMS} --tree '${TREE_CANCERTEAM}' --step 0.001 --testTree --logBranch --verbose --saveParent
+
+##############################
+# CACTUS (Reconstruction) MUST BE RUN ON A CLUSTER, IN GNU SCREEN!!
+##############################
+repeatMaskCancer:
+# not sure how to know (in an automated fashion) that the repeatMasking are all done...
+	eval_evolverFASTAextractor.py --cycleDir ${OUT_CANCERTEAM} --leavesOnly
+	repeatMasking_doCluster.py --genome ${OUT_CANCERTEAM}/Chris/seq.fa --workDir ${OUT_CANCERTEAM}/Chris/repeatMask --maxJob=80 &>/dev/null & 
+	repeatMasking_doCluster.py --genome ${OUT_CANCERTEAM}/Jing/seq.fa  --workDir ${OUT_CANCERTEAM}/Jing/repeatMask  --maxJob=80 &>/dev/null &
+	repeatMasking_doCluster.py --genome ${OUT_CANCERTEAM}/Steve/seq.fa --workDir ${OUT_CANCERTEAM}/Steve/repeatMask --maxJob=80 &>/dev/null &
+	repeatMasking_doCluster.py --genome ${OUT_CANCERTEAM}/Zack/seq.fa  --workDir ${OUT_CANCERTEAM}/Zack/repeatMask  --maxJob=80 &>/dev/null &
+repeatMaskCancerFinish:
+	for a in $(ls ${OUT_CANCERTEAM}/); do if [ -d ${OUT_CANCERTEAM}/$$a ]; then if [ -d ${OUT_CANCERTEAM}/$$a/repeatMask ]; \
+	then twoBitToFa ${OUT_CANCERTEAM}/$$a/repeatMask/seq.rmsk.2bit ${OUT_CANCERTEAM}/$$a/seq.masked.fa;\
+	eval_fastaNameCorrector.py --name $$a < ${OUT_CANCERTEAM}/$$a/seq.masked.fa > ${OUT_CANCERTEAM}/$$a/seq.masked.clean.fa; fi; fi; done
+sonTraceCancer:
+	jobTree.py --batchSystem=parasol --command  "cactus_workflow.py --netDisk ${CANCER_NETDISK} --speciesTree '${TREE_CANCERTEAM}' \
+	${OUT_CANCERTEAM}/Jing/seq.masked.clean.fa \
+	${OUT_CANCERTEAM}/Steve/seq.masked.clean.fa \
+	${OUT_CANCERTEAM}/Zack/seq.masked.clean.fa \
+	${OUT_CANCERTEAM}/Chris/seq.masked.clean.fa --job JOB_FILE" --jobTree ${CANCER_JOBTREE} --logDebug
+	eval_evolverPairwiseExtractor.py --cycleDir ${OUT_CANCERTEAM} --leavesOnly
+	cactus_MAFGenerator --netDisk ${CANCER_NETDISK} --outputFile ${OUT_CANCERTEAM}/reconstruction.maf --netName 0 --logLevel DEBUG
+	for a in $$(ls ${OUT_CANCERTEAM}/*.clean.maf); do (eval_MAFComparator --logLevel DEBUG --mAFFile1 $$a \
+	--mAFFile2 ${OUT_CANCERTEAM}/reconstruction.maf --outputFile $$a.compare.xml --sampleNumber 1000000 &) ; done
+	eval_cycleStats.sh ${OUT_CANCERTEAM}
+	cactus_treeStats --netDisk ${CANCER_NETDISK} --netName 0 --outputFile ${OUT_CANCERTEAM}/cactusTreeStats.xml
+
+##############################
+# UTILITIES
+##############################
+extractCancerMAFs:
+	evolver_pairwiseExtractor.py --cycleDir ${OUT_CANCERTEAM} --leavesOnly
