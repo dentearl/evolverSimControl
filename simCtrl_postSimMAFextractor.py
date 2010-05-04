@@ -15,8 +15,8 @@ from sonLib.bioio import newickTreeParser
 from sonLib.bioio import printBinaryTree
 from optparse import OptionParser
 import xml.etree.ElementTree as ET
-import eval.lib.libSimControl as LSC
-import eval.lib.libSimTree as LST
+import simualtion.lib.libSimControl as LSC
+import simulation.lib.libSimTree as LST
 
 programs = ['evolver_cvt', 'evolver_transalign',
             'simCtrl_commandEval.py', 'head']

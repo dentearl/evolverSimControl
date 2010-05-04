@@ -21,8 +21,8 @@ cycleMain_2.py Handles:
 import xml.etree.ElementTree as ET
 import sys, os
 from optparse import OptionParser
-import eval.lib.libSimControl as LSC
-import eval.lib.libSimCycle   as LSY
+import simulation.lib.libSimControl as LSC
+import simulation.lib.libSimCycle   as LSY
 
 programs = ['evolver_evo', 'evolver_cvt', 'evolver_transalign',
             'simCtrl_cycleMain_3.py', 'ln', 'simCtrl_wrapperTRF.py', 

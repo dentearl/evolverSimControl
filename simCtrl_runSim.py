@@ -17,8 +17,8 @@ from optparse import OptionParser
 import xml.etree.ElementTree as ET
 import os, sys, time
 from datetime import datetime # for logging
-import eval.lib.libSimControl as LSC
-import eval.lib.libSimTree as LST
+import simulation.lib.libSimControl as LSC
+import simulation.lib.libSimTree as LST
 
 # this is the first script to run in a simulation, so it will check for the
 # existance of everything the entire simulation will end up calling, not

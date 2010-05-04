@@ -16,8 +16,7 @@ timestamp.
 import xml.etree.ElementTree as ET
 import os, sys
 from optparse import OptionParser
-import eval.lib.libSimControl as LSC
-#import eval.lib.libSimCycle   as LSY
+import simulation.lib.libSimControl as LSC
 
 def usage():
     print "USAGE: %s --cycleDir [cycleDirectory/] --type [main,stats]" %(sys.argv[0])

@@ -14,8 +14,8 @@ from sonLib.bioio import printBinaryTree
 from optparse import OptionParser
 import xml.etree.ElementTree as ET
 import copy, os, shutil, sys, subprocess
-import eval.lib.libSimControl as LSC
-import eval.lib.libSimTree as LST
+import simulation.lib.libSimControl as LSC
+import simulation.lib.libSimTree as LST
 
 programs = ['simCtrl_simTree.py']
 LSC.verifyPrograms(programs)

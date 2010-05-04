@@ -18,7 +18,7 @@ at a time, so we expect a retcode of 1.)
 """
 ########################################
 import glob, os, subprocess, sys
-import eval.lib.libSimControl as LSC
+import simulation.lib.libSimControl as LSC
 
 programs = ['trf']
 LSC.verifyPrograms(programs)

@@ -15,9 +15,8 @@ separate process.
 import xml.etree.ElementTree as ET
 from optparse import OptionParser
 import os, sys
-#import eval.lib.libSimTree as LST
-import eval.lib.libSimControl as LSC
-import eval.lib.libSimStats as LSS
+import simulation.lib.libSimControl as LSC
+import simulation.lib.libSimStats as LSS
 
 programs = ['simCtrl_commandEval.py', 'evolver_evo', 'evolver_gff_cdsutr2exons.py',
             'evolver_gff_exons2introns.py', 'evolver_gff_featurestats2.sh',

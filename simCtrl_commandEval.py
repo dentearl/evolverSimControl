@@ -30,7 +30,7 @@ import sys
 import time
 import xml.etree.ElementTree as ET
 from optparse import OptionParser
-import eval.lib.libSimControl as LSC
+import simulation.lib.libSimControl as LSC
 
 def usage():
     print "USAGE: %s JOB_FILE \" &myCMD;command1&myCMD; &myCMD;command2&myCMD; &myCMD;command3&myCMD; ... \"" %(sys.argv[0])

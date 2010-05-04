@@ -24,8 +24,8 @@ from sonLib.bioio import newickTreeParser
 from sonLib.bioio import printBinaryTree
 from optparse import OptionParser
 import xml.etree.ElementTree as ET
-import eval.lib.libSimTree as LST
-from eval.lib.libSimControl import stem
+import simulation.lib.libSimTree as LST
+from simulation.lib.libSimControl import stem
 
 def usage():
     print 'USAGE: %s --dir <dir> --tree <newick tree in quotes>' %(sys.argv[0])

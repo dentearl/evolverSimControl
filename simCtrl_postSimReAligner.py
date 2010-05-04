@@ -15,7 +15,7 @@ leaves to root alignment.
 ##############################
 from optparse import OptionParser
 import os, sys, subprocess
-import eval.lib.libSimControl as LSC
+import simulation.lib.libSimControl as LSC
 
 programs = ['evolver_transalign']
 LSC.verifyPrograms(programs)

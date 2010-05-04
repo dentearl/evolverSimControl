@@ -20,8 +20,8 @@ import xml.etree.ElementTree as ET
 import os, sys
 import shutil # for rmtree, for the childDir
 from optparse import OptionParser
-import eval.lib.libSimControl as LSC
-import eval.lib.libSimCycle   as LSY
+import simulation.lib.libSimControl as LSC
+import simulation.lib.libSimCycle   as LSY
 
 programs = ['evolver_evo', 'evolver_cvt', 'evolver_transalign',
             'simCtrl_cycleMain_2.py', 'simCtrl_commandEval.py',

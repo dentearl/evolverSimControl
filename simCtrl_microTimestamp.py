@@ -21,8 +21,7 @@ info
 import xml.etree.ElementTree as ET
 import os, sys, time
 from optparse import OptionParser
-import eval.lib.libSimControl as LSC
-#import eval.lib.libSimCycle   as LSY
+import simulation.lib.libSimControl as LSC
 
 def usage():
     print "USAGE: %s --cycleDir [cycleDirectory/] --name [cycleStep_2_cycleMain_2_evolver_evo_start]" %(sys.argv[0])

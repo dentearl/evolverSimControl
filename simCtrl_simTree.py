@@ -14,8 +14,8 @@ from optparse import OptionParser
 import xml.etree.ElementTree as ET
 import glob, os, sys, time
 from datetime import datetime # for loggingo
-import eval.lib.libSimControl as LSC
-import eval.lib.libSimTree as LST
+import simulation.lib.libSimControl as LSC
+import simulation.lib.libSimTree as LST
 
 programs = ['simCtrl_simTreeFollowUp.py', 'simCtrl_cycleMain_1.py',
             'simCtrl_commandEval.py']
