@@ -100,12 +100,11 @@ def main(argv):
                                  ' -branchlength '  +str(options.stepSize) + \
                                  ' -statsfile ' + os.path.join(options.childDir, 'stats', 'inter.stats') + \
                                  ' -model ' + os.path.join(options.gParamsDir, 'model.txt') +\
-                                 ' -xfertandems' +\
                                  ' -seed '+ options.seed+\
                                  ' -logevents ' + \
-                                 ' -log ' + os.path.join(options.childDir, 'logs', 'inter.log'))+\
-               ' '+\
-               LSC.commandPacker(MOBILES_BIN+\
+                                 ' -log ' + os.path.join(options.childDir, 'logs', 'inter.log')) # ' -xfertandems' removed following may12 crashes related to free() heap stack corruption
+    interCMD += ' '
+    interCMD +=LSC.commandPacker(MOBILES_BIN+\
                                  ' --evo '+EVO_BIN+\
                                  ' --cvt '+CVT_BIN+\
                                  ' --py '+ os.path.dirname(EVO_BIN)+\
@@ -117,16 +116,16 @@ def main(argv):
                                  ' --ltr '+os.path.join(options.parentDir,'mobiles', 'LTR.fa')+\
                                  ' --mescfg '+os.path.join(options.gParamsDir,'mes.cfg')+\
                                  ' --model '+os.path.join(options.gParamsDir,'model.mes.txt')+\
-                                 ' > '+os.path.join(options.childDir,'logs','mobiles.log'))+\
-               ' '+\
-               LSC.commandPacker('mv mes.fa '+os.path.join(options.childDir,'mobiles','mes.fa'))+\
-               ' '+\
-               LSC.commandPacker('mv ME_output.fa '+os.path.join(options.childDir,'mobiles','ME.fa'))+\
-               ' '+\
-               LSC.commandPacker('mv ME_output.gff '+os.path.join(options.childDir,'mobiles','ME.gff'))+\
-               ' '+\
-               LSC.commandPacker('mv ME_output_ltrs.fa '+os.path.join(options.childDir,'mobiles','LTR.fa'))+\
-               '"'
+                                 ' > '+os.path.join(options.childDir,'logs','mobiles.log'))
+    interCMD += ' '
+    interCMD +=LSC.commandPacker('mv mes.fa '+os.path.join(options.childDir,'mobiles','mes.fa'))
+    interCMD +=' '
+    interCMD +=LSC.commandPacker('mv ME_output.fa '+os.path.join(options.childDir,'mobiles','ME.fa'))
+    interCMD +=' '
+    interCMD +=LSC.commandPacker('mv ME_output.gff '+os.path.join(options.childDir,'mobiles','ME.gff'))
+    interCMD +=' '
+    interCMD +=LSC.commandPacker('mv ME_output_ltrs.fa '+os.path.join(options.childDir,'mobiles','LTR.fa'))
+    interCMD +='"'
 
     xmlTree = ET.parse(options.jobFile)
     jobElm=xmlTree.getroot()
