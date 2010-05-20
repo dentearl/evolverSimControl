@@ -87,9 +87,9 @@ def main(argv):
     buildDirs(options)
     
     # next will be the inter step
-    interCMD = CMD_EVAL_BIN+\
-               ' JOB_FILE "'+\
-               LSC.commandPacker(EVO_BIN +\
+    interCMD = CMD_EVAL_BIN
+    interCMD +=' JOB_FILE "'
+    interCMD +=LSC.commandPacker(EVO_BIN +\
                                  ' -interchr ' +os.path.join(options.parentDir, 'seq.rev') + \
                                  ' -inannots ' +os.path.join(options.parentDir, 'annots.gff') + \
                                  ' -aln ' + os.path.join(options.childDir, 'inter', 'inter.aln.rev') + \
