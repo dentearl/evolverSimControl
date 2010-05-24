@@ -130,6 +130,7 @@ def commandRecorder(cmd, dir):
     infoTree=ET.parse(inputXML)
     root=infoTree.getroot()
     tObj=ET.SubElement(root, 'followUpCommand')
+    cmd = cmd.replace('"', '\'')
     tObj.text=cmd
     info=ET.ElementTree(root)
     info.write(inputXML)
