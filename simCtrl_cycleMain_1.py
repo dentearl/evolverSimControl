@@ -23,11 +23,11 @@ from optparse import OptionParser
 import simulation.lib.libSimControl as LSC
 import simulation.lib.libSimCycle   as LSY
 
-programs = ['evolver_evo', 'evolver_cvt', 'evolver_transalign',
+programs = ['evolver_evo', 'evolver_cvt',
             'simCtrl_cycleMain_2.py', 'simCtrl_commandEval.py',
             'evolver_handle_mobiles.pl']
 LSC.verifyPrograms(programs)
-(EVO_BIN, CVT_BIN, TRANS_BIN, CYCLE_MID1, CMD_EVAL_BIN,
+(EVO_BIN, CVT_BIN, CYCLE_MID1, CMD_EVAL_BIN,
  MOBILES_BIN) = programs
 
 def usage():
