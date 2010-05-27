@@ -56,7 +56,7 @@ def main(argv):
     if( os.path.isfile(os.path.join(options.parentDir, 'root.aln.rev'))):
         # align the inter step to the root via the parent's 'to-root' alignment.
         transCMD = CMD_EVAL_BIN+\
-                   ' --statXML '+os.path.join(options.childDir, 'chr','trans.info.xml')+\
+                   ' --statXML '+os.path.join(options.childDir, 'logs','trans.1.info.xml')+\
                    ' JOB_FILE "'
         transCMD +=LSC.commandPacker(TRANS_BIN+\
                                      ' -in1 '+ os.path.join(options.childDir, 'inter','inter.aln.rev') + \
@@ -67,7 +67,6 @@ def main(argv):
     else:
         # base case, the parent *is* the root.
         transCMD = CMD_EVAL_BIN+\
-                   ' --statXML '+os.path.join(options.childDir, 'chr','trans.info.xml')+\
                    ' JOB_FILE "'+\
                    LSC.commandPacker(LINK_BIN +\
                                      ' -s inter.aln.rev '+os.path.join(options.childDir,'inter', options.theParent+'.inter.aln.rev'))+\
@@ -84,7 +83,7 @@ def main(argv):
         chrom = line.rstrip()
         newChild = ET.SubElement(childrenElm, 'child')
         intraCMD = CMD_EVAL_BIN+\
-                   ' --statXML '+os.path.join(options.childDir, 'chr','micro.'+chrom+'.info.xml')+\
+                   ' --statXML '+os.path.join(options.childDir, 'logs','micro.'+chrom+'.info.xml')+\
                    ' JOB_FILE "'
         intraCMD +=LSC.commandPacker(EVO_BIN +\
                                      ' -inseq '    +os.path.join(options.childDir, 'inter', 'inter.outseq.rev') +\
