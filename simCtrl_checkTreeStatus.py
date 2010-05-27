@@ -740,21 +740,21 @@ def stepStatsBreakdown(runDir, cs_dict, isHtml, timeList, microTimeList,
         print 'time spent in each step (%s = %d)' %(nStr, len(cs_dict))
         if isHtml:
             print '<table cellpadding="5">'
-            print '<tr><th>%s</th><th>%s</th><th>%s</th><th>%s</th><th>%s</th></tr>' %('step', 'ave (sec)', 'pretty', 'sd', 'barplot')
+            print '<tr><th>%s</th><th>%s</th><th>%s</th><th>%s</th><th>%s</th></tr>' %('step', 'ave (s)', 'pretty', 'sd', 'barplot')
         else:
-            print '%13s %12s %8s %s' %('ave (sec)', 'pretty', 'sd', 'barplot')
+            print '%13s %12s %8s %s' %('ave (s)', 'pretty', 'sd', 'barplot')
         for m in mainSteps:
             hist = '#'*int(25*(mean(timeDict[m])/maxMeanTime))
             if isHtml:
                 hist = '&#9744;'*int(round(25*(mean(timeDict[m])/maxMeanTime))) # &#9744; &#183;
-                sys.stdout.write( '<tr><td>%d)</td>' % step )
-                sys.stdout.write( '<td align="right">%8.2f</td>' % mean(timeDict[m]) )
-                sys.stdout.write( '<td align="right">%s</td>' % prettyTime(mean(timeDict[m])) )
+                sys.stdout.write( '<tr><td align="right" width=25>%d)</td>' % step )
+                sys.stdout.write( '<td align="right" width=75>%8.2f</td>' % mean(timeDict[m]) )
+                sys.stdout.write( '<td align="right" width=100>%s</td>' % prettyTime(mean(timeDict[m])) )
                 if variance(timeDict[m]):
                     sdStr = '%8.2f' %math.sqrt(variance(timeDict[m]))
                 else:
                     sdStr = '-'
-                sys.stdout.write( '<td align="right">%s</td>' % sdStr )
+                sys.stdout.write( '<td align="right" width=60>%s</td>' % sdStr )
                 if barimg:
                     sys.stdout.write('<td align=left><img src="%s" height=10 width=%d></td></tr>\n' % (barimg, int(round(200*mean(timeDict[m])/maxMeanTime))))
                 else:
@@ -766,14 +766,14 @@ def stepStatsBreakdown(runDir, cs_dict, isHtml, timeList, microTimeList,
         for s in statSteps:
             if isHtml:
                 hist = '&#9744;'*int(round(25*(mean(timeDict[s])/maxMeanTime)))
-                sys.stdout.write( '<tr><td>%d)</td>' % step )
-                sys.stdout.write( '<td align="right">%8.2f</td>' % mean(timeDict[s]) )
-                sys.stdout.write( '<td align="right">%s</td>' % prettyTime(mean(timeDict[s])) )
+                sys.stdout.write( '<tr><td align="right" width=25>%d)</td>' % step )
+                sys.stdout.write( '<td align="right" width=75>%8.2f</td>' % mean(timeDict[s]) )
+                sys.stdout.write( '<td align="right" width=100>%s</td>' % prettyTime(mean(timeDict[s])) )
                 if variance(timeDict[s]):
                     sdStr = '%8.2f' %math.sqrt(variance(timeDict[s]))
                 else:
                     sdStr = '-'
-                sys.stdout.write( '<td align="right">%s</td>' % sdStr)
+                sys.stdout.write( '<td align="right" width=60>%s</td>' % sdStr)
                 if barimg:
                     sys.stdout.write('<td align=left><img src="%s" height=10 width=%d></td></tr>\n' % (barimg, int(round(200*mean(timeDict[s])/maxMeanTime))))
                 else:
@@ -800,20 +800,20 @@ def stepStatsBreakdown(runDir, cs_dict, isHtml, timeList, microTimeList,
         i = 0
         if isHtml:
             print '<table cellpadding="5">'
-            print '<tr><th>%s</th><th>%s</th><th>%s</th><th>%s</th><th>%s</th></tr>' %('step', 'ave (sec)', 'pretty', 'sd', 'barplot')
+            print '<tr><th>%s</th><th>%s</th><th>%s</th><th>%s</th><th>%s</th></tr>' %('step', 'ave (s)', 'pretty', 'sd', 'barplot')
         else:
-            print '%13s %12s %8s %s' %('ave (sec)', 'pretty', 'sd', 'barplot')
+            print '%13s %12s %8s %s' %('ave (s)', 'pretty', 'sd', 'barplot')
         for m in microSteps:
             if isHtml:
                 hist = '&#9744;'*int(round(25*(mean(microTimeDict[microStepsToNames[m]])/maxMeanTime)))
-                sys.stdout.write( '<tr><td>2.%d)</td>' % i )
-                sys.stdout.write( '<td align="right">%8.2f</td>' % mean(microTimeDict[microStepsToNames[m]]) )
-                sys.stdout.write( '<td align="right">%s</td>' % prettyTime(mean(microTimeDict[microStepsToNames[m]])) )
+                sys.stdout.write( '<tr><td align="right" width=25>2.%d)</td>' % i )
+                sys.stdout.write( '<td align="right" width=75>%8.2f</td>' % mean(microTimeDict[microStepsToNames[m]]) )
+                sys.stdout.write( '<td align="right" width=100>%s</td>' % prettyTime(mean(microTimeDict[microStepsToNames[m]])) )
                 if variance(microTimeDict[microStepsToNames[m]]):
                     sdStr = '%8.2f' % math.sqrt(variance(microTimeDict[microStepsToNames[m]]))
                 else:
                     sdStr = '-'
-                sys.stdout.write( '<td align="right">%s</td>' % sdStr)
+                sys.stdout.write( '<td align="right" width=60>%s</td>' % sdStr)
                 if barimg:
                     sys.stdout.write('<td align=left><img src="%s" height=10 width=%d></td></tr>\n' % (barimg, int(round(200*mean(microTimeDict[microStepsToNames[m]])/maxMeanTime))))
                 else:
@@ -826,11 +826,12 @@ def stepStatsBreakdown(runDir, cs_dict, isHtml, timeList, microTimeList,
                                                      hist)
             i += 1
         if (isHtml) and ( maxMeanTime > 0.0 ):
+            thisStep = 'cycleStep_2_cycleMain_2'
             sys.stdout.write( '<tr><td>%s</td>' % 'total' )
-            sys.stdout.write( '<td align="right">%8.2f</td>' % mean(cycleTimes) )
-            sys.stdout.write( '<td align="right">%s</td>' % prettyTime(mean(cycleTimes)) )
-            if variance(cycleTimes):
-                sdStr = '%8.2f' % math.sqrt(variance(cycleTimes))
+            sys.stdout.write( '<td align="right">%8.2f</td>' % mean(timeDict[thisStep]) )
+            sys.stdout.write( '<td align="right">%s</td>' % prettyTime(mean(timeDict[thisStep])) )
+            if variance(timeDict[thisStep]):
+                sdStr = '%8.2f' % math.sqrt(variance(timeDict[thisStep]))
             else:
                 sdStr = '-'
             sys.stdout.write( '<td align="right">%s</td>' % sdStr)
@@ -838,27 +839,27 @@ def stepStatsBreakdown(runDir, cs_dict, isHtml, timeList, microTimeList,
             print '</table>'
             
             
-        print 'time spent in each transalign (%s ~ %d)' %(nStr, 2*len(cs_dict))
+        print 'time spent in each transalign (%s ~ %d)' %(nStr, len(cs_dict))
         # it's approximate because the first cycles away from the root will not have transalign 1 times,
         # they'll have cp times which are very fast and as such are not recorded here. So the real number is
         # a little bit less than this n.
         i = 1
         if isHtml:
             print '<table cellpadding="5">'
-            print '<tr><th>%s</th><th>%s</th><th>%s</th><th>%s</th><th>%s</th></tr>' %('step', 'ave (sec)', 'pretty', 'sd', 'barplot')
+            print '<tr><th>%s</th><th>%s</th><th>%s</th><th>%s</th><th>%s</th></tr>' %('step', 'ave (s)', 'pretty', 'sd', 'barplot')
         else:
-            print '%13s %12s %8s %s' %('ave (sec)', 'pretty', 'sd', 'barplot')
+            print '%13s %12s %8s %s' %('ave (s)', 'pretty', 'sd', 'barplot')
         for t in transAlignTimeDict:
             if isHtml:
                 hist = '&#9744;'*int(round(25*(mean(transAlignTimeDict[t])/maxMeanTime)))
-                sys.stdout.write( '<tr><td>t %d)</td>' % i )
-                sys.stdout.write( '<td align="right">%8.2f</td>'    % mean(transAlignTimeDict[t]) )
-                sys.stdout.write( '<td align="right">%s</td>'       % prettyTime(mean(transAlignTimeDict[t])))
+                sys.stdout.write( '<tr><td align="right" width=25>t %d)</td>' % i )
+                sys.stdout.write( '<td align="right" width=75>%8.2f</td>'    % mean(transAlignTimeDict[t]) )
+                sys.stdout.write( '<td align="right" width=100>%s</td>'       % prettyTime(mean(transAlignTimeDict[t])))
                 if variance(transAlignTimeDict[t]):
                     sdStr = '%8.2f' % math.sqrt(variance(transAlignTimeDict[t]))
                 else:
                     sdStr = '-'
-                sys.stdout.write( '<td align="right">%s</td>'    % sdStr )
+                sys.stdout.write( '<td align="right" width=60>%s</td>'    % sdStr )
                 if barimg:
                     sys.stdout.write('<td align=left><img src="%s" height=10 width=%d></td></tr>\n' % (barimg, int(round(200*mean(transAlignTimeDict[t])/maxMeanTime))))
                 else:
