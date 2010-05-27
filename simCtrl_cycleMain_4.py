@@ -52,9 +52,10 @@ def main(argv):
     childrenElm = xmlTree.find('children')
 
     ########################################
-    # Transalign 2, CDSalign PARALLEL 3
+    # Transalign 2
     ########################################
     transCMD = CMD_EVAL_BIN+\
+               ' --statXML '+os.path.join(options.childDir, 'logs','trans.2.info.xml')+\
                ' JOB_FILE "'+\
                LSC.commandPacker(TRANS_BIN +\
                                  ' -in1 '+os.path.join(options.childDir, 'inter', options.theParent+'.inter.aln.rev')+ \
