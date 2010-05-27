@@ -20,6 +20,7 @@ import math
 import os
 import sys
 import time
+import cPickle
 from sonLib.bioio import newickTreeParser
 from sonLib.bioio import printBinaryTree
 from optparse import OptionParser
@@ -40,14 +41,15 @@ class Branch:
         self.path=0.0
         self.name=''
 
-class Results:
-    """I use a 'Results' object to keep track of all of the
-    detailed results in a single object. I find it easier
+class Status:
+    """I use a 'Status' object to keep track of all of the
+    detailed results and current status in a single object. I find it easier
     to pass around. The items in the object are mostly defined
     in the unpackData() function.
     """
     def __init__(self):
         self.name=''
+        self.variables={}
 
 def totalTreeStepsFinder(nt, ss):
     """totalTreeStepsFinder() takes a newickTree and a stepSize
@@ -84,16 +86,16 @@ def completedTreeStepsFinder(nt, ss, cycles, comStepsDict, prgStepsDict):
     a stepSize, and a list of the present cycle directories,
     and it returns the number of completed steps in the tree.
     """
+    if(nt == None):
+        return 0
     myCycles=cycles[:]
     runDirs=[]
     for i in range(0,len(myCycles)):
-        myCycles[i] = os.path.basename(myCycles[i])
+        myCycles[i]  = os.path.basename(myCycles[i])
         (head, tail) = os.path.split(cycles[i])
         runDirs.append(head)
     runDir = os.path.commonprefix(runDirs)
     cyclesDict = dict(zip(myCycles, [1]*len(myCycles)))
-    if(nt == None):
-        return 0
     while(nt.distance > 0):
         nt.distance = nt.distance - ss
         if nt.distance < 0:
@@ -102,7 +104,6 @@ def completedTreeStepsFinder(nt, ss, cycles, comStepsDict, prgStepsDict):
         if name in cyclesDict and (name not in comStepsDict):
             if not os.path.exists(os.path.join(runDir, name,'cycleInfo.xml')):
                 continue
-#            print str(os.path.join(runDir, name,'cycleInfo.xml'))
             infotree=ET.parse(os.path.join(runDir, name,'cycleInfo.xml'))
             if infotree.find('timestamps'):
                 ts=infotree.find('timestamps')
@@ -141,7 +142,6 @@ def completedTreeStepsFinder(nt, ss, cycles, comStepsDict, prgStepsDict):
                             prgStepsDict[name]=pointDict[p]
                 toBeDeleted=[]
                 for n in prgStepsDict:
-#                    print n +' '+str(prgStepsDict[n])
                     if prgStepsDict[n] == 16:
                         comStepsDict[n]=1
                         toBeDeleted.append(n)
@@ -445,7 +445,7 @@ def depthFirstWalk(nt, stepSize=0.001, d=0, branch='root', overlaps={}, scale=4,
 
 def drawScaleBar(numSteps, scale, isHtml):
     scaleBar=' '
-    for i in range(int(numSteps), 0, -1):
+    for i in range(int(numSteps+1), 0, -1):
         if i >= 100:
             if not i%10:
                 scaleBar+=(int(scale/2) )*' '+str(i)+(scale-int(scale/2)-3)*' '+'|'
@@ -471,55 +471,57 @@ def drawScaleBar(numSteps, scale, isHtml):
     if isHtml:
         print '</pre>'
 
-def timeHandler(completedTreeSteps, totalTreeSteps, elapsedTreeTime, longBranchSteps, options, cycleDirs):
-    parentNode = parentNodeStrFinder(longBranchSteps.name, options.inputNewick, options.stepSize)
+def timeHandler(status, options):
+    parentNode = parentNodeStrFinder(status.longBranchSteps.name, options.inputNewick, options.stepSize)
     if os.path.exists(os.path.join(options.dir, parentNode)):
         curCycleElapsedTime = time.time() - os.path.getmtime(os.path.join(options.dir, parentNode))
     else:
-        curCycleElapsedTime = time.time() - os.path.getmtime(os.path.join(options.dir, longBranchSteps.name))
-    treeTime = prettyTime(elapsedTreeTime)
+        curCycleElapsedTime = time.time() - os.path.getmtime(os.path.join(options.dir, status.longBranchSteps.name))
+    status.elapsedTreeTime = elapsedTreeTimeFinder(options.inputNewick, options.stepSize, options.dir, status.cycleDirs)
+    status.treeTime = prettyTime(status.elapsedTreeTime)
+    newickTree = newickTreeParser(options.inputNewick, 0.0)
+    
     #####
     # 
-    if completedTreeSteps == totalTreeSteps:
+    if status.completedTreeSteps == status.totalTreeSteps:
         # the simulation is complete
-        elapsedTime   = prettyTime(howLongFinder(options.dir, cycleDirs, useNow=False))
+        status.elapsedTime   = prettyTime(howLongFinder(options.dir, status.cycleDirs, useNow=False))
     else:
         # simulation is in progress
-        longBranchSteps.path = longBranchSteps.path+0.5 # longBranchSteps fails to count the current running cycle
-        elapsedTime          = prettyTime(howLongFinder(options.dir, cycleDirs))
-    if completedTreeSteps and totalTreeSteps:
+        status.longBranchSteps.path = status.longBranchSteps.path+0.5 # longBranchSteps fails to count the current running cycle
+        status.elapsedTime          = prettyTime(howLongFinder(options.dir, status.cycleDirs))
+    if status.completedTreeSteps and status.totalTreeSteps:
         # check to make sure these values are not 0
-        aveBranchTime = prettyTime(elapsedTreeTime/completedTreeSteps)
-        if completedTreeSteps != totalTreeSteps:
-            if curCycleElapsedTime > (elapsedTreeTime/completedTreeSteps):
+        status.aveBranchTime = prettyTime(status.elapsedTreeTime/status.completedTreeSteps)
+        if status.completedTreeSteps != status.totalTreeSteps:
+            if curCycleElapsedTime > (status.elapsedTreeTime/status.completedTreeSteps):
                 # don't subtract off more than one cycle, it makes the estimates come out weird.
-                rt = ((elapsedTreeTime/completedTreeSteps) * (longBranchSteps.path-0.5))
+                rt = ((status.elapsedTreeTime/status.completedTreeSteps) * (status.longBranchSteps.path-0.5))
             else:
-                rt = ((elapsedTreeTime/completedTreeSteps) * (longBranchSteps.path+0.5)) - curCycleElapsedTime
+                rt = ((status.elapsedTreeTime/status.completedTreeSteps) * (status.longBranchSteps.path+0.5)) - curCycleElapsedTime
             #print ' ett/ctt = '+str(elapsedTreeTime/completedTreeSteps)+' lbs.p = '+str(longBranchSteps.path+0.5)+' curElTime: '+str(curCycleElapsedTime)
             if rt < 0:
-                remainingTime = 'Soon'
-                estTimeOfComp = 'Soon'
-                estTotalRunLength = prettyTime(howLongFinder(options.dir, cycleDirs))
+                status.remainingTime = 'Soon'
+                status.estTimeOfComp = 'Soon'
+                status.estTotalRunLength = prettyTime(howLongFinder(options.dir, status.cycleDirs))
             else:
-                estTotalRunLength = prettyTime(rt + howLongFinder(options.dir, cycleDirs))
-                remainingTime = prettyTime(rt)
-                estTimeOfComp = time.strftime("%a, %d %b %Y %H:%M:%S (UTC) ", time.gmtime(rt + time.time()))
+                status.estTotalRunLength = prettyTime(rt + howLongFinder(options.dir, status.cycleDirs))
+                status.remainingTime = prettyTime(rt)
+                status.estTimeOfComp = time.strftime("%a, %d %b %Y %H:%M:%S (UTC) ", time.gmtime(rt + time.time()))
         else:
-            estTotalRunLength = prettyTime(howLongFinder(options.dir, cycleDirs, useNow=False))
-            remainingTime = 'Done'
-            estTimeOfComp = 'Done'
+            status.estTotalRunLength = prettyTime(howLongFinder(options.dir, status.cycleDirs, useNow=False))
+            status.remainingTime = 'Done'
+            status.estTimeOfComp = 'Done'
+            status.variables['Done'] = True
     else:
-        aveBranchTime = '--'
-        remainingTime = '--'
-        estTimeOfComp = '--'
-        estTotalRunLength = '--'
-    if longBranchSteps.path:
-        workingCycleString = '(%s->%s)' %(parentNode, longBranchSteps.name)
+        status.aveBranchTime = '--'
+        status.remainingTime = '--'
+        status.estTimeOfComp = '--'
+        status.estTotalRunLength = '--'
+    if status.longBranchSteps.path:
+        status.workingCycleString = '(%s->%s)' %(parentNode, status.longBranchSteps.name)
     else:
-        workingCycleString = ''
-    output=[aveBranchTime, remainingTime, estTimeOfComp, estTotalRunLength, workingCycleString, treeTime, elapsedTime]
-    return output
+        status.workingCycleString = ''
 
 def initOptions(parser):
     parser.add_option('-d', '--dir',dest='dir',
@@ -542,6 +544,8 @@ def initOptions(parser):
                       help='prints output in an HTML friendly way, maybe for a cgi, hmmmmmmm?')
     parser.add_option('-t', '--htmlDir',dest='htmlDir', default='',
                       help='prefix for html links.')
+    parser.add_option('--barimg',dest='barimg', default='',
+                      help='URL to image file to be stretched to make barplots for html output.')
 
 def checkOptions(options):
     defaultStepSize = 0.001
@@ -588,6 +592,7 @@ def pureHTMLStart():
     print ''
 
 def initHTML():
+    print '<!doctype html>'
     print '<html>'
     print '''
 <head>
@@ -631,19 +636,22 @@ def csDictToTimeDict(cs_dict, runDir):
     """
     cycleTimes={}
     for c in cs_dict:
-        infotree=ET.parse(os.path.join(runDir, c,'cycleInfo.xml'))
-        ts=infotree.find('timestamps')
-        cycleTimes[c] = ( float(ts.attrib['endEpochUTC']) -
-                           float(ts.attrib['startEpochUTC']) )
+        if cs_dict[c] == 1:
+            infotree=ET.parse(os.path.join(runDir, c,'cycleInfo.xml'))
+            ts=infotree.find('timestamps')
+            cycleTimes[c] = ( float(ts.attrib['endEpochUTC']) -
+                              float(ts.attrib['startEpochUTC']) )
+        else:
+            cycleTimes[c] = cs_dict[c]
     return cycleTimes
 
-def stepStatsBreakdown(runDir, cs_dict, isHtml):
+def stepStatsBreakdown(runDir, cs_dict, isHtml, timeList, microTimeList,
+                       transAlignTimeList, csAlreadyAdded, barimg):
     """stepStatsBreakdown() takes a dictionary of completed cycle steps and
     then finds out how long each step has taken and gives us some stats about
     the distribution of time spent in each step.
     cs_dict is the completed steps dict
     """
-    timeList=[[], [], [], [], [] ,[] ,[] ,[]]
     timeDict={'cycleStep_1_cycleMain_1':timeList[0],
               'cycleStep_2_cycleMain_2':timeList[1],
               'cycleStep_3_cycleMain_3':timeList[2],
@@ -658,7 +666,6 @@ def stepStatsBreakdown(runDir, cs_dict, isHtml):
               'cycleStep_7_cycleStats_3', 'cycleStep_8_cycleStats_4']
     microSteps=['command_0', 'command_1', 'command_2',
                 'command_3', 'command_4', 'command_5']
-    microTimeList=[[],[],[],[],[],[]]
     microStepsToNames={'command_0':'evolver_evo',
                        'command_1':'evolver_cvt',
                        'command_2':'trf_wrapper',
@@ -671,8 +678,17 @@ def stepStatsBreakdown(runDir, cs_dict, isHtml):
                    'echo':microTimeList[3],
                    'mv *.dat':microTimeList[4],
                    'mv *.outseq.rev':microTimeList[5]}
+    transalignSteps = ['transalign 1', 'transalign 2']
+    transAlignTimeDict={'trans.1.info.xml':transAlignTimeList[0],
+                        'trans.2.info.xml':transAlignTimeList[1]}
+    transAlignToNames={'transalign 1':'trans.1.info.xml',
+                       'transalign 2':'trans.2.info.xml',}
     cycleTimes=csDictToTimeList(cs_dict, runDir)
     for c in cs_dict:
+        if c in csAlreadyAdded:
+            # Since we're pickling our objects after every run, we should
+            # only collect data on runtimes once and then after store it.
+            continue        
         infotree=ET.parse(os.path.join(runDir, c,'cycleInfo.xml'))
         ts=infotree.find('timestamps')
         tsm=ts.find('main')
@@ -689,7 +705,7 @@ def stepStatsBreakdown(runDir, cs_dict, isHtml):
             if tObjEnd and tObjStart:
                 timeDict[s].append( float(tObjEnd.find('epochUTC').text) -
                                     float(tObjStart.find('epochUTC').text))
-        chroms = glob.glob(os.path.join(runDir,c,'chr','micro.*.info.xml'))
+        chroms = glob.glob(os.path.join(runDir,c,'logs','micro.*.info.xml'))
         for chr in chroms:
             infotree = ET.parse(chr)
             ts  = infotree.find('timestamps')
@@ -699,11 +715,21 @@ def stepStatsBreakdown(runDir, cs_dict, isHtml):
                 oObj = mObj.find('elapsed')
                 elapsed = oObj.text
                 microTimeDict[microStepsToNames[m]].append(float(elapsed))
+        for t in transAlignTimeDict:
+            if os.path.exists(os.path.join(runDir,c,'logs',t)):
+                infotree=ET.parse(os.path.join(runDir,c, 'logs', t))
+                ts  = infotree.find('timestamps')
+                tsm = ts.find('micro')
+                tsc = tsm.find('command_0')
+                tse = tsc.find('elapsed')
+                elapsed = tse.text
+                transAlignTimeDict[t].append(float(elapsed))
+        csAlreadyAdded[c] = True
     step=1
     if isHtml:
-        n = '<i>n</i>'
+        nStr = '<i>n</i>'
     else:
-        n = 'n'
+        nStr = 'n'
     maxMeanTime = 0
     for t in timeDict:
         if mean(timeDict[t]) > maxMeanTime:
@@ -711,12 +737,12 @@ def stepStatsBreakdown(runDir, cs_dict, isHtml):
     if maxMeanTime > 0:
         if isHtml:
             print '<h4>Step Stats</h4>'
-        print 'time spent in each step (%s = %d)' %(n, len(cs_dict))
+        print 'time spent in each step (%s = %d)' %(nStr, len(cs_dict))
         if isHtml:
             print '<table cellpadding="5">'
-            print '<tr><th>%s</th><th>%s</th><th>%s</th><th>%s</th><th>%s</th></tr>' %('step', 'ave (sec)', 'pretty', 'sd', 'hist')
+            print '<tr><th>%s</th><th>%s</th><th>%s</th><th>%s</th><th>%s</th></tr>' %('step', 'ave (sec)', 'pretty', 'sd', 'barplot')
         else:
-            print '%13s %12s %8s %s' %('ave (sec)', 'pretty', 'sd', 'hist')
+            print '%13s %12s %8s %s' %('ave (sec)', 'pretty', 'sd', 'barplot')
         for m in mainSteps:
             hist = '#'*int(25*(mean(timeDict[m])/maxMeanTime))
             if isHtml:
@@ -724,8 +750,15 @@ def stepStatsBreakdown(runDir, cs_dict, isHtml):
                 sys.stdout.write( '<tr><td>%d)</td>' % step )
                 sys.stdout.write( '<td align="right">%8.2f</td>' % mean(timeDict[m]) )
                 sys.stdout.write( '<td align="right">%s</td>' % prettyTime(mean(timeDict[m])) )
-                sys.stdout.write( '<td align="right">%8.2f</td>' % math.sqrt(variance(timeDict[m])) )
-                sys.stdout.write( '<td><hist>%s</hist></td></tr>\n' % hist )
+                if variance(timeDict[m]):
+                    sdStr = '%8.2f' %math.sqrt(variance(timeDict[m]))
+                else:
+                    sdStr = '-'
+                sys.stdout.write( '<td align="right">%s</td>' % sdStr )
+                if barimg:
+                    sys.stdout.write('<td align=left><img src="%s" height=10 width=%d></td></tr>\n' % (barimg, int(round(200*mean(timeDict[m])/maxMeanTime))))
+                else:
+                    sys.stdout.write( '<td><hist>%s</hist></td></tr>\n' % hist )
             else:
                 hist = '#'*int(round(25*(mean(timeDict[m])/maxMeanTime)))
                 print '%3d) %8.2f %12s %8.2f %s' %(step, mean(timeDict[m]), prettyTime(mean(timeDict[m])), math.sqrt(variance(timeDict[m])), hist)
@@ -736,8 +769,15 @@ def stepStatsBreakdown(runDir, cs_dict, isHtml):
                 sys.stdout.write( '<tr><td>%d)</td>' % step )
                 sys.stdout.write( '<td align="right">%8.2f</td>' % mean(timeDict[s]) )
                 sys.stdout.write( '<td align="right">%s</td>' % prettyTime(mean(timeDict[s])) )
-                sys.stdout.write( '<td align="right">%8.2f</td>' % math.sqrt(variance(timeDict[s])) )
-                sys.stdout.write( '<td><hist>%s</hist></td></tr>\n' % hist )
+                if variance(timeDict[s]):
+                    sdStr = '%8.2f' %math.sqrt(variance(timeDict[s]))
+                else:
+                    sdStr = '-'
+                sys.stdout.write( '<td align="right">%s</td>' % sdStr)
+                if barimg:
+                    sys.stdout.write('<td align=left><img src="%s" height=10 width=%d></td></tr>\n' % (barimg, int(round(200*mean(timeDict[s])/maxMeanTime))))
+                else:
+                    sys.stdout.write( '<td><hist>%s</hist></td></tr>\n' % hist )
             else:
                 hist = '#'*int(round(25*(mean(timeDict[s])/maxMeanTime)))
                 print '%3d) %8.2f %12s %8.2f %s' %(step, mean(timeDict[s]), prettyTime(mean(timeDict[s])), math.sqrt(variance(timeDict[s])), hist)
@@ -748,31 +788,92 @@ def stepStatsBreakdown(runDir, cs_dict, isHtml):
             sys.stdout.write( '<tr><td>%s</td>' % 'total' )
             sys.stdout.write( '<td align="right">%8.2f</td>' % mean(cycleTimes) )
             sys.stdout.write( '<td align="right">%s</td>' % prettyTime(mean(cycleTimes)) )
-            sys.stdout.write( '<td align="right">%8.2f</td>' % math.sqrt(variance(cycleTimes)) )
+            if variance(cycleTimes):
+                sdStr = '%8.2f' %math.sqrt(variance(cycleTimes))
+            else:
+                sdStr = '-'
+            sys.stdout.write( '<td align="right">%s</td>' % sdStr)
             sys.stdout.write( '<td></td></tr>' )
             print '</table>'
             
-        print 'time spent in each chromosome (%s = %d)' %(n, len(microTimeList[0]))
+        print 'time spent in each chromosome (%s = %d)' %(nStr, len(microTimeList[0]))
         i = 0
         if isHtml:
             print '<table cellpadding="5">'
-            print '<tr><th>%s</th><th>%s</th><th>%s</th><th>%s</th><th>%s</th></tr>' %('step', 'ave (sec)', 'pretty', 'sd', 'hist')
+            print '<tr><th>%s</th><th>%s</th><th>%s</th><th>%s</th><th>%s</th></tr>' %('step', 'ave (sec)', 'pretty', 'sd', 'barplot')
         else:
-            print '%13s %12s %8s %s' %('ave (sec)', 'pretty', 'sd', 'hist')
+            print '%13s %12s %8s %s' %('ave (sec)', 'pretty', 'sd', 'barplot')
         for m in microSteps:
             if isHtml:
                 hist = '&#9744;'*int(round(25*(mean(microTimeDict[microStepsToNames[m]])/maxMeanTime)))
                 sys.stdout.write( '<tr><td>2.%d)</td>' % i )
                 sys.stdout.write( '<td align="right">%8.2f</td>' % mean(microTimeDict[microStepsToNames[m]]) )
                 sys.stdout.write( '<td align="right">%s</td>' % prettyTime(mean(microTimeDict[microStepsToNames[m]])) )
-                sys.stdout.write( '<td align="right">%8.2f</td>' % math.sqrt(variance(microTimeDict[microStepsToNames[m]])) )
-                sys.stdout.write( '<td><hist>%s</hist></td></tr>\n' % hist )
+                if variance(microTimeDict[microStepsToNames[m]]):
+                    sdStr = '%8.2f' % math.sqrt(variance(microTimeDict[microStepsToNames[m]]))
+                else:
+                    sdStr = '-'
+                sys.stdout.write( '<td align="right">%s</td>' % sdStr)
+                if barimg:
+                    sys.stdout.write('<td align=left><img src="%s" height=10 width=%d></td></tr>\n' % (barimg, int(round(200*mean(microTimeDict[microStepsToNames[m]])/maxMeanTime))))
+                else:
+                    sys.stdout.write( '<td><hist>%s</hist></td></tr>\n' % hist )
             else:
                 hist = '#'*int(round(25*(mean(microTimeDict[microStepsToNames[m]])/maxMeanTime)))
                 print '2.%d) %8.2f %12s %8.2f %s' %(i, mean(microTimeDict[microStepsToNames[m]]),
                                                      prettyTime(mean(microTimeDict[microStepsToNames[m]])),
                                                      math.sqrt(variance(microTimeDict[microStepsToNames[m]])),
                                                      hist)
+            i += 1
+        if (isHtml) and ( maxMeanTime > 0.0 ):
+            sys.stdout.write( '<tr><td>%s</td>' % 'total' )
+            sys.stdout.write( '<td align="right">%8.2f</td>' % mean(cycleTimes) )
+            sys.stdout.write( '<td align="right">%s</td>' % prettyTime(mean(cycleTimes)) )
+            if variance(cycleTimes):
+                sdStr = '%8.2f' % math.sqrt(variance(cycleTimes))
+            else:
+                sdStr = '-'
+            sys.stdout.write( '<td align="right">%s</td>' % sdStr)
+            sys.stdout.write( '<td></td></tr>' )
+            print '</table>'
+            
+            
+        print 'time spent in each transalign (%s ~ %d)' %(nStr, 2*len(cs_dict))
+        # it's approximate because the first cycles away from the root will not have transalign 1 times,
+        # they'll have cp times which are very fast and as such are not recorded here. So the real number is
+        # a little bit less than this n.
+        i = 1
+        if isHtml:
+            print '<table cellpadding="5">'
+            print '<tr><th>%s</th><th>%s</th><th>%s</th><th>%s</th><th>%s</th></tr>' %('step', 'ave (sec)', 'pretty', 'sd', 'barplot')
+        else:
+            print '%13s %12s %8s %s' %('ave (sec)', 'pretty', 'sd', 'barplot')
+        for t in transAlignTimeDict:
+            if isHtml:
+                hist = '&#9744;'*int(round(25*(mean(transAlignTimeDict[t])/maxMeanTime)))
+                sys.stdout.write( '<tr><td>t %d)</td>' % i )
+                sys.stdout.write( '<td align="right">%8.2f</td>'    % mean(transAlignTimeDict[t]) )
+                sys.stdout.write( '<td align="right">%s</td>'       % prettyTime(mean(transAlignTimeDict[t])))
+                if variance(transAlignTimeDict[t]):
+                    sdStr = '%8.2f' % math.sqrt(variance(transAlignTimeDict[t]))
+                else:
+                    sdStr = '-'
+                sys.stdout.write( '<td align="right">%s</td>'    % sdStr )
+                if barimg:
+                    sys.stdout.write('<td align=left><img src="%s" height=10 width=%d></td></tr>\n' % (barimg, int(round(200*mean(transAlignTimeDict[t])/maxMeanTime))))
+                else:
+                    sys.stdout.write( '<td><hist>%s</hist></td></tr>\n' % hist )
+            else:
+                hist = '#'*int(round(25*(mean(transAlignTimeDict[t])/maxMeanTime)))
+                sys.stdout.write('t %d)'% i)
+                sys.stdout.write(' %8.2f'% mean(transAlignTimeDict[t]))
+                sys.stdout.write(' %12s' % prettyTime(mean(transAlignTimeDict[t])))
+                if variance(transAlignTimeDict[t]):
+                    sdStr = '%8.2f' % math.sqrt(variance(transAlignTimeDict[t]))
+                else:
+                    sdStr = '-'
+                sys.stdout.write(' %s'% sdStr )
+                sys.stdout.write(' %s\n' % hist )
             i += 1
         if (isHtml) and ( maxMeanTime > 0.0 ):
             print '</table>'
@@ -789,7 +890,11 @@ def findStalledCycles(runDir, cs_dict, prg_dict, isHtml, htmlDir=''):
     cycleTimes=csDictToTimeList(cs_dict, runDir)
     meanTime = mean(cycleTimes)
     sdTime   = math.sqrt(variance(cycleTimes))
+    toDelete_dict={}
     for p in prg_dict:
+        if not os.path.exists(os.path.join(runDir, p ,'cycleInfo.xml')):
+            toDelete_dict[p] = True
+            continue
         infotree=ET.parse(os.path.join(runDir, p,'cycleInfo.xml'))
         ts=infotree.find('timestamps')
         tObjStart = float(ts.attrib['startEpochUTC'])
@@ -798,7 +903,8 @@ def findStalledCycles(runDir, cs_dict, prg_dict, isHtml, htmlDir=''):
                 print '<br><font color="red"><h2>WARNING</h2> cycle [ %s%s</a> ] has taken %s, which is > mean+3*SD (%s). Cycle may be stalled!</font><br>' %(str2link(p, htmlDir),p, prettyTime(time.time()-tObjStart), prettyTime(3*sdTime+meanTime))
             else:
                 print '\nWARNING -  cycle [ %s%s ] has taken %s, which is > mean+3*SD (%s). Cycle may be stalled!\n' %(str2link(p, htmlDir),p, prettyTime(time.time()-tObjStart), prettyTime(3*sdTime+meanTime))
-
+    for p in toDelete_dict:
+        del(prg_dict[p]) # if this file doesn't exist, there's a good change the cycle was removed.
 
 def listCurrentCycles(runDir, cs_dict, prg_dict, isHtml, htmlDir=''):
     """listCurretnCycles() lists all currently running cycles, their current
@@ -821,7 +927,11 @@ def listCurrentCycles(runDir, cs_dict, prg_dict, isHtml, htmlDir=''):
         else:
             print 'Currently running cycles:'
             print '%30s %15s %5s %15s' %('Cycle', 'Total Time', 'Step', 'Step Time')
+    toDelete_dict={}
     for p in prg_dict:
+        if not os.path.exists(os.path.join(runDir, p,'cycleInfo.xml')):
+            toDelete_dict[p] = True
+            continue
         infotree=ET.parse(os.path.join(runDir, p,'cycleInfo.xml'))
         ts=infotree.find('timestamps')
         tObjStart = float(ts.attrib['startEpochUTC'])
@@ -844,6 +954,8 @@ def listCurrentCycles(runDir, cs_dict, prg_dict, isHtml, htmlDir=''):
             print '%30s %15s %5d %15s' %(p, prettyTime(runTime), stepNum, prettyTime(stepTime))
     if isHtml and len(prg_dict):
         print '</table>'
+    for p in toDelete_dict:
+        del(prg_dict[p])
 
 def printStem(aList, isHtml, inHours):
     """printStem() sends a list to the stem() function
@@ -908,77 +1020,96 @@ def unpackData(file):
     """unpackData() opens up the pickle of the last run and pulls out
     all the relevant data.
     """
-    results=Results()
-    return results
+    if not os.path.exists(file):
+        status=Status()
+    else:
+        FILE = open(file, 'r')
+        status = cPickle.load(FILE)
+        FILE.close()
+        if 'isDone' in status.variables:
+            status.variables['dontUpdate'] = True
+    return status
 
-def collectNewData(options, results):
-    """collectNewData() takes in the options and a results object
+def collectData(options, status):
+    """collectNewData() takes in the options and a Status object
     and then goes about seeing what new data has been generated since
     the last run of checkTreeStatus.py
     """
+    # The tree parsing and directory globing goes in here.
+    status.cycleDirs                = glob.glob(os.path.join(options.dir,'*'))
+    directoriesOnly(status.cycleDirs)
+    if 'totalTreeLength' not in status.variables:
+        newickTree = newickTreeParser(options.inputNewick, 0.0)
+        status.totalTreeLength          = totalTreeLengthFinder(newickTree)
+        status.variables['totalTreeLength'] = True
+    if 'totalTreeDepthSteps' not in status.variables:
+        newickTree = newickTreeParser(options.inputNewick, 0.0)
+        status.totalTreeDepthSteps      = totalTreeDepthStepsFinder(newickTree, options.stepSize)
+        status.variables['totalTreeDepthSteps'] = True
+    if 'totalTreeSteps' not in status.variables:
+        newickTree = newickTreeParser(options.inputNewick, 0.0)
+        status.totalTreeSteps           = totalTreeStepsFinder(newickTree, options.stepSize)
+        status.variables['totalTreeSteps'] = True
+    if 'completedTreeSteps_dict' not in status.variables:
+        status.completedTreeSteps_dict  = {}
+        status.inProgressTreeSteps_dict = {}
+        status.variables['completedTreeSteps_dict'] = True
+        status.variables['inProgressTreeSteps_dict'] = True
+    if 'timeList' not in status.variables:
+        status.timeList=[[], [], [], [], [] ,[] ,[] ,[]]
+        status.microTimeList=[[],[],[],[],[],[]]
+        status.transAlignTimeList=[[],[]]
+        status.csAlreadyAdded={}
+        status.variables['timeList'] = True
+    newickTree = newickTreeParser(options.inputNewick, 0.0)
+    status.completedTreeSteps = completedTreeStepsFinder(newickTree, options.stepSize,
+                                                         status.cycleDirs, status.completedTreeSteps_dict,
+                                                         status.inProgressTreeSteps_dict)
+    status.completedTreeSteps_dict = csDictToTimeDict(status.completedTreeSteps_dict, options.dir)
+    #####
+    # now we find the longest continuous branch yet to be simulated
+    # longBranchSteps is a Branch() object
+    newickTree = newickTreeParser(options.inputNewick, 0.0)
+    status.longBranchSteps = longestRemainingBranchFinder(newickTree, options.stepSize, status.cycleDirs) 
+    if not status.longBranchSteps.path:
+        status.longBranchSteps.name = ''
+        
+    #####
+    # Time Handling!
+    timeHandler(status, options)
 
-def packData(options, results):
-    """packData() stores all of the results in the appropriate pickle file.
+
+def packData(status, file):
+    """packData() stores all of the Status in the appropriate pickle file.
     """
-
+    FILE = open(file, 'w')
+    cPickle.dump(status, FILE, 2) # 2 here is the format protocol
+    FILE.close()
     
 def main():
     parser=OptionParser()
     initOptions(parser)
     (options, args) = parser.parse_args()
     checkOptions(options)
-    results=unpackData(os.path.join(options.dir, 'simulationInfo.xml'))
-    collectNewData(options, results)
-    # the first thing here should be an unpacking of data
-    # from the simulationInfo.xml file, then aquiring any new data
-    # if the simulation is not complete.
-    ########################################
-    # The tree parsing and directory globing goes in here.
-    cycleDirs                = glob.glob(os.path.join(options.dir,'*'))
-    directoriesOnly(cycleDirs)
-    newickTree               = newickTreeParser(options.inputNewick, 0.0)
-    totalTreeLength          = totalTreeLengthFinder(newickTree)
-    totalTreeDepthSteps      = totalTreeDepthStepsFinder(newickTree, options.stepSize)
-    newickTree               = newickTreeParser(options.inputNewick, 0.0)
-    totalTreeSteps           = totalTreeStepsFinder(newickTree, options.stepSize)
-    newickTree               = newickTreeParser(options.inputNewick, 0.0)
-    completedTreeSteps_dict  = {}
-    inProgressTreeSteps_dict = {}
-    completedTreeSteps = completedTreeStepsFinder(newickTree, options.stepSize,
-                                                  cycleDirs, completedTreeSteps_dict,
-                                                  inProgressTreeSteps_dict)
-    completedTreeSteps_dict = csDictToTimeDict(completedTreeSteps_dict, options.dir)
-    newickTree = newickTreeParser(options.inputNewick, 0.0)
-    elapsedTreeTime = elapsedTreeTimeFinder(newickTree, options.stepSize, options.dir, cycleDirs)
-    #####
-    # now we find the longest continuous branch yet to be simulated
-    # longBranchSteps is a Branch() object
-    newickTree = newickTreeParser(options.inputNewick, 0.0)
-    longBranchSteps = longestRemainingBranchFinder(newickTree, options.stepSize, cycleDirs) 
-    if not longBranchSteps.path:
-        longBranchSteps.name = ''
-    
-    #####
-    # Time Handling!
-    timeOutput = timeHandler(completedTreeSteps, totalTreeSteps,
-                             elapsedTreeTime, longBranchSteps,
-                             options, cycleDirs)
-    (aveBranchTime, remainingTime, estTimeOfComp, estTotalRunLength, workingCycleString, treeTime, elapsedTime) = timeOutput
-    
-    #####
-    # PRINT OUTPUT
-    print 'Tot. Tree len: %f (%d steps of %s) longest remaining branch: %.1f %s' %(totalTreeLength, totalTreeSteps, str(options.stepSize).rstrip('0'), longBranchSteps.path,
-                                                                                         workingCycleString)
+    status=unpackData(os.path.join(options.dir, '.simulationStatus.pickle'))
+    if 'isDone' not in status.variables:
+        collectData(options, status)
+
+    print 'Tot. Tree len: %f (%d steps of %s) longest remaining branch: %.1f %s' %(status.totalTreeLength, status.totalTreeSteps,
+                                                                                   str(options.stepSize).rstrip('0'), status.longBranchSteps.path,
+                                                                                   status.workingCycleString)
     if options.isHtml:
         print '<br>'
-    print 'Tot. Stps taken: %d (%2.2f %% complete) elapsed CPU time: %s (ave: %s/step)' %(completedTreeSteps, 100*(float(completedTreeSteps) / float(totalTreeSteps)),
-                                                                                              treeTime, aveBranchTime)
+    print 'Tot. Stps taken: %d (%2.2f %% complete) elapsed CPU time: %s (ave: %s/step)' %(status.completedTreeSteps,
+                                                                                          100*(float(status.completedTreeSteps) / float(status.totalTreeSteps)),
+                                                                                          status.treeTime, status.aveBranchTime)
     if options.isHtml:
         print '<br>'
-        remainingTimeStr='<b>'+remainingTime+'</b>'
+        status.remainingTimeStr='<b>'+status.remainingTime+'</b>'
     else:
-        remainingTimeStr=remainingTime
-    print 'ETtC: %s EToC: %s Elapsed wall-clock: %s ETRL: %s' %(remainingTimeStr, estTimeOfComp, elapsedTime, estTotalRunLength)
+        status.remainingTimeStr=status.remainingTime
+    print 'ETtC: %s EToC: %s Elapsed wall-clock: %s ETRL: %s' %(status.remainingTimeStr, status.estTimeOfComp,
+                                                                status.elapsedTime, status.estTotalRunLength)
     if options.isHtml:
         print '<br>'
     print 'Generated at %s' %(time.strftime("%a, %d %b %Y %H:%M:%S (UTC)", time.gmtime()))
@@ -990,21 +1121,26 @@ def main():
         if options.isHtml:
             print '<pre>'
         nt = newickTreeParser(options.inputNewick, 0.0)
-        drawText(nt, options.stepSize, totalTreeDepthSteps, scale=options.scale,
-                 comStepsDict=completedTreeSteps_dict, prgStepsDict=inProgressTreeSteps_dict, isHtml=options.isHtml, dir=options.htmlDir)
+        drawText(nt, options.stepSize, status.totalTreeDepthSteps, scale=options.scale,
+                 comStepsDict=status.completedTreeSteps_dict, prgStepsDict=status.inProgressTreeSteps_dict,
+                 isHtml=options.isHtml, dir=options.htmlDir)
     
-    findStalledCycles(options.dir, completedTreeSteps_dict, inProgressTreeSteps_dict, options.isHtml, options.htmlDir)
+    findStalledCycles(options.dir, status.completedTreeSteps_dict, status.inProgressTreeSteps_dict, options.isHtml, options.htmlDir)
     if options.curCycles or options.isHtml:
-        listCurrentCycles(options.dir, completedTreeSteps_dict, inProgressTreeSteps_dict, options.isHtml, options.htmlDir)
+        listCurrentCycles(options.dir, status.completedTreeSteps_dict, status.inProgressTreeSteps_dict, options.isHtml, options.htmlDir)
     if options.stepStats or options.isHtml:
-        stepStatsBreakdown(options.dir, completedTreeSteps_dict, options.isHtml)
+        stepStatsBreakdown(options.dir, status.completedTreeSteps_dict, options.isHtml, status.timeList,
+                           status.microTimeList, status.transAlignTimeList, status.csAlreadyAdded, options.barimg)
     if options.cycleStem or options.cycleStemHours or options.isHtml:
-        printStem( csDictToTimeList(completedTreeSteps_dict, options.dir) , options.isHtml, options.cycleStemHours)
+        printStem( csDictToTimeList(status.completedTreeSteps_dict, options.dir) , options.isHtml, options.cycleStemHours)
     if options.cycleList or options.isHtml:
-        printSortedCycleTimes(completedTreeSteps_dict, options.isHtml, options.htmlDir)
+        printSortedCycleTimes(status.completedTreeSteps_dict, options.isHtml, options.htmlDir)
     
     if options.isHtml:
         finishHTML()
+
+    if 'dontUpdate' not in status.variables:
+        packData(status, os.path.join(options.dir, '.simulationStatus.pickle'))
 
 if __name__ == "__main__":
     main()
