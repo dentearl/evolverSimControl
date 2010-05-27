@@ -26,11 +26,10 @@ import simulation.lib.libSimCycle   as LSY
 
 programs = ['evolver_evo', 'evolver_cvt', 'evolver_transalign',
             'simCtrl_cycleMain_3.py', 'ln', 'simCtrl_wrapperTRF.py', 
-            'mv' , 'echo', 'sleep', 'simCtrl_commandEval.py',
-            'simCtrl_microTimestamp.py']
+            'mv' , 'echo', 'sleep', 'simCtrl_commandEval.py']
 LSC.verifyPrograms(programs)
 (EVO_BIN, CVT_BIN, TRANS_BIN, CYCLE_MAIN3, LINK_BIN, TRF_WRAP_BIN,
- MV_BIN, ECHO_BIN, SLEEP_BIN, CMD_EVAL_BIN, MICRO_TIME) = programs
+ MV_BIN, ECHO_BIN, SLEEP_BIN, CMD_EVAL_BIN) = programs
 
 def usage():
     print "USAGE: %s --parent parentDir/ --child childDir --params globalParamsDir/ --jobFile JOB_FILE [optional: --step ]" %(sys.argv[0])

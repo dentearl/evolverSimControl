@@ -36,7 +36,7 @@ programs = ['simCtrl_simTree.py','simCtrl_rootCycleInfoCreator.py', 'cp',
             'simCtrl_cycleStats_1.py', 'simCtrl_cycleStats_2.py',
             'simCtrl_cycleStats_3.py', 'simCtrl_cycleStats_4.py',
             'simCtrl_simTreeFollowUp.py', 'simCtrl_wrapperTRF.py',
-            'simCtrl_completeTimestamp.py', 'simCtrl_microTimestamp.py']
+            'simCtrl_completeTimestamp.py']
 LSC.verifyPrograms(programs)
 (SIMTREE_PY, ROOT_CYCLEXML_MAKER,
  CP_BIN, CMD_EVAL_BIN) = programs[0:4]
