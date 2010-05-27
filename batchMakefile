@@ -9,7 +9,7 @@ TREE_AVG_MAMMALS:=((evoBosTau4:0.18908,evoCanFam2:0.16303)evoBosTau4-evoCanFam2:
 STEP_AVG_PRIMATES:=0.0005
 STEP_AVG_MAMMALS:=0.01
 AVG_PRIMATES_JOBTREE:=/hive/users/dearl/simTreeWorking/jobTreeAvgPrimates
-AVG_MAMMALS_JOBTREE:=/hive/users/dearl/simTreeWorking/jobTreeAvgMammals_2
+AVG_MAMMALS_JOBTREE:=/hive/users/dearl/simTreeWorking/jobTreeAvgMammals
 TREE_CANCERTEAM:=(Jing:0.01, (Steve:0.003, (Zack:.005, Chris:.009)Zack-Chris:.001)S-Z-C:0.001)All:.002;
 TREE_UTENSILSET:=(Fork:0.01, (Knife:0.003, (Spoon:.005, Ladle:.009)Spoon-Ladle:.001)K-S-L:0.001)All:.002;
 TREE_PRIMATES:=((human:0.006690,chimp:0.007571)human-chimp:0.024272,(colobus_monkey:0.015404,(baboon:0.008258,macaque:0.028617)baboon-macaque:0.008519)-colo-bab-mac:0.022120)all:0.023960;
@@ -47,9 +47,9 @@ default:
 # PRODUCTION
 ##############################
 avgPrimates:
-	jobTree.py --jobTree ${AVG_PRIMATES_JOBTREE} --batchSystem=parasol --command="${RUNSIM} --parent ${AVG_ROOT} --params ${GPARAMS} --tree '${TREE_AVG_PRIMATES}' --step ${STEP_AVG_PRIMATES} --out ${OUT_AVG_PRIMATES} --jobFile JOB_FILE --saveParent --seed 31337" --logDebug --retryCount 0
+	jobTree.py --jobTree ${AVG_PRIMATES_JOBTREE} --batchSystem=parasol --command="${RUNSIM} --parent ${AVG_ROOT} --params ${GPARAMS} --tree '${TREE_AVG_PRIMATES}' --step ${STEP_AVG_PRIMATES} --out ${OUT_AVG_PRIMATES} --jobFile JOB_FILE --saveParent --seed 313370" --logDebug --retryCount 0
 avgMammals:
-	jobTree.py --jobTree ${AVG_MAMMALS_JOBTREE}  --batchSystem=parasol --command="${RUNSIM} --parent ${AVG_ROOT} --params ${GPARAMS} --tree '${TREE_AVG_MAMMALS}'  --step ${STEP_AVG_MAMMALS}  --out ${OUT_AVG_MAMMALS}  --jobFile JOB_FILE --saveParent --seed 1337" --logDebug --retryCount 4
+	jobTree.py --jobTree ${AVG_MAMMALS_JOBTREE}  --batchSystem=parasol --command="${RUNSIM} --parent ${AVG_ROOT} --params ${GPARAMS} --tree '${TREE_AVG_MAMMALS}'  --step ${STEP_AVG_MAMMALS}  --out ${OUT_AVG_MAMMALS}  --jobFile JOB_FILE --saveParent --seed 13371121" --logDebug --retryCount 0
 primate:
 	jobTree.py --jobTree ${PRIMATE_JOBTREE} --batchSystem=parasol --command="${RUNSIM} --parent ${TOY_ROOT} --params ${GPARAMS} --tree '${TREE_PRIMATES}' --step 0.0005 --out /hive/users/dearl/simTreeWorking/primateRun/ --jobFile JOB_FILE --logBranch" --logDebug --retryCount 4
 cancerTeam:
