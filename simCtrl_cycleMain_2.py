@@ -60,9 +60,13 @@ def main(argv):
         transCMD +=LSC.commandPacker(TRANS_BIN+\
                                      ' -in1 '+ os.path.join(options.childDir, 'inter','inter.aln.rev') + \
                                      ' -in2 '+ os.path.join(options.parentDir,'root.aln.rev')  + \
-                                     ' -out '+ os.path.join(options.childDir, 'inter', options.theParent+'.inter.aln.rev') + \
-                                     ' -log '+ os.path.join(options.childDir, 'logs', 'transalign.inter.log'))+\
-                   '"'
+                                     ' -out '+ 'LOCAL_DIR/'+options.theParent+'.inter.aln.rev '+\
+                                     ' -log '+ 'LOCAL_DIR/transalign.inter.log')
+        transCMD +=LSC.commandPacker(MV_BIN+\
+                                     ' '+'LOCAL_DIR/'+options.theParent+'.inter.aln.rev '+ os.path.join(options.childDir, 'inter/'))
+        transCMD +=LSC.commandPacker(MV_BIN+\
+                                     ' '+'LOCAL_DIR/transalign.inter.log '+ os.path.join(options.childDir, 'logs/'))
+        transCMD +='"'
     else:
         # base case, the parent *is* the root.
         transCMD = CMD_EVAL_BIN+\
