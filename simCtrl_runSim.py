@@ -160,6 +160,7 @@ def main():
         # since the root/ dir exists, we can make the first call to simTree.py
         # WRITE INFO.XML IF this is the first run of the simulation.
         if nt.distance == 0:
+            # branch point, create two child processes
             newChild = ET.SubElement(childrenElm, 'child')
             newChild.attrib['command'] = LST.treeBranchCommandBuilder(nt.left, 'Left Branch', options,
                                                               options.parentDir, options.gParamsDir)
@@ -168,6 +169,7 @@ def main():
                                                               options.parentDir, options.gParamsDir)
             
         else:
+            # stem, create one child process
             newChild = ET.SubElement(childrenElm, 'child')
             newChild.attrib['command'] = LST.treeBranchCommandBuilder(nt, 'Stem', options, options.parentDir,
                                                               options.gParamsDir)
