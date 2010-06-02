@@ -323,11 +323,18 @@ def directoriesOnly(list):
         if (not os.path.isdir(i)):
             list.remove(i)
 
-def str2link(s, dir):
+def str2link(s, dir, title=''):
     if dir == '':
         return ''
     else:
-        return '<a href="'+dir+'/'+s+'/">'
+        if title:
+            return '<a href="'+dir+'/'+s+'/" title="'+title+'">'
+        else:
+            return '<a href="'+dir+'/'+s+'/">'
+
+def prettyTitle(n, s):
+    t = prettyTime(s)
+    return 'Cycle %s took %s.' %(n, t)
 
 def drawText(nt, ss, totalTreeDepth, scale=4, comStepsDict={}, prgStepsDict={}, isHtml=False, dir=''):
     """drawText() is in contrast to some other drawFORMAT() function that
@@ -393,7 +400,7 @@ def depthFirstWalk(nt, stepSize=0.001, d=0, branch='root', overlaps={}, scale=4,
             nt.distance=0
         name = LST.nameTree(nt)
         if name in comStepsDict:
-            offset=offset+str2link(name, dir)+scale*symStat+stringCap
+            offset=offset+str2link(name, dir, title=prettyTitle(name,comStepsDict[name]))+scale*symStat+stringCap
         elif name in prgStepsDict:
             if prgStepsDict[name]<9:
                 # these are the + symbols, the main steps
