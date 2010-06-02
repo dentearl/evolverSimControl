@@ -193,7 +193,8 @@ def longestRemainingBranchFinder(nt, ss, cycles):
             b.name = l.name
     return b
 
-def elapsedTreeTimeFinder(nt, ss, simDir, cycles, parentNode='simulationInfo.xml'):
+def elapsedTreeTimeFinder(nt, ss, simDir, cycles, elapsedTimesDict,
+                          comStepsDict, parentNode='simulationInfo.xml'):
     """elapsedTreeTimeFinder() takes a newickTree, a stepSize, the location of the
     simulation directory, a list of all the present cycle directories, and the parentNode
     and returns the total amount of machine time spent on the tree including all branches.
@@ -217,21 +218,30 @@ def elapsedTreeTimeFinder(nt, ss, simDir, cycles, parentNode='simulationInfo.xml
             if tObj.find('start') != None:
                 if tObj.find('start').find('epochUTC') != None:
                     parentNodeTime = float(tObj.find('start').find('epochUTC').text)
-        #parentNodeTime = os.path.getmtime(os.path.join(simDir, parentNode))
     else:
         return etime
     running=True
-    times=[]
+    prgTimesDict = {}
     for c in cyclesDict:
-        if os.path.exists(os.path.join(runDir, c,'cycleInfo.xml')):
-            infoTree=ET.parse(os.path.join(runDir, c,'cycleInfo.xml'))
-            root=infoTree.getroot()
-            tObj=root.find('timestamps')
-            if tObj != None:
-                if 'endEpochUTC' in tObj.attrib:
-                    times.append( float(tObj.attrib['endEpochUTC']) -
-                                  float(tObj.attrib['startEpochUTC']) )
-    return sum(times)
+        if c in comStepsDict:
+            if c not in elapsedTimesDict:
+                elapsedTimesDict[c] = getCycleRunTime(os.path.join(runDir,c,'cycleInfo.xml'))
+        else:
+            prgTimesDict[c] = getCycleRunTime(os.path.join(runDir,c,'cycleInfo.xml'))
+        
+    return (elapsedTimesDict, prgTimesDict)
+
+def getCycleRunTime(file):
+    time = 0.0
+    if os.path.exists(file):
+        infoTree=ET.parse(file)
+        root=infoTree.getroot()
+        tObj=root.find('timestamps')
+        if tObj != None:
+            if 'endEpochUTC' in tObj.attrib:
+                time = ( float(tObj.attrib['endEpochUTC']) -
+                         float(tObj.attrib['startEpochUTC']) )
+    return time
 
 def parentNodeStrFinder(target, newickStr, ss, previous='root'):
     """
@@ -484,8 +494,10 @@ def timeHandler(status, options):
         curCycleElapsedTime = time.time() - os.path.getmtime(os.path.join(options.dir, parentNode))
     else:
         curCycleElapsedTime = time.time() - os.path.getmtime(os.path.join(options.dir, status.longBranchSteps.name))
-    status.elapsedTreeTime = elapsedTreeTimeFinder(options.inputNewick, options.stepSize, options.dir, status.cycleDirs)
-    status.treeTime = prettyTime(status.elapsedTreeTime)
+    (status.elapsedTreeTimeDict, prgTimeDict) = elapsedTreeTimeFinder(options.inputNewick, options.stepSize, options.dir,
+                                                       status.cycleDirs, status.elapsedTreeTimeDict, status.completedTreeSteps_dict)
+    elapsedTreeTime = sum(status.elapsedTreeTimeDict.values()) + sum(prgTimeDict.values())
+    status.treeTime = prettyTime(elapsedTreeTime)
     newickTree = newickTreeParser(options.inputNewick, 0.0)
     
     #####
@@ -499,13 +511,13 @@ def timeHandler(status, options):
         status.elapsedTime          = prettyTime(howLongFinder(options.dir, status.cycleDirs))
     if status.completedTreeSteps and status.totalTreeSteps:
         # check to make sure these values are not 0
-        status.aveBranchTime = prettyTime(status.elapsedTreeTime/status.completedTreeSteps)
+        status.aveBranchTime = prettyTime(elapsedTreeTime/status.completedTreeSteps)
         if status.completedTreeSteps != status.totalTreeSteps:
-            if curCycleElapsedTime > (status.elapsedTreeTime/status.completedTreeSteps):
+            if curCycleElapsedTime > (elapsedTreeTime/status.completedTreeSteps):
                 # don't subtract off more than one cycle, it makes the estimates come out weird.
-                rt = ((status.elapsedTreeTime/status.completedTreeSteps) * (status.longBranchSteps.path-0.5))
+                rt = ((elapsedTreeTime/status.completedTreeSteps) * (status.longBranchSteps.path-0.5))
             else:
-                rt = ((status.elapsedTreeTime/status.completedTreeSteps) * (status.longBranchSteps.path+0.5)) - curCycleElapsedTime
+                rt = ((elapsedTreeTime/status.completedTreeSteps) * (status.longBranchSteps.path+0.5)) - curCycleElapsedTime
             #print ' ett/ctt = '+str(elapsedTreeTime/completedTreeSteps)+' lbs.p = '+str(longBranchSteps.path+0.5)+' curElTime: '+str(curCycleElapsedTime)
             if rt < 0:
                 status.remainingTime = 'Soon'
@@ -1063,6 +1075,9 @@ def collectData(options, status):
         status.inProgressTreeSteps_dict = {}
         status.variables['completedTreeSteps_dict'] = True
         status.variables['inProgressTreeSteps_dict'] = True
+    if 'elapsedTreeTimeDict' not in status.variables:
+        status.elapsedTreeTimeDict = {}
+        status.variables['elapsedTreeTimeDict'] = True
     if 'timeList' not in status.variables:
         status.timeList=[[], [], [], [], [] ,[] ,[] ,[]]
         status.microTimeList=[[],[],[],[],[],[]]
