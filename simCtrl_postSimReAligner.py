@@ -4,7 +4,7 @@ simCtrl_postSimReAligner.py
 dent earl, dearl (a) soe ucsc edu
 12 april 2010
 
-This script will corrects for a mistake in simulation
+This script will correct for a mistake in simulation
 setup. IF your simulation began with a stem, then it will be
 impossible to infer the root genome; the best inference would
 lead you to the branch point before the root, but not up the
