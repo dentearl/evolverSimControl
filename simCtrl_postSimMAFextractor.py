@@ -15,7 +15,7 @@ from sonLib.bioio import newickTreeParser
 from sonLib.bioio import printBinaryTree
 from optparse import OptionParser
 import xml.etree.ElementTree as ET
-import simualtion.lib.libSimControl as LSC
+import simulation.lib.libSimControl as LSC
 import simulation.lib.libSimTree as LST
 
 programs = ['evolver_cvt', 'evolver_transalign',
@@ -218,8 +218,8 @@ def performMAFmerge(options, nodesList, leaves, nodeParentDict):
         if (not os.path.exists(os.path.join(options.simDir,n.name, nodeParent+'.maf')) and 
             os.path.exists(os.path.join(options.simDir, n.children[0], n.name+'.maf')) and 
             os.path.exists(os.path.join(options.simDir, n.children[1], n.name+'.maf'))):
-            mergeCMD = CMD_EVAL_BIN + ' JOB_FILE "'+\
-                       LSC.commandPacker(MAF_MERGE_BIN +\
+            mergeCMD = CMD_EVAL_BIN + ' JOB_FILE "'
+            mergeCMD +=LSC.commandPacker(MAF_MERGE_BIN +\
                                          ' '+os.path.join(options.simDir, n.children[0], n.name+'.maf')+\
                                          ' '+os.path.join(options.simDir, n.children[1], n.name+'.maf')+\
                                          ' > ' + os.path.join(options.simDir, n.name, n.name+'.maf'))
