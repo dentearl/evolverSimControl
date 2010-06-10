@@ -986,7 +986,6 @@ def printStem(aList, isHtml, inHours):
         for i in range(0, len(aList)):
             # times are in seconds.
             aList[i] = aList[i] / 60 / 60
-            
     if isHtml:
         print '<h4>Distribution of cycle runtimes (%s)</h4>' %(timeUnits)
         print '<pre>'
@@ -998,7 +997,7 @@ def printStem(aList, isHtml, inHours):
     
 def printSortedCycleTimes(cs_dict, isHtml, htmlDir):
     """printSortedCycleTimes() prints out a list of completed cycles,
-    sorted by the cycle runtime.
+    sorted by the cycle runtimes.
     """
     items = cs_dict.items()
     returnItems = [[v[1], v[0]] for v in items]
@@ -1006,14 +1005,14 @@ def printSortedCycleTimes(cs_dict, isHtml, htmlDir):
     if isHtml:
         print '<h4>List of cycle runtimes</h4>'
         print '<table cellpadding="5">'
-        print '<tr><th>Time (s)</th><th>Cycle</th></tr>'
+        print '<tr><th>Time (s)</th><th></th><th>Cycle</th></tr>'
     else:
         print 'List of cycle runtimes:'
     for k,v in returnItems:
         if isHtml:
-            print '<tr><td align="right">%10.2f</td><td>%s%s</a></td></tr>'%(float(k), str2link(v,htmlDir),v)
+            print '<tr><td align="right">%10.2f</td><td>%s</td><td>%s%s</a></td></tr>'%(float(k), prettyTime(k), str2link(v,htmlDir),v)
         else:
-            print '%10.2f %30s'%(float(k), v)
+            print '%10.2f %10s %30s'%(float(k), prettyTime(k), v)
     if isHtml:
         print '</table>'
     
