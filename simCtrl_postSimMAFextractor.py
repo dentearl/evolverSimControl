@@ -19,10 +19,10 @@ import simulation.lib.libSimControl as LSC
 import simulation.lib.libSimTree as LST
 
 programs = ['evolver_cvt', 'evolver_transalign',
-            'simCtrl_commandEval.py', 'maf_order','head']
+            'simCtrl_commandEval.py', 'head']
 LSC.verifyPrograms(programs)
 (CVT_BIN, TRANS_BIN, CMD_EVAL_BIN,
- MAF_ORDER_BIN, MAF_MERGE_BIN) = programs
+ MAF_MERGE_BIN) = programs
 
 def usage():
     print 'USAGE: '+sys.argv[0]+' --simDir <dir> --jobFile JOB_FILE'
@@ -34,9 +34,9 @@ def initOptions(parser):
                       help='Simulation directory.')
     parser.add_option('-j', '--jobFile',dest='jobFile',
                       help='jobFile, passed in by jobTree.py.')
-    parser.add_option('-m', '--step', dest='step',
-                      default='maf',
-                      help='Which step are we on? Not intended for the user.')
+    parser.add_option('-m', '--mergeStep',action='store_true', dest='isMergeStep',
+                      default=False,
+                      help='the .aln.rev and .maf files have been created, now merge them.')
     parser.add_option('-d', '--debug', action='store_true', dest='isDebug',
                       default=False, help='Turns on debug output, does not issue jobs')
 
@@ -56,8 +56,11 @@ def checkOptions(options):
     if (options.simDir == None):
         sys.stderr.write('%s: Error, specify simulation dir.\n' % sys.argv[0])
         usage()
-    if (options.jobFile == None) and (options.isDebug == False) :
+    if (options.jobFile == None) and (options.isDebug == False):
         sys.stderr.write('%s: Error, specify jobFile.\n' % sys.argv[0])
+        usage()
+    if (not os.path.exists(options.jobFile)) and (options.isDebug == False):
+        sys.stderr.write('%s: Error, jobFile does not exist.\n' % sys.argv[0])
         usage()
     options.simDir  = os.path.abspath(options.simDir)
     if not os.path.exists(os.path.join(options.simDir, 'simulationInfo.xml')):
@@ -175,7 +178,7 @@ def buildMAFpairs(options, nodesList, leaves):
         followUpCommand = sys.argv[0] +\
                           ' --simDir '+options.simDir+\
                           ' --jobFile JOB_FILE '+\
-                          ' --step=merge'
+                          ' --mergeStep '
     if not options.isDebug:
         jobElm.attrib['command'] = followUpCommand
         xmlTree.write(options.jobFile)
@@ -242,7 +245,7 @@ def performMAFmerge(options, nodesList, leaves, nodeParentDict):
         followUpCommand = sys.argv[0] +\
                           ' --simDir '+options.simDir+\
                           ' --jobFile JOB_FILE '+\
-                          ' --step=merge '
+                          ' --mergeStep '
     if options.isDebug:
         if runningJobs:
             sys.stderr.write('I wish to perform %s\n' %(followUpCommand))
@@ -276,12 +279,10 @@ def main():
     buildNodesList(nt, nodesList, leaves)
     if options.isDebug:
         printNodesList(nodesList, leaves)
-    if options.step == 'maf':
+    if not options.isMergeStep:
         # step two, create the command to build all MAFs
         buildMAFpairs(options, nodesList, leaves)
-    elif options.step == 'order':
-        1 + 1
-    elif options.step == 'merge':
+    else:
         # step three, create the command to progressively combine MAFs
         nodeParentDict = nodeParentDictBuilder(nodesList)
         performMAFmerge(options, nodesList, leaves, nodeParentDict)
