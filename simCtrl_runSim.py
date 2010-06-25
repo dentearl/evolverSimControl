@@ -24,7 +24,7 @@ import simulation.lib.libSimTree as LST
 # existance of everything the entire simulation will end up calling, not
 # just the scripts or external files used by runSim.py.
 programs = ['simCtrl_simTree.py','simCtrl_rootCycleInfoCreator.py', 'cp',
-            'simCtrl_commandEval.py',
+            'mkdir', 'simCtrl_commandEval.py',
             'evolver_evo', 'evolver_cvt', 'evolver_transalign',
             'evolver_drawrev', 'evolver_gff_cdsutr2exons.py',
             'evolver_gff_exons2introns.py', 'evolver_gff_featurestats2.sh',
@@ -39,7 +39,7 @@ programs = ['simCtrl_simTree.py','simCtrl_rootCycleInfoCreator.py', 'cp',
             'simCtrl_completeTimestamp.py']
 LSC.verifyPrograms(programs)
 (SIMTREE_PY, ROOT_CYCLEXML_MAKER,
- CP_BIN, CMD_EVAL_BIN) = programs[0:4]
+ CP_BIN, MKDIR_BIN, CMD_EVAL_BIN) = programs[0:4]
 
 def usage():
     print 'USAGE: '+sys.argv[0]+' --root [dir] --out --tree [newick tree in quotes] --params [parameter dir] --stepSize [0.001] --jobFile JOB_FILE '
@@ -51,7 +51,8 @@ def newickContainsReservedWord(nt):
     there are no reserved names used as IDs. At present the only reserved
     name is 'root'.
     """
-    reservedWords = {'root':1}
+    reservedWords = {'root':1,
+                     'parameters':1}
     if nt == None:
         return False
     if nt.iD in reservedWords:
@@ -61,7 +62,7 @@ def newickContainsReservedWord(nt):
     if left or right:
         return True
 
-"""TO DO:
+"""
 Okay, here's what we do: The first call to simTree.py will ALWAYS perform
 the task of copying over the parent genome into a directory called 'root'
 and will create the cycleInfo.xml file. Then, if the newick tree starts at a branch
@@ -96,14 +97,25 @@ def main():
     if not options.isFollowUp:
         # if the root/ dir does not exist inside the simulation directory
         # then we need to create it and then re-call runSim
-        childCMD = CMD_EVAL_BIN+\
-                   ' JOB_FILE "'+\
-                   LSC.commandPacker(CP_BIN+\
+        childCMD = CMD_EVAL_BIN+' JOB_FILE "'
+        childCMD+= LSC.commandPacker(CP_BIN+\
                                      ' -r '+options.parentDir+\
-                                     ' '+os.path.join(options.outDir, 'root'))+\
-                   LSC.commandPacker(ROOT_CYCLEXML_MAKER +\
-                                     ' --dir '+os.path.join(options.outDir,'root'))+\
-                   '"'
+                                     ' '+os.path.join(options.outDir, 'root'))
+        childCMD+= LSC.commandPacker(ROOT_CYCLEXML_MAKER +\
+                                     ' --dir '+os.path.join(options.outDir,'root'))
+        childCMD+= LSC.commandPacker(MKDIR_BIN+\
+                                     os.path.join(options.outDir, 'parameters'))
+        childCMD+= LSC.commandPacker(CP_BIN+\
+                                     ' '+os.path.join(options.gParamsDir,'model.txt')+\
+                                     ' '+os.path.join(options.outDir, 'parameters'))
+        childCMD+= LSC.commandPacker(CP_BIN+\
+                                     ' '+os.path.join(options.gParamsDir,'model.mes.txt')+\
+                                     ' '+os.path.join(options.outDir, 'parameters'))
+        childCMD+= LSC.commandPacker(CP_BIN+\
+                                     ' '+os.path.join(options.gParamsDir,'mes.cfg')+\
+                                     ' '+os.path.join(options.outDir, 'parameters'))
+        childCMD+= '"'
+        options.gParamsDir = os.path.join(options.outDir, 'parameters')
         newChild = ET.SubElement(childrenElm, 'child')
         newChild.attrib['command']=childCMD
         options.parentDir = os.path.join(options.outDir, 'root')
