@@ -50,14 +50,14 @@ avgPrimates:
 	jobTree.py --jobTree ${AVG_PRIMATES_JOBTREE} --batchSystem=parasol --command="${RUNSIM} --parent ${AVG_ROOT} --params ${GPARAMS} --tree '${TREE_AVG_PRIMATES}' --step ${STEP_AVG_PRIMATES} --out ${OUT_AVG_PRIMATES} --jobFile JOB_FILE --saveParent --seed 313370" --logDebug --retryCount 0
 avgMammals:
 	jobTree.py --jobTree ${AVG_MAMMALS_JOBTREE}  --batchSystem=parasol --command="${RUNSIM} --parent ${AVG_ROOT} --params ${GPARAMS} --tree '${TREE_AVG_MAMMALS}'  --step ${STEP_AVG_MAMMALS}  --out ${OUT_AVG_MAMMALS}  --jobFile JOB_FILE --saveParent --seed 13371121" --logDebug --retryCount 0
-primate:
-	jobTree.py --jobTree ${PRIMATE_JOBTREE} --batchSystem=parasol --command="${RUNSIM} --parent ${TOY_ROOT} --params ${GPARAMS} --tree '${TREE_PRIMATES}' --step 0.0005 --out /hive/users/dearl/simTreeWorking/primateRun/ --jobFile JOB_FILE --logBranch" --logDebug --retryCount 4
-cancerTeam:
-	jobTree.py --jobTree ${CANCER_JOBTREE} --batchSystem=parasol --command="${RUNSIM} --parent ${TOY_ROOT} --params ${GPARAMS} --tree '${TREE_CANCERTEAM}' --step 0.001 --out ${OUT_CANCERTEAM} --jobFile JOB_FILE --logBranch --saveParent --seed 1" --logDebug --retryCount 0
-utensilSet:
-	jobTree.py --jobTree ${UTENSILSET_JOBTREE} --batchSystem=parasol --command="${RUNSIM} --parent ${TOY_ROOT} --params ${GPARAMS} --tree '${TREE_UTENSILSET}' --step 0.001 --out ${OUT_UTENSILSET} --jobFile JOB_FILE --logBranch --saveParent --seed 1" --logDebug --retryCount 0
-aloneCancer:
-	./simTreeStandAlone.py --parent ${TOY_ROOT} --out /cluster/home/dearl/simTreeWorking/standAloneCancer/ --params ${GPARAMS} --tree '${TREE_CANCERTEAM}' --step 0.004 --logBranch
+# primate:
+# 	jobTree.py --jobTree ${PRIMATE_JOBTREE} --batchSystem=parasol --command="${RUNSIM} --parent ${TOY_ROOT} --params ${GPARAMS} --tree '${TREE_PRIMATES}' --step 0.0005 --out /hive/users/dearl/simTreeWorking/primateRun/ --jobFile JOB_FILE --logBranch" --logDebug --retryCount 4
+# cancerTeam:
+# 	jobTree.py --jobTree ${CANCER_JOBTREE} --batchSystem=parasol --command="${RUNSIM} --parent ${TOY_ROOT} --params ${GPARAMS} --tree '${TREE_CANCERTEAM}' --step 0.001 --out ${OUT_CANCERTEAM} --jobFile JOB_FILE --logBranch --saveParent --seed 1" --logDebug --retryCount 0
+# utensilSet:
+# 	jobTree.py --jobTree ${UTENSILSET_JOBTREE} --batchSystem=parasol --command="${RUNSIM} --parent ${TOY_ROOT} --params ${GPARAMS} --tree '${TREE_UTENSILSET}' --step 0.001 --out ${OUT_UTENSILSET} --jobFile JOB_FILE --logBranch --saveParent --seed 1" --logDebug --retryCount 0
+# aloneCancer:
+#	./simTreeStandAlone.py --parent ${TOY_ROOT} --out /cluster/home/dearl/simTreeWorking/standAloneCancer/ --params ${GPARAMS} --tree '${TREE_CANCERTEAM}' --step 0.004 --logBranch
 
 ##############################
 # PARASOL TESTS (jobTree)
@@ -98,7 +98,7 @@ testAloneCancer:
 ##############################
 repeatMaskCancer:
 # not sure how to know (in an automated fashion) that the repeatMasking are all done...
-	eval_evolverFASTAextractor.py --cycleDir ${OUT_CANCERTEAM} --leavesOnly
+	simUtil_evolverFASTAextractor.py --cycleDir ${OUT_CANCERTEAM} --leavesOnly
 	repeatMasking_doCluster.py --genome ${OUT_CANCERTEAM}/Chris/seq.fa --workDir ${OUT_CANCERTEAM}/Chris/repeatMask --maxJob=80 &>/dev/null & 
 	repeatMasking_doCluster.py --genome ${OUT_CANCERTEAM}/Jing/seq.fa  --workDir ${OUT_CANCERTEAM}/Jing/repeatMask  --maxJob=80 &>/dev/null &
 	repeatMasking_doCluster.py --genome ${OUT_CANCERTEAM}/Steve/seq.fa --workDir ${OUT_CANCERTEAM}/Steve/repeatMask --maxJob=80 &>/dev/null &
