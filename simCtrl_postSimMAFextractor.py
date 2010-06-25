@@ -64,7 +64,7 @@ def checkOptions(options):
         usage()
     options.simDir  = os.path.abspath(options.simDir)
     if not os.path.exists(os.path.join(options.simDir, 'simulationInfo.xml')):
-        sys.stderr.write('%s: Error, unable to find simutaltionInfo.xml.\n' % sys.argv[0])
+        sys.stderr.write('%s: Error, unable to find simulationInfo.xml.\n' % sys.argv[0])
         usage()
     infoTree = ET.parse(os.path.join(options.simDir, 'simulationInfo.xml'))
     treeObj = infoTree.find('tree')

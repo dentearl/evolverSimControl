@@ -99,14 +99,15 @@ testAloneCancer:
 repeatMaskCancer:
 # not sure how to know (in an automated fashion) that the repeatMasking are all done...
 	simUtil_evolverFASTAextractor.py --simDir ${OUT_CANCERTEAM} --leavesOnly
-	repeatMasking_doCluster.py --genome ${OUT_CANCERTEAM}/Chris/seq.fa --workDir ${OUT_CANCERTEAM}/Chris/repeatMask --maxJob=80 &>/dev/null & 
-	repeatMasking_doCluster.py --genome ${OUT_CANCERTEAM}/Jing/seq.fa  --workDir ${OUT_CANCERTEAM}/Jing/repeatMask  --maxJob=80 &>/dev/null &
-	repeatMasking_doCluster.py --genome ${OUT_CANCERTEAM}/Steve/seq.fa --workDir ${OUT_CANCERTEAM}/Steve/repeatMask --maxJob=80 &>/dev/null &
-	repeatMasking_doCluster.py --genome ${OUT_CANCERTEAM}/Zack/seq.fa  --workDir ${OUT_CANCERTEAM}/Zack/repeatMask  --maxJob=80 &>/dev/null &
+	repeatMasking_doCluster.py --genome ${OUT_CANCERTEAM}/Chris/seq.name.fa --workDir ${OUT_CANCERTEAM}/Chris/repeatMask --maxJob=80 &>/dev/null & 
+	repeatMasking_doCluster.py --genome ${OUT_CANCERTEAM}/Jing/seq.name.fa  --workDir ${OUT_CANCERTEAM}/Jing/repeatMask  --maxJob=80 &>/dev/null &
+	repeatMasking_doCluster.py --genome ${OUT_CANCERTEAM}/Steve/seq.name.fa --workDir ${OUT_CANCERTEAM}/Steve/repeatMask --maxJob=80 &>/dev/null &
+	repeatMasking_doCluster.py --genome ${OUT_CANCERTEAM}/Zack/seq.name.fa  --workDir ${OUT_CANCERTEAM}/Zack/repeatMask  --maxJob=80 &>/dev/null &
 repeatMaskCancerFinish:
 	for a in $(ls ${OUT_CANCERTEAM}/); do if [ -d ${OUT_CANCERTEAM}/$$a ]; then if [ -d ${OUT_CANCERTEAM}/$$a/repeatMask ]; \
 	then twoBitToFa ${OUT_CANCERTEAM}/$$a/repeatMask/seq.rmsk.2bit ${OUT_CANCERTEAM}/$$a/seq.masked.fa;\
-	eval_fastaNameCorrector.py --name $$a < ${OUT_CANCERTEAM}/$$a/seq.masked.fa > ${OUT_CANCERTEAM}/$$a/seq.masked.clean.fa; fi; fi; done
+	fi; fi; done
+#	eval_fastaNameCorrector.py --name $$a < ${OUT_CANCERTEAM}/$$a/seq.masked.fa > ${OUT_CANCERTEAM}/$$a/seq.masked.clean.fa; 
 sonTraceCancer:
 	jobTree.py --batchSystem=parasol --command  "cactus_workflow.py --netDisk ${CANCER_NETDISK} --speciesTree '${TREE_CANCERTEAM}' \
 	${OUT_CANCERTEAM}/Jing/seq.masked.clean.fa \
