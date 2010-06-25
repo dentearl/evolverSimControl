@@ -18,7 +18,7 @@ import sys
 from optparse import OptionParser
 from sonLib.bioio import newickTreeParser
 import xml.etree.ElementTree as ET
-import eval.lib.libSimControl as LSC
+import simulation.lib.libSimControl as LSC
 
 programs = ['evolver_cvt', 'evolver_transalign', 'eval_fastaNameCorrector.py']
 LSC.verifyPrograms(programs)
