@@ -98,7 +98,7 @@ testAloneCancer:
 ##############################
 repeatMaskCancer:
 # not sure how to know (in an automated fashion) that the repeatMasking are all done...
-	simUtil_evolverFASTAextractor.py --cycleDir ${OUT_CANCERTEAM} --leavesOnly
+	simUtil_evolverFASTAextractor.py --simDir ${OUT_CANCERTEAM} --leavesOnly
 	repeatMasking_doCluster.py --genome ${OUT_CANCERTEAM}/Chris/seq.fa --workDir ${OUT_CANCERTEAM}/Chris/repeatMask --maxJob=80 &>/dev/null & 
 	repeatMasking_doCluster.py --genome ${OUT_CANCERTEAM}/Jing/seq.fa  --workDir ${OUT_CANCERTEAM}/Jing/repeatMask  --maxJob=80 &>/dev/null &
 	repeatMasking_doCluster.py --genome ${OUT_CANCERTEAM}/Steve/seq.fa --workDir ${OUT_CANCERTEAM}/Steve/repeatMask --maxJob=80 &>/dev/null &
