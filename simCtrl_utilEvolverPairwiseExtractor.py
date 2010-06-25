@@ -12,7 +12,7 @@ all pairwise MAFs (or Fastas...).
 ##############################
 from optparse import OptionParser
 import glob, os, re, subprocess, sys
-import eval.lib.libSimControl as LSC
+import simulation.lib.libSimControl as LSC
 
 programs = ['evolver_cvt', 'evolver_transalign', 'eval_evolverMAFcleaner.py']
 LSC.verifyPrograms(programs)
