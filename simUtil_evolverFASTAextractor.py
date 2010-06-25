@@ -20,7 +20,7 @@ from sonLib.bioio import newickTreeParser
 import xml.etree.ElementTree as ET
 import simulation.lib.libSimControl as LSC
 
-programs = ['evolver_cvt', 'evolver_transalign', 'eval_fastaNameCorrector.py']
+programs = ['evolver_cvt', 'evolver_transalign', 'simUtil_fastaNameCorrector.py']
 LSC.verifyPrograms(programs)
 CVT_BIN     = programs[0]
 TRANS_BIN   = programs[1]
