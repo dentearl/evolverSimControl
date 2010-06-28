@@ -19,7 +19,7 @@ import simulation.lib.libSimControl as LSC
 import simulation.lib.libSimTree as LST
 
 programs = ['evolver_cvt', 'evolver_transalign',
-            'simCtrl_commandEval.py', 'head']
+            'simCtrl_commandEval.py', 'mafJoin']
 LSC.verifyPrograms(programs)
 (CVT_BIN, TRANS_BIN, CMD_EVAL_BIN,
  MAF_MERGE_BIN) = programs
@@ -39,6 +39,8 @@ def initOptions(parser):
                       help='the .aln.rev and .maf files have been created, now merge them.')
     parser.add_option('-d', '--debug', action='store_true', dest='isDebug',
                       default=False, help='Turns on debug output, does not issue jobs')
+    parser.add_option('--noParalogy', action='store_true', dest='noParalogy',
+                      default=False, help='adds a flag -noparalogy to the transalign call, switches paralogous blocks off. ')
 
 class Node:
     """Nodes have one parent and two children,
@@ -59,7 +61,7 @@ def checkOptions(options):
     if (options.jobFile == None) and (options.isDebug == False):
         sys.stderr.write('%s: Error, specify jobFile.\n' % sys.argv[0])
         usage()
-    if (not os.path.exists(options.jobFile)) and (options.isDebug == False):
+    if (options.isDebug == False) and (not os.path.exists(options.jobFile)):
         sys.stderr.write('%s: Error, jobFile does not exist.\n' % sys.argv[0])
         usage()
     options.simDir  = os.path.abspath(options.simDir)
@@ -147,12 +149,20 @@ def buildMAFpairs(options, nodesList, leaves):
             transCMD = CMD_EVAL_BIN+ ' JOB_FILE "'
             if not os.path.exists(os.path.join(options.simDir, c, n.name+'.aln.rev')):
                 print 'well, I can\'t seem to see %s' %(os.path.join(options.simDir, c, n.name+'.aln.rev'))
-                transCMD += LSC.commandPacker(TRANS_BIN+\
-                                              ' -in1 '+ os.path.join(options.simDir,c, 'root.aln.rev') + \
-                                              ' -in2 '+ os.path.join(options.simDir,n.name, 'root.aln.rev')  + \
-                                              ' -out '+ os.path.join(options.simDir,c, n.name+'.aln.rev') + \
-                                              ' -log '+ os.path.join(options.simDir,c, 'logs', 'transalign.'+n.name+'.log'))+\
-                           LSC.commandPacker(CVT_BIN+\
+                if options.noParalogy:
+                    transCMD += LSC.commandPacker(TRANS_BIN+\
+                                                  ' -in1 '+ os.path.join(options.simDir,c, 'root.aln.rev') + \
+                                                  ' -in2 '+ os.path.join(options.simDir,n.name, 'root.aln.rev')  + \
+                                                  ' -out '+ os.path.join(options.simDir,c, n.name+'.aln.rev') + \
+                                                  ' -noparalogy '+\
+                                                  ' -log '+ os.path.join(options.simDir,c, 'logs', 'transalign.'+n.name+'.log'))
+                else:
+                    transCMD += LSC.commandPacker(TRANS_BIN+\
+                                                  ' -in1 '+ os.path.join(options.simDir,c, 'root.aln.rev') + \
+                                                  ' -in2 '+ os.path.join(options.simDir,n.name, 'root.aln.rev')  + \
+                                                  ' -out '+ os.path.join(options.simDir,c, n.name+'.aln.rev') + \
+                                                  ' -log '+ os.path.join(options.simDir,c, 'logs', 'transalign.'+n.name+'.log'))
+                transCMD += LSC.commandPacker(CVT_BIN+\
                                              ' -fromrev '+os.path.join(options.simDir, c, n.name+'.aln.rev')+\
                                              ' -tomaf '+os.path.join(options.simDir, c, n.name+ext))
                 runningJobs = runningJobs + 1
@@ -179,6 +189,8 @@ def buildMAFpairs(options, nodesList, leaves):
                           ' --simDir '+options.simDir+\
                           ' --jobFile JOB_FILE '+\
                           ' --mergeStep '
+    if options.noParalogy:
+        followUpCommand += ' --noParalogy '
     if not options.isDebug:
         jobElm.attrib['command'] = followUpCommand
         xmlTree.write(options.jobFile)
@@ -220,14 +232,16 @@ def performMAFmerge(options, nodesList, leaves, nodeParentDict):
             os.path.exists(os.path.join(options.simDir, n.children[1], n.name+'.maf'))):
             mergeCMD = CMD_EVAL_BIN + ' JOB_FILE "'
             mergeCMD +=LSC.commandPacker(MAF_MERGE_BIN +\
+                                         ' \''+str(n.name)+'\''+\
                                          ' '+os.path.join(options.simDir, n.children[0], n.name+'.maf')+\
                                          ' '+os.path.join(options.simDir, n.children[1], n.name+'.maf')+\
-                                         ' > ' + os.path.join(options.simDir, n.name, n.name+'.maf'))
+                                         ' ' + os.path.join(options.simDir, n.name, n.name+'.maf'))
             if n.name != 'root':
                 mergeCMD +=LSC.commandPacker(MAF_MERGE_BIN +\
+                                             ' \''+str(n.name)+'\''+\
                                              ' '+os.path.join(options.simDir, n.name, nodeParent+'.tmp.maf')+\
                                              ' '+os.path.join(options.simDir, n.name, n.name+'.maf')+\
-                                             ' > '+os.path.join(options.simDir, n.name, nodeParent+'.maf'))
+                                             ' '+os.path.join(options.simDir, n.name, nodeParent+'.maf'))
             mergeCMD += '"'
             runningJobs = runningJobs + 1
             if not options.isDebug:
@@ -250,7 +264,7 @@ def performMAFmerge(options, nodesList, leaves, nodeParentDict):
         if runningJobs:
             sys.stderr.write('I wish to perform %s\n' %(followUpCommand))
         else:
-            sys.stderr.write('I seem to think I\'m done I have no running jobs\n')
+            sys.stderr.write('I seem to think I\'m done -- I have no running jobs\n')
     else:
         if runningJobs:
             jobElm.attrib['command'] = followUpCommand
