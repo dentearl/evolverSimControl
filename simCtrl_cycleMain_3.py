@@ -24,10 +24,11 @@ from optparse import OptionParser
 import simulation.lib.libSimControl as LSC
 import simulation.lib.libSimCycle   as LSY
 
-programs = ['evolver_evo', 'evolver_cvt', 'evolver_transalign',
-            'evolver_trf2gff.py', 'simCtrl_cycleMain_4.py', 'cat', 'simCtrl_commandEval.py']
+programs = ['evolver_evo', 'evolver_cvt', 'evolver_trf2gff.py',
+            'simCtrl_cycleMain_4.py', 'cat', 'simCtrl_commandEval.py']
 LSC.verifyPrograms(programs)
-EVO_BIN, CVT_BIN, TRANS_BIN, TRF2GFF_BIN, CYCLE_END, CAT_BIN, CMD_EVAL_BIN = programs
+(EVO_BIN, CVT_BIN, TRF2GFF_BIN,
+ CYCLE_END, CAT_BIN, CMD_EVAL_BIN) = programs
 
 def usage():
     print "USAGE: %s --parent parentDir/ --child childDir --params globalParamsDir/ --jobFile JOB_FILE [optional: --step ]" %(sys.argv[0])
