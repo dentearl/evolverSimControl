@@ -96,11 +96,11 @@ def main(argv):
                                      ' -mes '      +os.path.join(options.childDir,'mobiles', 'mes.fa') + \
                                      ' -inannots ' +os.path.join(options.childDir, 'inter','inter.outannots.gff')+ \
                                      ' -statsfile '+os.path.join(options.childDir, 'stats',chrom+'.stats') +  \
-                                     ' -codonsubs '+os.path.join(options.childDir, 'chr',  chrom+'.codonsubs') +\
-                                     ' -outannots '+os.path.join(options.childDir, 'chr',  chrom+'.outannots.gff') + \
+                                     ' -codonsubs '+os.path.join(options.childDir, 'intra',  chrom+'.codonsubs') +\
+                                     ' -outannots '+os.path.join(options.childDir, 'intra',  chrom+'.outannots.gff') + \
                                      ' -outgenome '+options.theChild + \
                                      ' -model '    +os.path.join(options.gParamsDir,'model.txt') + \
-                                     ' -aln '      +os.path.join(options.childDir,  'chr',  chrom+'.aln.rev') + \
+                                     ' -aln '      +os.path.join(options.childDir,  'intra',  chrom+'.aln.rev') + \
                                      ' -outseq '   +'LOCAL_DIR/'+chrom+'.outseq.rev' + \
                                      ' -log '      +os.path.join(options.childDir,  'logs', 'evo.'+chrom+'.log'))
         intraCMD +=LSC.commandPacker(CVT_BIN +\

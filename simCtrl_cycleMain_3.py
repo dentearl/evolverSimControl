@@ -55,9 +55,9 @@ def main(argv):
     TRF_CMD      = CMD_EVAL_BIN+\
                    ' JOB_FILE "'+\
                    LSC.commandPacker(TRF2GFF_BIN +\
-                   ' ' + os.path.join(options.childDir,'chr','*.dat')+\
-                   ' > ' + os.path.join(options.childDir,'chr','trfannots.gff'))
-    CAT_GFF_CMD  = CAT_BIN + ' ' + os.path.join(options.childDir,'chr','trfannots.gff')
+                   ' ' + os.path.join(options.childDir,'intra','*.dat')+\
+                   ' > ' + os.path.join(options.childDir,'intra','trfannots.gff'))
+    CAT_GFF_CMD  = CAT_BIN + ' ' + os.path.join(options.childDir,'intra','trfannots.gff')
     EVO_CMD  = ' '
     CVT_CMD  = ' '
 
@@ -66,26 +66,26 @@ def main(argv):
     for line in FILE:
         chrom = line.rstrip()
         CAT_GFF_CMD = CAT_GFF_CMD +\
-                      ' '+os.path.join(options.childDir, 'chr', chrom+'.outannots.gff')
+                      ' '+os.path.join(options.childDir, 'intra', chrom+'.outannots.gff')
         if firstPass: # these commands require comma separated values
             EVO_CMD = EVO_CMD+\
-                     ' '+os.path.join(options.childDir, 'chr', chrom+'.aln.rev')
+                     ' '+os.path.join(options.childDir, 'intra', chrom+'.aln.rev')
             CVT_CMD = CVT_CMD+\
-                     ' '+os.path.join(options.childDir, 'chr', chrom+'.outseq.rev')
+                     ' '+os.path.join(options.childDir, 'intra', chrom+'.outseq.rev')
             firstPass=False
         else:
             EVO_CMD=EVO_CMD+\
-                     ','+os.path.join(options.childDir, 'chr', chrom+'.aln.rev')
+                     ','+os.path.join(options.childDir, 'intra', chrom+'.aln.rev')
             CVT_CMD=CVT_CMD+\
-                     ','+os.path.join(options.childDir, 'chr', chrom+'.outseq.rev')
+                     ','+os.path.join(options.childDir, 'intra', chrom+'.outseq.rev')
     FILE.close()
     CAT_GFF_CMD= TRF_CMD +\
-                 LSC.commandPacker(CAT_GFF_CMD + ' > '+os.path.join(options.childDir, 'chr', 'evannots.gff'))+'"'
+                 LSC.commandPacker(CAT_GFF_CMD + ' > '+os.path.join(options.childDir, 'intra', 'evannots.gff'))+'"'
     EVO_MERGE= CMD_EVAL_BIN +' JOB_FILE "'+\
                LSC.commandPacker(EVO_BIN+\
                                  ' -mergechrs '+EVO_CMD+ \
                                  ' -outgenome '+options.theChild+\
-                                 ' -out '+os.path.join(options.childDir, 'chr', 'intra.aln.rev'))+'"'
+                                 ' -out '+os.path.join(options.childDir, 'intra', 'intra.aln.rev'))+'"'
     CVT_MERGE= CMD_EVAL_BIN +' JOB_FILE "'+\
                LSC.commandPacker(CVT_BIN+\
                                  ' -mergerevseqs '+CVT_CMD+\

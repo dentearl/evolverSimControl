@@ -53,7 +53,7 @@ def main():
     statCMD = CMD_EVAL_BIN+\
               ' JOB_FILE "'+\
               LSC.commandPacker(EVO_BIN+\
-                                ' -cdsalns '+ os.path.join(options.childDir, 'chr', 'intra.aln.rev')+ \
+                                ' -cdsalns '+ os.path.join(options.childDir, 'intra', 'intra.aln.rev')+ \
                                 ' -alns '   + os.path.join(options.childDir, 'stats', 'cds_alns.rev')+ \
                                 ' -annots1 '+ os.path.join(options.childDir, 'inter', 'inter.outannots.gff')+ \
                                 ' -annots2 '+ os.path.join(options.childDir, 'annots.gff')+ \
@@ -116,7 +116,7 @@ def main():
               ' JOB_FILE "'+\
               LSC.commandPacker(EVO_BIN+\
                                 ' -nologcmdlineandtime '+\
-                                ' -ancstats '+os.path.join(options.childDir, 'chr', 'intra.aln.rev')+ \
+                                ' -ancstats '+os.path.join(options.childDir, 'intra', 'intra.aln.rev')+ \
                                 ' -log '+ os.path.join(options.childDir, 'stats', 'tmpstats.difflength.tmp'))+'"'
     newChild = ET.SubElement(childrenElm, 'child')
     newChild.attrib['command'] = statCMD

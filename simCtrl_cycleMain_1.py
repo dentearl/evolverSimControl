@@ -49,7 +49,7 @@ def buildDirs(options):
         raise
     else:
         # Step one, add the timestamp.
-        os.mkdir(os.path.join(options.childDir,'chr'))
+        os.mkdir(os.path.join(options.childDir,'intra'))
         os.mkdir(os.path.join(options.childDir,'inter'))
         os.mkdir(os.path.join(options.childDir,'logs'))
         os.mkdir(os.path.join(options.childDir,'mobiles'))

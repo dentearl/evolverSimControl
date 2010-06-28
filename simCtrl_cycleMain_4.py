@@ -59,14 +59,14 @@ def main(argv):
                ' JOB_FILE "'+\
                LSC.commandPacker(TRANS_BIN +\
                                  ' -in1 '+os.path.join(options.childDir, 'inter', options.theParent+'.inter.aln.rev')+ \
-                                 ' -in2 '+os.path.join(options.childDir, 'chr', 'intra.aln.rev')+ \
+                                 ' -in2 '+os.path.join(options.childDir, 'intra', 'intra.aln.rev')+ \
                                  ' -out '+os.path.join(options.childDir, 'root.aln.rev')+ \
                                  ' -log '+os.path.join(options.childDir, 'logs', 'transalign.log'))+'"'
     gDActCMD = CMD_EVAL_BIN+\
                ' JOB_FILE "'+\
                LSC.commandPacker(GDACT_BIN +\
                                  ' ' + os.path.join(options.parentDir, 'annots.gff') +\
-                                 ' ' + os.path.join(options.childDir, 'chr', 'evannots.gff')+\
+                                 ' ' + os.path.join(options.childDir, 'intra', 'evannots.gff')+\
                                  ' ' + os.path.join(options.childDir, 'annots.gff')+\
                                  ' ' + EVO_BIN+\
                                  ' >& ' + os.path.join(options.childDir, 'logs', 'gene_deactivate.log'))+'"'
