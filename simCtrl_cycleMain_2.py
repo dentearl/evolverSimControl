@@ -25,10 +25,10 @@ import simulation.lib.libSimControl as LSC
 import simulation.lib.libSimCycle   as LSY
 
 programs = ['evolver_evo', 'evolver_cvt', 'evolver_transalign',
-            'simCtrl_cycleMain_3.py', 'ln', 'simCtrl_wrapperTRF.py', 
+            'simCtrl_cycleMain_3.py', 'simCtrl_wrapperTRF.py', 
             'mv' , 'echo', 'sleep', 'simCtrl_commandEval.py']
 LSC.verifyPrograms(programs)
-(EVO_BIN, CVT_BIN, TRANS_BIN, CYCLE_MAIN3, LINK_BIN, TRF_WRAP_BIN,
+(EVO_BIN, CVT_BIN, TRANS_BIN, CYCLE_MAIN3, TRF_WRAP_BIN,
  MV_BIN, ECHO_BIN, SLEEP_BIN, CMD_EVAL_BIN) = programs
 
 def usage():
@@ -51,32 +51,31 @@ def main(argv):
     jobElm=xmlTree.getroot()
     childrenElm = xmlTree.find('children')
     
-    # 1st transalign
-    if( os.path.isfile(os.path.join(options.parentDir, 'root.aln.rev'))):
-        # align the inter step to the root via the parent's 'to-root' alignment.
-        transCMD = CMD_EVAL_BIN+\
-                   ' --statXML '+os.path.join(options.childDir, 'logs','trans.1.info.xml')+\
-                   ' JOB_FILE "'
-        transCMD +=LSC.commandPacker(TRANS_BIN+\
-                                     ' -in1 '+ os.path.join(options.childDir, 'inter','inter.aln.rev') + \
-                                     ' -in2 '+ os.path.join(options.parentDir,'root.aln.rev')  + \
-                                     ' -out '+ 'LOCAL_DIR/'+options.theParent+'.inter.aln.rev '+\
-                                     ' -log '+ 'LOCAL_DIR/transalign.inter.log')
-        transCMD +=LSC.commandPacker(MV_BIN+\
-                                     ' '+'LOCAL_DIR/'+options.theParent+'.inter.aln.rev '+ os.path.join(options.childDir, 'inter/'))
-        transCMD +=LSC.commandPacker(MV_BIN+\
-                                     ' '+'LOCAL_DIR/transalign.inter.log '+ os.path.join(options.childDir, 'logs/'))
-        transCMD +='"'
-    else:
-        # base case, the parent *is* the root.
-        transCMD = CMD_EVAL_BIN+\
-                   ' JOB_FILE "'+\
-                   LSC.commandPacker(LINK_BIN +\
-                                     ' -s inter.aln.rev '+os.path.join(options.childDir,'inter', options.theParent+'.inter.aln.rev'))+\
-                   '"'
-
-    newChild = ET.SubElement(childrenElm, 'child')
-    newChild.attrib['command'] = transCMD
+   #  # 1st transalign
+#     if( os.path.isfile(os.path.join(options.parentDir, 'root.aln.rev'))):
+#         # align the inter step to the root via the parent's 'to-root' alignment.
+#         transCMD = CMD_EVAL_BIN+\
+#                    ' --statXML '+os.path.join(options.childDir, 'logs','trans.1.info.xml')+\
+#                    ' JOB_FILE "'
+#         transCMD +=LSC.commandPacker(TRANS_BIN+\
+#                                      ' -in1 '+ os.path.join(options.childDir, 'inter','inter.aln.rev') + \
+#                                      ' -in2 '+ os.path.join(options.parentDir,'root.aln.rev')  + \
+#                                      ' -out '+ 'LOCAL_DIR/'+options.theParent+'.inter.aln.rev '+\
+#                                      ' -log '+ 'LOCAL_DIR/transalign.inter.log')
+#         transCMD +=LSC.commandPacker(MV_BIN+\
+#                                      ' '+'LOCAL_DIR/'+options.theParent+'.inter.aln.rev '+ os.path.join(options.childDir, 'inter/'))
+#         transCMD +=LSC.commandPacker(MV_BIN+\
+#                                      ' '+'LOCAL_DIR/transalign.inter.log '+ os.path.join(options.childDir, 'logs/'))
+#         transCMD +='"'
+#     else:
+#         # base case, the parent *is* the root.
+#         transCMD = CMD_EVAL_BIN+\
+#                    ' JOB_FILE "'+\
+#                    LSC.commandPacker(LINK_BIN +\
+#                                      ' -s inter.aln.rev '+os.path.join(options.childDir,'inter', options.theParent+'.inter.aln.rev'))+\
+#                    '"'
+#    newChild = ET.SubElement(childrenElm, 'child')
+#    newChild.attrib['command'] = transCMD
 
     ##############################
     # Intra steps:
@@ -113,9 +112,9 @@ def main(argv):
         intraCMD +=LSC.commandPacker(ECHO_BIN +\
                                      ' \' \' ')
         intraCMD +=LSC.commandPacker(MV_BIN+\
-                                     ' '+'LOCAL_DIR/'+chrom+'.*.dat '+ os.path.join(options.childDir, 'chr/'))
+                                     ' '+'LOCAL_DIR/'+chrom+'.*.dat '+ os.path.join(options.childDir, 'intra/'))
         intraCMD +=LSC.commandPacker(MV_BIN+\
-                                     ' '+'LOCAL_DIR/'+chrom+'.outseq.rev '+ os.path.join(options.childDir, 'chr/')+' ')
+                                     ' '+'LOCAL_DIR/'+chrom+'.outseq.rev '+ os.path.join(options.childDir, 'intra/')+' ')
         intraCMD +='"'
         newChild.attrib['command'] = intraCMD
     FILE.close()

@@ -25,10 +25,10 @@ import simulation.lib.libSimCycle   as LSY
 
 programs = ['evolver_evo', 'evolver_cvt', 'evolver_transalign',
             'touch', 'simCtrl_commandEval.py', 'evolver_gene_deactivate.sh',
-            'simCtrl_cycleStats_1.py', 'simCtrl_completeTimestamp.py']
+            'simCtrl_cycleStats_1.py', 'simCtrl_completeTimestamp.py', 'ln']
 LSC.verifyPrograms(programs)
 (EVO_BIN, CVT_BIN, TRANS_BIN, TOUCH, CMD_EVAL_BIN, GDACT_BIN,
- STATS_BIN, TIMESTAMP_BIN) = programs
+ STATS_BIN, TIMESTAMP_BIN, LINK_BIN) = programs
 
 def usage():
     print "USAGE: %s --parent parentDir/ --child childDir --params globalParamsDir/ --jobFile JOB_FILE [optional: --step ]" %(sys.argv[0])
@@ -52,16 +52,32 @@ def main(argv):
     childrenElm = xmlTree.find('children')
 
     ########################################
-    # Transalign 2
+    # Transalign
     ########################################
+    # the two transalign commands will be performed in series.
     transCMD = CMD_EVAL_BIN+\
-               ' --statXML '+os.path.join(options.childDir, 'logs','trans.2.info.xml')+\
+               ' --statXML '+os.path.join(options.childDir, 'logs','trans.info.xml')+\
                ' JOB_FILE "'+\
                LSC.commandPacker(TRANS_BIN +\
-                                 ' -in1 '+os.path.join(options.childDir, 'inter', options.theParent+'.inter.aln.rev')+ \
+                                 ' -in1 '+os.path.join(options.childDir, 'inter','inter.aln.rev')+ \
                                  ' -in2 '+os.path.join(options.childDir, 'intra', 'intra.aln.rev')+ \
-                                 ' -out '+os.path.join(options.childDir, 'root.aln.rev')+ \
-                                 ' -log '+os.path.join(options.childDir, 'logs', 'transalign.log'))+'"'
+                                 ' -out '+os.path.join(options.childDir, 'inter-intra.aln.rev')+ \
+                                 ' -log '+os.path.join(options.childDir, 'logs', 'transalign1.log'))
+    if( os.path.isfile(os.path.join(options.parentDir, 'root.aln.rev'))):
+        transCMD += LSC.commandPacker(TRANS_BIN +\
+                                     ' -in1 '+os.path.join(options.parentDir,'root.aln.rev')+ \
+                                     ' -in2 '+os.path.join(options.childDir, 'inter-intra.aln.rev')+ \
+                                     ' -out '+os.path.join(options.childDir, 'root.aln.rev')+ \
+                                     ' -log '+os.path.join(options.childDir, 'logs', 'transalign2.log'))
+    else:
+        # base case, the parent *is* the root.
+        transCMD += LSC.commandPacker(LINK_BIN +\
+                                      ' -s '+os.path.join(options.childDir,'inter-intra.aln.rev')+\
+                                      ' '+os.path.join(options.childDir,'root.aln.rev'))
+    transCMD +='"'
+    newChild = ET.SubElement(childrenElm, 'child')
+    newChild.attrib['command'] = transCMD
+    
     gDActCMD = CMD_EVAL_BIN+\
                ' JOB_FILE "'+\
                LSC.commandPacker(GDACT_BIN +\
@@ -71,11 +87,9 @@ def main(argv):
                                  ' ' + EVO_BIN+\
                                  ' >& ' + os.path.join(options.childDir, 'logs', 'gene_deactivate.log'))+'"'
     newChild = ET.SubElement(childrenElm, 'child')
-    newChild.attrib['command'] = transCMD
-    newChild = ET.SubElement(childrenElm, 'child')
     newChild.attrib['command'] = gDActCMD
 
-    # Last step, add the timestamp.
+    # Last step, add the cycle timestamp.
     followUpCommand = CMD_EVAL_BIN+\
                       ' JOB_FILE "'+\
                       LSC.commandPacker(TIMESTAMP_BIN+\
