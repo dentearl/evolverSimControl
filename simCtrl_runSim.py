@@ -39,7 +39,7 @@ programs = ['simCtrl_simTree.py','simCtrl_rootCycleInfoCreator.py', 'cp',
             'simCtrl_completeTimestamp.py']
 LSC.verifyPrograms(programs)
 (SIMTREE_PY, ROOT_CYCLEXML_MAKER,
- CP_BIN, MKDIR_BIN, CMD_EVAL_BIN) = programs[0:4]
+ CP_BIN, MKDIR_BIN, CMD_EVAL_BIN) = programs[0:5]
 
 def usage():
     print 'USAGE: '+sys.argv[0]+' --root [dir] --out --tree [newick tree in quotes] --params [parameter dir] --stepSize [0.001] --jobFile JOB_FILE '
@@ -104,7 +104,7 @@ def main():
         childCMD+= LSC.commandPacker(ROOT_CYCLEXML_MAKER +\
                                      ' --dir '+os.path.join(options.outDir,'root'))
         childCMD+= LSC.commandPacker(MKDIR_BIN+\
-                                     os.path.join(options.outDir, 'parameters'))
+                                     ' '+os.path.join(options.outDir, 'parameters'))
         childCMD+= LSC.commandPacker(CP_BIN+\
                                      ' '+os.path.join(options.gParamsDir,'model.txt')+\
                                      ' '+os.path.join(options.outDir, 'parameters'))
