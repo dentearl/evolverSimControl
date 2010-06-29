@@ -697,11 +697,11 @@ def stepStatsBreakdown(runDir, cs_dict, isHtml, timeList, microTimeList,
                    'echo':microTimeList[3],
                    'mv *.dat':microTimeList[4],
                    'mv *.outseq.rev':microTimeList[5]}
-    transalignSteps = ['transalign 1', 'transalign 2']
-    transAlignTimeDict={'trans.1.info.xml':transAlignTimeList[0],
-                        'trans.2.info.xml':transAlignTimeList[1]}
-    transAlignToNames={'transalign 1':'trans.1.info.xml',
-                       'transalign 2':'trans.2.info.xml',}
+    transalignSteps = ['command_0', 'command_1']
+    transAlignToNames={'command_0':'transalign 1',
+                       'command_1':'transalign 2'}
+    transAlignTimeDict={'transalign 1':transAlignTimeList[0],
+                        'transalign 2':transAlignTimeList[1]}
     cycleTimes=csDictToTimeList(cs_dict, runDir)
     for c in cs_dict:
         if c in csAlreadyAdded:
@@ -734,15 +734,15 @@ def stepStatsBreakdown(runDir, cs_dict, isHtml, timeList, microTimeList,
                 oObj = mObj.find('elapsed')
                 elapsed = oObj.text
                 microTimeDict[microStepsToNames[m]].append(float(elapsed))
-        for t in transAlignTimeDict:
-            if os.path.exists(os.path.join(runDir,c,'logs',t)):
-                infotree=ET.parse(os.path.join(runDir,c, 'logs', t))
-                ts  = infotree.find('timestamps')
-                tsm = ts.find('micro')
-                tsc = tsm.find('command_0')
+        if os.path.exists(os.path.join(runDir,c,'logs','trans.info.xml')):
+            infotree=ET.parse(os.path.join(runDir,c, 'logs','trans.info.xml'))
+            ts  = infotree.find('timestamps')
+            tsm = ts.find('micro')
+            for t in transalignSteps:
+                tsc = tsm.find(t)
                 tse = tsc.find('elapsed')
                 elapsed = tse.text
-                transAlignTimeDict[t].append(float(elapsed))
+                transAlignTimeDict[transAlignToNames[t]].append(float(elapsed))
         csAlreadyAdded[c] = True
     step=1
     if isHtml:
