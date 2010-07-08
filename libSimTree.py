@@ -1,6 +1,7 @@
 def nameTree(nt, reportDistance=1):
     """nameTree(nt) takes a newick tree and returns a str that can be used
-    to name the cycle-step that the tree represents
+    to name the cycle-step that the tree represents. Distance included in
+    the name by default.
     """
     from sonLib.bioio import printBinaryTree
     if nt == None:
