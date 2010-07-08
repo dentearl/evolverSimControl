@@ -24,11 +24,11 @@ from optparse import OptionParser
 import simulation.lib.libSimControl as LSC
 import simulation.lib.libSimCycle   as LSY
 
-programs = ['evolver_evo', 'evolver_cvt', 'evolver_transalign',
-            'simCtrl_cycleMain_3.py', 'simCtrl_wrapperTRF.py', 
-            'mv' , 'echo', 'sleep', 'simCtrl_commandEval.py']
+programs = ['evolver_evo', 'evolver_cvt', 'simCtrl_cycleMain_3.py',
+            'simCtrl_wrapperTRF.py', 'mv' , 'echo', 'sleep',
+            'simCtrl_commandEval.py']
 LSC.verifyPrograms(programs)
-(EVO_BIN, CVT_BIN, TRANS_BIN, CYCLE_MAIN3, TRF_WRAP_BIN,
+(EVO_BIN, CVT_BIN, CYCLE_MAIN3, TRF_WRAP_BIN,
  MV_BIN, ECHO_BIN, SLEEP_BIN, CMD_EVAL_BIN) = programs
 
 def usage():
@@ -99,7 +99,7 @@ def main(argv):
                                      ' -outannots '+os.path.join(options.childDir, 'intra',  chrom+'.outannots.gff') + \
                                      ' -outgenome '+options.theChild + \
                                      ' -model '    +os.path.join(options.gParamsDir,'model.txt') + \
-                                     ' -aln '      +os.path.join(options.childDir,  'intra',  chrom+'.aln.rev') + \
+                                     ' -aln '      +'LOCAL_DIR/'+chrom+'.aln.rev') + \
                                      ' -outseq '   +'LOCAL_DIR/'+chrom+'.outseq.rev' + \
                                      ' -log '      +os.path.join(options.childDir,  'logs', 'evo.'+chrom+'.log'))
         intraCMD +=LSC.commandPacker(CVT_BIN +\
@@ -115,6 +115,8 @@ def main(argv):
                                      ' '+'LOCAL_DIR/'+chrom+'.*.dat '+ os.path.join(options.childDir, 'intra/'))
         intraCMD +=LSC.commandPacker(MV_BIN+\
                                      ' '+'LOCAL_DIR/'+chrom+'.outseq.rev '+ os.path.join(options.childDir, 'intra/')+' ')
+        intraCMD +=LSC.commandPacker(MV_BIN+\
+                                     ' '+'LOCAL_DIR/'+chrom+'.aln.rev '+ os.path.join(options.childDir, 'intra/')+' ')
         intraCMD +='"'
         newChild.attrib['command'] = intraCMD
     FILE.close()

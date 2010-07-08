@@ -31,7 +31,7 @@ LSC.verifyPrograms(programs)
  EVOSTATS_BIN, MOBILE_REPORT_BIN)  = programs
 
 DRAW_REV_BLOCK_SIZE=10000
-DRAW_REV_NT_PER_PIX=10000
+DRAW_REV_NT_PER_PIX=100000
 
 def usage():
     print 'USAGE: %s --childDir <dir> --parentDir <dir> --jobFile <JOB_FILE> ' %(sys.argv[0])

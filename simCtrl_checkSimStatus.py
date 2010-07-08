@@ -683,19 +683,22 @@ def stepStatsBreakdown(runDir, cs_dict, isHtml, timeList, microTimeList,
     statSteps=['cycleStep_5_cycleStats_1','cycleStep_6_cycleStats_2',
               'cycleStep_7_cycleStats_3', 'cycleStep_8_cycleStats_4']
     microSteps=['command_0', 'command_1', 'command_2',
-                'command_3', 'command_4', 'command_5']
+                'command_3', 'command_4', 'command_5',
+                'command_6']
     microStepsToNames={'command_0':'evolver_evo',
                        'command_1':'evolver_cvt',
                        'command_2':'trf_wrapper',
                        'command_3':'echo',
                        'command_4':'mv *.dat',
-                       'command_5':'mv *.outseq.rev'}
+                       'command_5':'mv *.outseq.rev',
+                       'command_6':'mv *.aln.rev'}
     microTimeDict={'evolver_evo':microTimeList[0],
                    'evolver_cvt':microTimeList[1],
                    'trf_wrapper':microTimeList[2],
                    'echo':microTimeList[3],
                    'mv *.dat':microTimeList[4],
-                   'mv *.outseq.rev':microTimeList[5]}
+                   'mv *.outseq.rev':microTimeList[5],
+                   'mv *.aln.rev':microTimeList[6],}
     transalignSteps = ['command_0', 'command_1']
     transAlignToNames={'command_0':'transalign 1',
                        'command_1':'transalign 2'}
@@ -1078,7 +1081,7 @@ def collectData(options, status):
         status.variables['elapsedTreeTimeDict'] = True
     if 'timeList' not in status.variables:
         status.timeList=[[], [], [], [], [] ,[] ,[] ,[]]
-        status.microTimeList=[[],[],[],[],[],[]]
+        status.microTimeList=[[],[],[],[],[],[],[]]
         status.transAlignTimeList=[[],[]]
         status.csAlreadyAdded={}
         status.variables['timeList'] = True

@@ -86,12 +86,14 @@ def recordStats(file, i, name , t0, t1, r):
     timeEpoch.text=str(t1)
     oObj = ET.SubElement(nObj, 'elapsed')
     oObj.text=str(t1-t0)
+    oObj = ET.SubElement(nObj, 'elapsedPretty')
+    oObj.text=prettyTime(t1-t0)
     oObj = ET.SubElement(nObj, 'resources')
     pObj = ET.SubElement(oObj, 'ru_utime')
     pObj.text = str(r[0])
     pObj = ET.SubElement(oObj, 'ru_stime')
     pObj.text = str(r[1])
-    # pObj = ET.SubElement(oObj, 'ru_maxrss')
+#     pObj = ET.SubElement(oObj, 'ru_maxrss')
 #     pObj.text = str(r[2])
 #     pObj = ET.SubElement(oObj, 'ru_ixrss')
 #     pObj.text = str(r[3])
@@ -99,6 +101,24 @@ def recordStats(file, i, name , t0, t1, r):
     pObj.text = str((t1-t0)-(r[0]+r[1]))
     info=ET.ElementTree(infotree)
     info.write(file)
+
+def prettyTime(t):
+    """ prettyTime(t): input t comes in as seconds. Output is a str
+    with units attached (secs, mins, hrs, etc.)
+    """
+    if(t < 210):
+        return '%.2f secs' %(t)
+    t = t/60.0
+    if(t < 121):
+        return '%.2f mins' %(t)
+    t = t/60.0
+    if(t < 25):
+        return '%.2f hrs' %(t)
+    t = t/24.0
+    if(t < 28):
+        return '%.2f days' %(t)
+    t = t/7
+    return '%.2f weeks' %(t)
 
 def tupleDiff(a,b):
     c=[]
