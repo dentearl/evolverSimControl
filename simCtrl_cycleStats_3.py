@@ -48,20 +48,12 @@ def main():
 
     statCMD = CMD_EVAL_BIN+\
               ' JOB_FILE "'+\
-              LSC.commandPacker(CAT_BIN+\
-                                ' '+ os.path.join(options.childDir, 'stats', 'tmpstats.difflength.tmp')+\
-                                ' '+ os.path.join(options.childDir, 'stats', 'tmpstats.diffcompost.tmp')+\
-                                ' '+ os.path.join(options.childDir,'stats','tmpstats.diffannots.tmp')+\
-                                ' > '+ os.path.join(options.childDir, 'stats', 'childParent.diff.txt'))+'"'
-    newChild = ET.SubElement(childrenElm, 'child')
-    newChild.attrib['command'] = statCMD
-    statCMD = CMD_EVAL_BIN+\
-              ' JOB_FILE "'+\
               LSC.commandPacker(EVO_BIN+\
                                 ' -nologcmdlineandtime '+\
                                 ' -compost1 '+os.path.join(options.rootDir, 'seq.rev')+ \
                                 ' -compost2 '+os.path.join(options.childDir, 'seq.rev')+ \
-                                ' -log '+ os.path.join(options.childDir, 'stats', 'tmpstats.root.diffcompost.tmp'))+'"'
+                                ' -log '+ os.path.join(options.childDir, 'stats', 'tmpstats.root.diffcompost.tmp'))
+    statCMD +='"'
     newChild = ET.SubElement(childrenElm, 'child')
     newChild.attrib['command'] = statCMD
     statCMD = CMD_EVAL_BIN+\
@@ -76,14 +68,6 @@ def main():
                                 ' '+os.path.join(options.childDir,'seq.rev')+\
                                 ' '+CVT_BIN+\
                                 ' > '+os.path.join(options.childDir,'stats','tmpstats.root.diffannots.tmp'))+'"'    
-    newChild = ET.SubElement(childrenElm, 'child')
-    newChild.attrib['command'] = statCMD
-    statCMD = CMD_EVAL_BIN+\
-              ' JOB_FILE "'+\
-              LSC.commandPacker(EVO_BIN+\
-                                ' -nologcmdlineandtime '+\
-                                ' -ancstats '+os.path.join(options.childDir, 'root.aln.rev')+ \
-                                ' -log '+ os.path.join(options.childDir, 'stats', 'tmpstats.root.difflength.tmp'))+'"'
     newChild = ET.SubElement(childrenElm, 'child')
     newChild.attrib['command'] = statCMD
 

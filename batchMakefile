@@ -10,8 +10,8 @@ STEP_AVG_PRIMATES:=0.0005
 STEP_AVG_MAMMALS:=0.01
 AVG_PRIMATES_JOBTREE:=/hive/users/dearl/simTreeWorking/jobTreeAvgPrimates
 AVG_MAMMALS_JOBTREE:=/hive/users/dearl/simTreeWorking/jobTreeAvgMammals
-TREE_CANCERTEAM:=(Jing:0.01, (Steve:0.003, (Zack:.005, Chris:.009)Zack-Chris:.001)S-Z-C:0.001)All:.002;
-TREE_UTENSILSET:=(Fork:0.01, (Knife:0.003, (Spoon:.005, Ladle:.009)Spoon-Ladle:.001)K-S-L:0.001)All:.002;
+TREE_CANCERTEAM:=(Jing:0.01, (Steve:0.003, (Zack:.005, Chris:.009)Zack-Chris:.001)S-Z-C:0.001);
+TREE_UTENSILSET:=(Knife:0.004, (Fork:0.003, (Ladle:0.002, (Spoon:0.001, Teaspoon:0.001)S-TS:.001)S-TS-Ladle:.001)S-TS-L-F:0.001);
 TREE_PRIMATES:=((human:0.006690,chimp:0.007571)human-chimp:0.024272,(colobus_monkey:0.015404,(baboon:0.008258,macaque:0.028617)baboon-macaque:0.008519)-colo-bab-mac:0.022120)all:0.023960;
 WORKING_JOBTREE:=/hive/users/dearl/simTreeWorking/myTree
 PRIMATE_JOBTREE:=/hive/users/dearl/simTreeWorking/primateJobTree
@@ -20,9 +20,11 @@ OUT_AVG_MAMMALS:=/hive/users/dearl/simTreeWorking/AVG_MAMMALS/
 OUT_CANCERTEAM:=/hive/users/dearl/simTreeWorking/cancerTeamTest
 CANCER_JOBTREE:=/hive/users/dearl/simTreeWorking/cancerJobTree
 CANCER_NETDISK:=/hive/users/dearl/simTreeWorking/cancerNetDisk
-UTENSILSET_JOBTREE:=/hive/users/dearl/simTreeWorking/utensilJobTree
+RAND:=$(shell date '+%s' | perl -ple 's/^\d{6}//;')
+UTENSILSET_JOBTREE:=/hive/users/dearl/simTreeWorking/utensilJobTree$(RAND)
 UTENSILSET_NETDISK:=/hive/users/dearl/simTreeWorking/utensilNetDisk
-OUT_UTENSILSET:=/hive/users/dearl/simTreeWorking/utensilTest
+OUT_UTENSILSET:=/hive/users/dearl/simTreeWorking/AVG_PRIMATES/
+
 default:
 	cat Makefile
 ##############################
@@ -54,8 +56,8 @@ avgMammals:
 # 	jobTree.py --jobTree ${PRIMATE_JOBTREE} --batchSystem=parasol --command="${RUNSIM} --parent ${TOY_ROOT} --params ${GPARAMS} --tree '${TREE_PRIMATES}' --step 0.0005 --out /hive/users/dearl/simTreeWorking/primateRun/ --jobFile JOB_FILE --logBranch" --logDebug --retryCount 4
 # cancerTeam:
 # 	jobTree.py --jobTree ${CANCER_JOBTREE} --batchSystem=parasol --command="${RUNSIM} --parent ${TOY_ROOT} --params ${GPARAMS} --tree '${TREE_CANCERTEAM}' --step 0.001 --out ${OUT_CANCERTEAM} --jobFile JOB_FILE --logBranch --saveParent --seed 1" --logDebug --retryCount 0
-# utensilSet:
-# 	jobTree.py --jobTree ${UTENSILSET_JOBTREE} --batchSystem=parasol --command="${RUNSIM} --parent ${TOY_ROOT} --params ${GPARAMS} --tree '${TREE_UTENSILSET}' --step 0.001 --out ${OUT_UTENSILSET} --jobFile JOB_FILE --logBranch --saveParent --seed 1" --logDebug --retryCount 0
+utensilSet:
+	jobTree.py --jobTree ${UTENSILSET_JOBTREE} --batchSystem=parasol --command="${RUNSIM} --parent ${TOY_ROOT} --params ${GPARAMS} --tree '${TREE_UTENSILSET}' --step 0.001 --out ${OUT_UTENSILSET} --jobFile JOB_FILE --logBranch --saveParent --seed 1" --logDebug --retryCount 0
 # aloneCancer:
 #	./simTreeStandAlone.py --parent ${TOY_ROOT} --out /cluster/home/dearl/simTreeWorking/standAloneCancer/ --params ${GPARAMS} --tree '${TREE_CANCERTEAM}' --step 0.004 --logBranch
 

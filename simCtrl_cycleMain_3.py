@@ -106,6 +106,8 @@ def main(argv):
                       ' --params ' + options.gParamsDir +\
                       ' --seed '   + options.seed+\
                       ' --jobFile JOB_FILE'
+#     if options.isLeaf:
+#         followUpCommand += ' --isLeaf '
     jobElm.attrib['command'] = followUpCommand
     xmlTree.write(options.jobFile)
 

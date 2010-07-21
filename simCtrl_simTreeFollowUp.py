@@ -17,14 +17,22 @@ import copy, os, shutil, sys, subprocess
 import simulation.lib.libSimControl as LSC
 import simulation.lib.libSimTree as LST
 
-programs = ['simCtrl_simTree.py']
+programs = ['simCtrl_simTree.py', 'simCtrl_cycleSerialTransalign.py']
 LSC.verifyPrograms(programs)
-SIMTREE_PY = programs[0]
+(SIMTREE_PY, CYCLETRANS_PY) = programs
 
 def usage():
     sys.stderr.write('USAGE: '+sys.argv[0]+' --parent <dir> --tree <newick tree in quotes>'+\
           ' --params <parameter directory> --jobFile JOB_FILE ')
     sys.exit(2)
+
+def cycleIsLeaf(nt):
+    """Returns True if the newick tree supplied has 0 distance
+    and is not a node
+    """
+    if (not nt.internal) and (nt.distance == 0):
+        return True
+    return False
     
 def main():
     parser=OptionParser()
@@ -38,7 +46,6 @@ def main():
         workingDir = os.path.abspath(options.outDir)
     else:
         (workingDir,tail) = os.path.split(options.parentDir)
-    sys.stderr.write('followUp.py sees: %s' %(str(options.inputNewick)))
     newickTree = newickTreeParser(options.inputNewick, 0.0)
     if(newickTree.distance < options.stepSize):
         newickTree.distance = 0
@@ -53,21 +60,82 @@ def main():
     childrenElm = xmlTree.find('children')
     if(newickTree.distance <= 0):
         newickTree.distance = 0
-        if(newickTree.internal):
+        if newickTree.internal:
             nextTree = newickTreeParser(options.inputNewick, 0.0)
             ####################
             # LEFT BRANCH
-            newChild = ET.SubElement(childrenElm, 'child')
-            newChild.attrib['command'] = LST.treeBranchCommandBuilder(newickTree.left, 'Left Branch', options,
-                                                              commonParent, options.gParamsDir)
+            if not cycleIsLeaf(newickTree.left):
+                newChild = ET.SubElement(childrenElm, 'child')
+                newChild.attrib['command'] = LST.treeBranchCommandBuilder(newickTree.left, 'Left Branch', options,
+                                                                          commonParent, options.gParamsDir)
+                # Left branches look backwards for the transalign,
+                # right braches do not.
+                name = LST.nameTree(newickTree.left)
+                childDir = os.path.join(workingDir, name)
+                newChild = ET.SubElement(childrenElm, 'child')
+                transCMD = CYCLETRANS_PY +\
+                           ' --parent ' + commonParent +\
+                           ' --child '  + childDir +\
+                           ' --params ' + options.gParamsDir +\
+                           ' --step '   + str(options.stepSize) +\
+                           ' --seed '   + str(options.seed) +\
+                           ' --jobFile JOB_FILE'
+                newChild.attrib['command'] = transCMD
+                LST.commandRecorder(transCMD, commonParent)
+            else:
+                name = LST.nameTree(newickTree.left)
+                childDir = os.path.join(workingDir, name)
+                followUpCommand = CYCLETRANS_PY +\
+                                  ' --parent ' + commonParent +\
+                                  ' --child '  + childDir +\
+                                  ' --params ' + options.gParamsDir +\
+                                  ' --step '   + str(options.stepSize) +\
+                                  ' --seed '   + str(optionsseed) +\
+                                  ' --isLeaf ' +\
+                                  ' --jobFile JOB_FILE'
+                jobElm=xmlTree.getroot()
+                jobElm.attrib['command'] = followUpCommand
+                LST.commandRecorder(followUpCommand, childDir)
             ####################
             # RIGHT BRANCH
-            newChild = ET.SubElement(childrenElm, 'child')
-            newChild.attrib['command'] = LST.treeBranchCommandBuilder(newickTree.right, 'Right Branch', options,
-                                                              commonParent, options.gParamsDir)
+            if not cycleIsLeaf(newickTree.left):
+                newChild = ET.SubElement(childrenElm, 'child')
+                newChild.attrib['command'] = LST.treeBranchCommandBuilder(newickTree.right, 'Right Branch', options,
+                                                                          commonParent, options.gParamsDir)
+            else:
+                name = LST.nameTree(newickTree.right)
+                childDir = os.path.join(workingDir, name)
+                followUpCommand = CYCLETRANS_PY +\
+                                  ' --parent ' + commonParent +\
+                                  ' --child '  + childDir +\
+                                  ' --params ' + options.gParamsDir +\
+                                  ' --step '   + str(options.stepSize) +\
+                                  ' --seed '   + str(options.seed) +\
+                                  ' --isLeaf ' +\
+                                  ' --jobFile JOB_FILE'
+                jobElm=xmlTree.getroot()
+                jobElm.attrib['command'] = followUpCommand
+                LST.commandRecorder(followUpCommand, childDir)
+        else:
+            ##########
+            # STEM without distance that isn't internal (i.e., a leaf!)
+            if cycleIsLeaf(newickTree):
+                name = LST.nameTree(newickTree)
+                childDir = os.path.join(workingDir, name)
+                followUpCommand = CYCLETRANS_PY +\
+                                  ' --parent ' + commonParent +\
+                                  ' --child '  + childDir +\
+                                  ' --params ' + options.gParamsDir +\
+                                  ' --step '   + str(options.stepSize) +\
+                                  ' --seed '   + str(options.seed) +\
+                                  ' --isLeaf ' +\
+                                  ' --jobFile JOB_FILE'
+                jobElm=xmlTree.getroot()
+                jobElm.attrib['command'] = followUpCommand
+                LST.commandRecorder(followUpCommand, childDir)
     else:
         ##########
-        # STEM
+        # STEM with distance
         #####
         newickTree = newickTreeParser(options.inputNewick, 0.0)
         if (newickTree.distance < options.stepSize):
@@ -77,11 +145,23 @@ def main():
         if(newickTree.distance > 0):
             newChild = ET.SubElement(childrenElm, 'child')
             newChild.attrib['command'] = LST.treeBranchCommandBuilder(newickTree, 'Stem', options, commonParent,
-                                                              options.gParamsDir)
+                                                                      options.gParamsDir)
+            name = LST.nameTree(newickTree.left)
+            childDir = os.path.join(workingDir, name)
+            newChild = ET.SubElement(childrenElm, 'child')
+            transCMD = CYCLETRANS_PY +\
+                       ' --parent ' + commonParent +\
+                       ' --child '  + childDir +\
+                       ' --params ' + options.gParamsDir +\
+                       ' --step '   + str(options.stepSize) +\
+                       ' --seed '   + str(options.seed) +\
+                       ' --jobFile JOB_FILE'
+            newChild.attrib['command'] = transCMD
+            LST.commandRecorder(transCMD, commonParent)
 
     newickTree = newickTreeParser(options.inputNewick, 0.0) # we check to see if this is a leaf.
-    if((not options.saveParent) and (options.isContinue) and
-       (not options.isBranchChild) and (newickTree.distance > 0)): # settings check
+    if( (not options.saveParent) and (options.isContinue) and
+       (not options.isBranchChild) and (newickTree.distance > 0) ): # settings check
         shutil.rmtree(options.parentDir) # burn parent dir to the ground
         if(options.logBranch):
             (head, tail) = os.path.split(options.parentDir)

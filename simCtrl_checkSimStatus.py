@@ -28,6 +28,15 @@ import xml.etree.ElementTree as ET
 import simulation.lib.libSimTree as LST
 from simulation.lib.libSimControl import stem
 
+####################
+# GRAPH SYMBOLS
+symPreStat='O'
+symStat='$'
+symPreCycle='o'
+symCycle='+'
+symNone='-'
+symTrans='#'
+
 def usage():
     print 'USAGE: %s --help' %(sys.argv[0])
     print __doc__
@@ -375,11 +384,6 @@ def depthFirstWalk(nt, stepSize=0.001, d=0, branch='root', overlaps={}, scale=4,
                 |###| Zack-Chris
                     |###|###|###|###|###|###|###|+--|---| Chris
     """
-    symPreStat='O'
-    symStat='#'
-    symPreCycle='o'
-    symCycle='+'
-    symNone='-'
     if scale < 1:
         return
     if nt == None:
@@ -487,7 +491,10 @@ def drawScaleBar(numSteps, scale, isHtml):
             else:
                 scaleBar+=scale*' '+'|'
     print scaleBar
-    print '- unfinished   o main step started   + main step complete   O stat step started   # stat step complete'
+    print '%3s %20s %3s %20s %3s %20s\n%3s %20s %3s %20s %3s %20s' %(symNone, 'unfinished', symPreCycle, 'main step started',
+                                                symCycle, 'main step complete', symPreStat,
+                                                'stat step started', symStat, 'stat step complete',
+                                                symTrans, 'transalign')
     if isHtml:
         print '</pre>'
 
@@ -950,7 +957,9 @@ def listCurrentCycles(runDir, cs_dict, prg_dict, isHtml, htmlDir=''):
             print 'Currently running cycles:'
             print '%30s %15s %5s %15s' %('Cycle', 'Total Time', 'Step', 'Step Time')
     toDelete_dict={}
-    for p in prg_dict:
+    keyList = prg_dict.keys()
+    keyList.sort()
+    for p in keyList:
         if not os.path.exists(os.path.join(runDir, p,'cycleInfo.xml')):
             toDelete_dict[p] = True
             continue

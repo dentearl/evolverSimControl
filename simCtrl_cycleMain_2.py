@@ -99,7 +99,7 @@ def main(argv):
                                      ' -outannots '+os.path.join(options.childDir, 'intra',  chrom+'.outannots.gff') + \
                                      ' -outgenome '+options.theChild + \
                                      ' -model '    +os.path.join(options.gParamsDir,'model.txt') + \
-                                     ' -aln '      +'LOCAL_DIR/'+chrom+'.aln.rev') + \
+                                     ' -aln '      +'LOCAL_DIR/'+chrom+'.aln.rev' + \
                                      ' -outseq '   +'LOCAL_DIR/'+chrom+'.outseq.rev' + \
                                      ' -log '      +os.path.join(options.childDir,  'logs', 'evo.'+chrom+'.log'))
         intraCMD +=LSC.commandPacker(CVT_BIN +\
@@ -128,6 +128,8 @@ def main(argv):
                       ' --params ' + options.gParamsDir +\
                       ' --seed '   + options.seed+\
                       ' --jobFile JOB_FILE '
+#     if options.isLeaf:
+#         followUpCommand += ' --isLeaf '
     jobElm.attrib['command'] = followUpCommand
     ##############################
     # finished

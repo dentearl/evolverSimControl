@@ -18,15 +18,15 @@ import simulation.lib.libSimControl as LSC
 import simulation.lib.libSimTree as LST
 
 programs = ['simCtrl_simTreeFollowUp.py', 'simCtrl_cycleMain_1.py',
-            'simCtrl_commandEval.py']
+            'simCtrl_commandEval.py', 'simCtrl_cycleSerialTransalign.py']
 LSC.verifyPrograms(programs)
-(SIMTREE_FOLLOW_PY, CYCLEBEGIN_PY, CMD_EVAL_BIN) = programs
+(SIMTREE_FOLLOW_PY, CYCLEBEGIN_PY, CMD_EVAL_BIN, CYCLETRANS_PY) = programs
 
 def usage():
     print 'USAGE: '+sys.argv[0]+' --parent <dir> --out [optional dir] --tree <newick tree in quotes> --params <parameter dir> --jobFile JOB_FILE '
     print __doc__
     sys.exit(2)
-            
+
 def main():
     parser=OptionParser()
     LSC.standardOptions(parser)
@@ -49,41 +49,20 @@ def main():
     xmlTree = ET.parse(options.jobFile)
     childrenElm = xmlTree.find('children')
     nextTree = newickTreeParser(options.inputNewick, 0.0)
-    if(newickTree.distance <= 0):
-        newickTree.distance = 0
-        if(newickTree.internal): # branch point!
-            ####################
-            # LEFT BRANCH
-            newChild = ET.SubElement(childrenElm, 'child')
-            newChild.attrib['command'] = LST.cycleBranchCommandBuilder(newickTree.left, nextTree.left, 'left',
-                                                              options.stepSize, workingDir, options.parentDir,
-                                                              options.gParamsDir, options.seed, options.logBranch,
-                                                              options.testTree)
-            
-            ####################
-            # RIGHT BRANCH
-            newChild = ET.SubElement(childrenElm, 'child')
-            newChild.attrib['command'] = LST.cycleBranchCommandBuilder(newickTree.right, nextTree.right, 'right',
-                                                              options.stepSize, workingDir, options.parentDir,
-                                                              options.gParamsDir, options.seed, options.logBranch,
-                                                              options.testTree)
-    else:
-        ####################
-        # STEM
+    if newickTree.distance > 0:
         newChild = ET.SubElement(childrenElm, 'child')
         newChild.attrib['command'] = LST.cycleBranchCommandBuilder(newickTree, nextTree, 'stem', options.stepSize,
-                                                          workingDir, options.parentDir, options.gParamsDir,
-                                                          options.seed, options.logBranch, options.testTree)
-
+                                                                   workingDir, options.parentDir, options.gParamsDir,
+                                                                   options.seed, options.logBranch, options.testTree)
     ##########
-    # Follow up command, parsing the tree and then recurring
-    followUpCommand= SIMTREE_FOLLOW_PY +\
-                     ' --parent '+options.parentDir+\
-                     ' --tree "'+options.inputNewick + '"'+\
-                     ' --params '+options.gParamsDir +\
-                     ' --step '+str(options.stepSize) +\
-                     ' --seed '+options.seed +\
-                     ' --jobFile JOB_FILE'
+    # Follow up command
+    followUpCommand = SIMTREE_FOLLOW_PY +\
+                      ' --parent '+options.parentDir+\
+                      ' --tree "'+options.inputNewick + '"'+\
+                      ' --params '+options.gParamsDir +\
+                      ' --step '+str(options.stepSize) +\
+                      ' --seed '+options.seed +\
+                      ' --jobFile JOB_FILE'
     if (options.outDir != None):
         followUpCommand = followUpCommand + ' --out ' + options.outDir
     if(options.saveParent):

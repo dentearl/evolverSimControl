@@ -11,8 +11,8 @@ are:
     cycleMain_1.py cycleMain_2.py cycleMain_3.py cycleMain_4.py
 
 cycleMain_4.py Handles:
- 1) 2nd Transalign step.
- 2) CDS align step.
+ 1) CDS align step.
+ 2)
 
 7 October 2009
 """
@@ -23,17 +23,40 @@ from optparse import OptionParser
 import simulation.lib.libSimControl as LSC
 import simulation.lib.libSimCycle   as LSY
 
-programs = ['evolver_evo', 'evolver_cvt', 'evolver_transalign',
-            'touch', 'simCtrl_commandEval.py', 'evolver_gene_deactivate.sh',
-            'simCtrl_cycleStats_1.py', 'simCtrl_completeTimestamp.py', 'ln']
+programs = ['evolver_evo', 'evolver_cvt',
+            'simCtrl_commandEval.py', 'evolver_gene_deactivate.sh',
+            'simCtrl_cycleStats_1.py', 'simCtrl_completeTimestamp.py']
 LSC.verifyPrograms(programs)
-(EVO_BIN, CVT_BIN, TRANS_BIN, TOUCH, CMD_EVAL_BIN, GDACT_BIN,
- STATS_BIN, TIMESTAMP_BIN, LINK_BIN) = programs
+(EVO_BIN, CVT_BIN, CMD_EVAL_BIN, GDACT_BIN,
+ STATS_BIN, TIMESTAMP_BIN) = programs
 
 def usage():
     print "USAGE: %s --parent parentDir/ --child childDir --params globalParamsDir/ --jobFile JOB_FILE [optional: --step ]" %(sys.argv[0])
     print __doc__
     sys.exit(2)
+
+# def transCMDBuilder(options):
+#     transCMD = CMD_EVAL_BIN+\
+#                ' --statXML '+os.path.join(options.childDir, 'logs','trans.info.xml')+\
+#                ' JOB_FILE "'+\
+#                LSC.commandPacker(TRANS_BIN +\
+#                                  ' -in1 '+os.path.join(options.childDir, 'inter','inter.aln.rev')+ \
+#                                  ' -in2 '+os.path.join(options.childDir, 'intra', 'intra.aln.rev')+ \
+#                                  ' -out '+os.path.join(options.childDir, 'inter-intra.aln.rev')+ \
+#                                  ' -log '+os.path.join(options.childDir, 'logs', 'transalign1.log'))
+#     if( os.path.isfile(os.path.join(options.parentDir, 'root.aln.rev'))):
+#         transCMD += LSC.commandPacker(TRANS_BIN +\
+#                                      ' -in1 '+os.path.join(options.parentDir,'root.aln.rev')+ \
+#                                      ' -in2 '+os.path.join(options.childDir, 'inter-intra.aln.rev')+ \
+#                                      ' -out '+os.path.join(options.childDir, 'root.aln.rev')+ \
+#                                      ' -log '+os.path.join(options.childDir, 'logs', 'transalign2.log'))
+#     else:
+#         # base case, the parent *is* the root.
+#         transCMD += LSC.commandPacker(LINK_BIN +\
+#                                       ' -s '+os.path.join(options.childDir,'inter-intra.aln.rev')+\
+#                                       ' '+os.path.join(options.childDir,'root.aln.rev'))
+#     transCMD +='"'
+#     return transCMD
 
 def main(argv):
     parser=OptionParser()
@@ -52,32 +75,16 @@ def main(argv):
     childrenElm = xmlTree.find('children')
 
     ########################################
-    # Transalign
+    # Transalign ONLY if this is a LEAF genome,
+    # i.e., it is the final genome in a simulation.
     ########################################
-    # the two transalign commands will be performed in series.
-    transCMD = CMD_EVAL_BIN+\
-               ' --statXML '+os.path.join(options.childDir, 'logs','trans.info.xml')+\
-               ' JOB_FILE "'+\
-               LSC.commandPacker(TRANS_BIN +\
-                                 ' -in1 '+os.path.join(options.childDir, 'inter','inter.aln.rev')+ \
-                                 ' -in2 '+os.path.join(options.childDir, 'intra', 'intra.aln.rev')+ \
-                                 ' -out '+os.path.join(options.childDir, 'inter-intra.aln.rev')+ \
-                                 ' -log '+os.path.join(options.childDir, 'logs', 'transalign1.log'))
-    if( os.path.isfile(os.path.join(options.parentDir, 'root.aln.rev'))):
-        transCMD += LSC.commandPacker(TRANS_BIN +\
-                                     ' -in1 '+os.path.join(options.parentDir,'root.aln.rev')+ \
-                                     ' -in2 '+os.path.join(options.childDir, 'inter-intra.aln.rev')+ \
-                                     ' -out '+os.path.join(options.childDir, 'root.aln.rev')+ \
-                                     ' -log '+os.path.join(options.childDir, 'logs', 'transalign2.log'))
-    else:
-        # base case, the parent *is* the root.
-        transCMD += LSC.commandPacker(LINK_BIN +\
-                                      ' -s '+os.path.join(options.childDir,'inter-intra.aln.rev')+\
-                                      ' '+os.path.join(options.childDir,'root.aln.rev'))
-    transCMD +='"'
-    newChild = ET.SubElement(childrenElm, 'child')
-    newChild.attrib['command'] = transCMD
-    
+#     if options.isLeaf:
+#         transCMD = transCMDBuilder(options)
+#         newChild = ET.SubElement(childrenElm, 'child')
+#         newChild.attrib['command'] = transCMD
+
+    ####################
+    # gene decativation step
     gDActCMD = CMD_EVAL_BIN+\
                ' JOB_FILE "'+\
                LSC.commandPacker(GDACT_BIN +\
@@ -99,7 +106,8 @@ def main(argv):
                                         ' --childDir '+options.childDir+\
                                         ' --parentDir '+options.parentDir+\
                                         ' --jobFile JOB_XML'))+'"'
-                                        
+
+
     jobElm=xmlTree.getroot()
     jobElm.attrib['command'] = followUpCommand
     xmlTree.write(options.jobFile)

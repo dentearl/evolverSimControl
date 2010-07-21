@@ -141,7 +141,6 @@ def main(argv):
                       ' --params ' + options.gParamsDir +\
                       ' --seed '   + options.seed+\
                       ' --jobFile JOB_FILE '
-
     jobElm.attrib['command'] = followUpCommand
     xmlTree.write(options.jobFile)
 
