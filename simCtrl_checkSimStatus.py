@@ -1126,23 +1126,34 @@ def main():
     status=unpackData(os.path.join(options.dir, '.simulationStatus.pickle'))
     if 'isDone' not in status.variables:
         collectData(options, status)
-
-    print 'Tot. Tree len: %f (%d steps of %s) longest remaining branch: %.1f %s' %(status.totalTreeLength, status.totalTreeSteps,
-                                                                                   str(options.stepSize).rstrip('0'), status.longBranchSteps.path,
-                                                                                   status.workingCycleString)
     if options.isHtml:
-        print '<br>'
-    print 'Tot. Stps taken: %d (%2.2f %% complete) elapsed CPU time: %s (ave: %s/step)' %(status.completedTreeSteps,
-                                                                                          100*(float(status.completedTreeSteps) / float(status.totalTreeSteps)),
-                                                                                          status.treeTime, status.aveBranchTime)
+        print '<table><tr><td>\n'
+        elmDiv = '</td><td>'
+        rowDiv = '<td></tr><tr><td>'
+    else:
+        elmDiv = ''
+        rowDiv = ''
+    info1 = 'Tot. tree len: %f (%d steps of %s)' % (status.totalTreeLength, status.totalTreeSteps,
+                                                    str(options.stepSize).rstrip('0'))
+    info2 = 'Longest remaining branch: %.1f %s' % (status.longBranchSteps.path, status.workingCycleString)
+    print '%s%s%s%s' %( info1,elmDiv, info2, rowDiv )
+    info1 = 'Tot. stps taken: %3d (%2.2f %% complete)' %(status.completedTreeSteps,
+                                                         100*(float(status.completedTreeSteps) / float(status.totalTreeSteps)))
+    info2 = 'Elapsed CPU time: %12s (ave: %12s/step)' %(status.treeTime, status.aveBranchTime)
+    print '%s%s%s%s' %(info1, elmDiv, info2, rowDiv)
+                                                                                              
     if options.isHtml:
-        print '<br>'
         status.remainingTimeStr='<b>'+status.remainingTime+'</b>'
     else:
         status.remainingTimeStr=status.remainingTime
-    print 'ETtC: %s EToC: %s Elapsed wall-clock: %s ETRL: %s' %(status.remainingTimeStr, status.estTimeOfComp,
-                                                                status.elapsedTime, status.estTotalRunLength)
+    info1 = 'ETtC: %12s' % status.remainingTimeStr
+    info2 = 'EToC: %12s' % status.estTimeOfComp
+    info3 = 'Elapsed wall-clock: %12s' % status.elapsedTime
+    info4 = 'ETRL: %12s' % status.estTotalRunLength
+    print '%s%s%s%s\n%s%s%s\n' % (info1, elmDiv, info2, rowDiv,
+                                  info3, elmDiv, info4)
     if options.isHtml:
+        print '</td></tr></table>'
         print '<br>'
     print 'Generated at %s' %(time.strftime("%a, %d %b %Y %H:%M:%S (UTC)", time.gmtime()))
     if options.isHtml:
