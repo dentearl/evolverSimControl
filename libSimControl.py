@@ -32,6 +32,8 @@ def standardOptionsCheck(options, usage):
         sys.stderr.write('%s: Error, jobFile does not exist.\n' % sys.argv[0])
         usage()
     options.parentDir  = os.path.abspath(options.parentDir)
+    (options.simDir, tail) = os.path.split(options.parentDir)
+    options.rootDir    = os.path.join(options.simDir, 'root')
     options.gParamsDir = os.path.abspath(options.gParamsDir)
     options.theParent  = os.path.basename(options.parentDir)
 

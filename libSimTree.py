@@ -106,11 +106,11 @@ def cycleBranchCommandBuilder(nt, nxt, branchString, stepSize, workingDir, paren
             seed += 10
         seed = abs(seed)
     childCMD = CYCLEBEGIN_PY +\
-               ' --parent '+parentDir+\
-               ' --child ' +childPath+\
-               ' --params '+gParamsDir+\
-               ' --step '  +str(cycleStepSize)+\
-               ' --seed '  +str(seed)+\
+               ' --parent ' + parentDir +\
+               ' --child '  + childPath +\
+               ' --params ' + gParamsDir +\
+               ' --step '   + str(cycleStepSize) +\
+               ' --seed '   + str(seed) +\
                ' --jobFile JOB_FILE'
     ##################################################
     # TEST TREE COMMAND
