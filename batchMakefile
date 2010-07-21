@@ -4,8 +4,10 @@ RUNSIM:=simCtrl_runSim.py
 GPARAMS:=/cluster/home/dearl/evolver/myToy/gParams/
 TOY_ROOT:=/cluster/home/dearl/evolver/myToy/root/
 AVG_ROOT:=/cluster/home/dearl/simTreeWorking/avgRoot/
-TREE_AVG_PRIMATES:=((evoGorGor1:0.008825,(evoHg19:0.0067,evoPanTro2:0.006667)evoHg19-evoPanTro2:0.00225)eG-eH-eC:0.00968,evoPonAbe2:0.018318);
-TREE_AVG_MAMMALS:=((evoBosTau4:0.18908,evoCanFam2:0.16303)evoBosTau4-evoCanFam2:0.032898,(evoHg19:0.144018,(evoMm9:0.084509,evoRn4:0.091589)evoMm9-evoRn4:0.271974)eH-eM-eR:0.020593);
+# TREE_AVG_PRIMATES:=((evoGorGor1:0.008825,(evoHg19:0.0067,evoPanTro2:0.006667)evoHg19-evoPanTro2:0.00225)eG-eH-eC:0.00968,evoPonAbe2:0.018318);
+# TREE_AVG_MAMMALS:=((evoBosTau4:0.18908,evoCanFam2:0.16303)evoBosTau4-evoCanFam2:0.032898,(evoHg19:0.144018,(evoMm9:0.084509,evoRn4:0.091589)evoMm9-evoRn4:0.271974)eH-eM-eR:0.020593);
+TREE_AVG_PRIMATES:=((sGorilla:0.008825,(sHuman:0.0067,sChimp:0.006667)sHuman-sChimp:0.00225)sG-sH-sC:0.00968,sOrang:0.018318);
+TREE_AVG_MAMMALS:=((sCow:0.18908,sDog:0.16303)sCow-sDog:0.032898,(sHuman:0.144018,(sMouse:0.084509,sRat:0.091589)sMouse-sRat:0.271974)sH-sM-sR:0.020593);
 STEP_AVG_PRIMATES:=0.0005
 STEP_AVG_MAMMALS:=0.01
 AVG_PRIMATES_JOBTREE:=/hive/users/dearl/simTreeWorking/jobTreeAvgPrimates
@@ -52,49 +54,18 @@ avgPrimates:
 	jobTree.py --jobTree ${AVG_PRIMATES_JOBTREE} --batchSystem=parasol --command="${RUNSIM} --parent ${AVG_ROOT} --params ${GPARAMS} --tree '${TREE_AVG_PRIMATES}' --step ${STEP_AVG_PRIMATES} --out ${OUT_AVG_PRIMATES} --jobFile JOB_FILE --saveParent --seed 313370" --logDebug --retryCount 0
 avgMammals:
 	jobTree.py --jobTree ${AVG_MAMMALS_JOBTREE}  --batchSystem=parasol --command="${RUNSIM} --parent ${AVG_ROOT} --params ${GPARAMS} --tree '${TREE_AVG_MAMMALS}'  --step ${STEP_AVG_MAMMALS}  --out ${OUT_AVG_MAMMALS}  --jobFile JOB_FILE --saveParent --seed 13371121" --logDebug --retryCount 0
-# primate:
-# 	jobTree.py --jobTree ${PRIMATE_JOBTREE} --batchSystem=parasol --command="${RUNSIM} --parent ${TOY_ROOT} --params ${GPARAMS} --tree '${TREE_PRIMATES}' --step 0.0005 --out /hive/users/dearl/simTreeWorking/primateRun/ --jobFile JOB_FILE --logBranch" --logDebug --retryCount 4
-# cancerTeam:
-# 	jobTree.py --jobTree ${CANCER_JOBTREE} --batchSystem=parasol --command="${RUNSIM} --parent ${TOY_ROOT} --params ${GPARAMS} --tree '${TREE_CANCERTEAM}' --step 0.001 --out ${OUT_CANCERTEAM} --jobFile JOB_FILE --logBranch --saveParent --seed 1" --logDebug --retryCount 0
-utensilSet:
-	jobTree.py --jobTree ${UTENSILSET_JOBTREE} --batchSystem=parasol --command="${RUNSIM} --parent ${TOY_ROOT} --params ${GPARAMS} --tree '${TREE_UTENSILSET}' --step 0.001 --out ${OUT_UTENSILSET} --jobFile JOB_FILE --logBranch --saveParent --seed 1" --logDebug --retryCount 0
-# aloneCancer:
-#	./simTreeStandAlone.py --parent ${TOY_ROOT} --out /cluster/home/dearl/simTreeWorking/standAloneCancer/ --params ${GPARAMS} --tree '${TREE_CANCERTEAM}' --step 0.004 --logBranch
 
 ##############################
 # PARASOL TESTS (jobTree)
 ##############################
-testSimplePathParasol:
-	jobTree.py --jobTree ${WORKING_JOBTREE} --batchSystem=parasol --command="${RUNSIM}  --parent ${TOY_ROOT} --params ${GPARAMS} --tree 'Chris:.005;' --out /hive/users/dearl/simTreeWorking/yeeOldeTest --step 0.001 --jobFile JOB_FILE --logBranch --testTree" --logDebug --retryCount 1
-testSimpleBranchParasol:
-	jobTree.py --jobTree ${WORKING_JOBTREE} --batchSystem=parasol --command="${RUNSIM}  --parent ${TOY_ROOT} --params ${GPARAMS} --tree '(Chris:.004, Zack:0.002)CZ:.003;' --out yeeOldeTest --step 0.001 --jobFile JOB_FILE --logBranch --testTree" --logDebug --retryCount 1
-testMediumBranchParasol:
-	jobTree.py --jobTree ${WORKING_JOBTREE} --batchSystem=parasol --command="${RUNSIM}  --parent ${TOY_ROOT} --params ${GPARAMS} --tree '(Steve:0.003, (Zack:.005, Chris:.009):.001):.002;' --out yeeOldeTest --step 0.001 --jobFile JOB_FILE --logBranch --testTree" --logDebug --retryCount 1
-testCancerTeamParasol:
-	jobTree.py --jobTree ${WORKING_JOBTREE} --batchSystem=parasol --command="${RUNSIM}  --parent ${TOY_ROOT} --params ${GPARAMS} --tree '${TREE_CANCERTEAM}' --step 0.001 --out /hive/users/dearl/simTreeWorking/cancerTeamTest --jobFile JOB_FILE --testTree --logBranch " --logDebug --retryCount 1
-testPrimatesParasol:
-	jobTree.py --jobTree ${WORKING_JOBTREE} --batchSystem=parasol --command="${RUNSIM}  --parent ${TOY_ROOT} --params ${GPARAMS} --tree '${TREE_PRIMATES}' --step 0.0005 --out /hive/users/dearl/simTreeWorking/primateRun/ --jobFile JOB_FILE --logBranch --testTree" --logDebug --retryCount 1
+test:
+	jobTree.py --jobTree ${UTENSILSET_JOBTREE} --batchSystem=parasol --command="${RUNSIM} --parent ${TOY_ROOT} --params ${GPARAMS} --tree '${TREE_UTENSILSET}' --step 0.001 --out ${OUT_UTENSILSET} --jobFile JOB_FILE --logBranch --saveParent --seed 1" --logDebug --retryCount 0
 
 ##############################
 # SINGLE MACHINE TESTS (jobTree)
 ##############################
-testSimplePathSingle:
-	jobTree.py --jobTree ${WORKING_JOBTREE} --batchSystem=single_machine --command="${RUNSIM}  --parent ${TOY_ROOT} --params ${GPARAMS} --tree 'Chris:.005;' --out yeeOldeTest --step 0.001 --jobFile JOB_FILE --logBranch --testTree" --logDebug --retryCount 1 # test rmtree()
-testSimpleBranchSingle:
-	jobTree.py --jobTree ${WORKING_JOBTREE} --batchSystem=single_machine --command="${RUNSIM}  --parent ${TOY_ROOT} --params ${GPARAMS} --tree '(Chris:.004, Zack:0.002)CZ:.003;' --out yeeOldeTest --step 0.001 --jobFile JOB_FILE --logBranch --testTree" --logDebug --retryCount 1 # test rmtree()
-testMediumBranchSingle:
-	jobTree.py --jobTree ${WORKING_JOBTREE} --batchSystem=single_machine --command="${RUNSIM}  --parent ${TOY_ROOT} --params ${GPARAMS} --tree '(Steve:0.003, (Zack:.005, Chris:.009):.001):.002;' --out yeeOldeTest --step 0.001 --jobFile JOB_FILE --logBranch --testTree" --logDebug --retryCount 1
-testCancerTeamSingle:
-	jobTree.py --jobTree ${WORKING_JOBTREE} --batchSystem=single_machine --command="${RUNSIM}  --parent ${TOY_ROOT} --params ${GPARAMS} --tree '${TREE_CANCERTEAM}' --step 0.001 --out cancerTeamTest --jobFile JOB_FILE --testTree --logBranch" --logDebug --retryCount 1
-testPrimatesSingle:
-	jobTree.py --jobTree ${WORKING_JOBTREE} --batchSystem=single_machine --command="${RUNSIM}  --parent ${TOY_ROOT} --params ${GPARAMS} --tree '${TREE_PRIMATES}' --step 0.0005 --out /hive/users/dearl/simTreeWorking/primateRun/ --jobFile JOB_FILE --logBranch --testTree" --logDebug --retryCount 1
-
-##############################
-# STAND ALONE TESTS (no jobTree)
-##############################
-testAloneCancer:
-	simCtrl_simTreeStandAlone.py --parent ${TOY_ROOT} --out /cluster/home/dearl/simTreeWorking/standAloneTest/ --params ${GPARAMS} --tree '${TREE_CANCERTEAM}' --step 0.001 --testTree --logBranch --verbose --saveParent
-
+test:
+	jobTree.py --jobTree ${UTENSILSET_JOBTREE} --batchSystem=single_machine --command="${RUNSIM} --parent ${TOY_ROOT} --params ${GPARAMS} --tree '${TREE_UTENSILSET}' --step 0.001 --out ${OUT_UTENSILSET} --jobFile JOB_FILE --logBranch --saveParent --seed 1" --logDebug --retryCount 0
 
 ##############################
 # not run in screen, run on hgwdev:
