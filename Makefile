@@ -21,4 +21,4 @@ ${binPath}/%: %
 
 clean: 
 	rm -f *.o
-	rm -f ${py_progs:%=${binPath}/%} ${binPath}/simUtil_*
+	rm -rf ${py_progs:%=${binPath}/%} ${binPath}/simUtil_*
