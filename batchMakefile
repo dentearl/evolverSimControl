@@ -6,26 +6,22 @@ TOY_ROOT:=/cluster/home/dearl/evolver/myToy/root/
 AVG_ROOT:=/cluster/home/dearl/simTreeWorking/avgRoot/
 # TREE_AVG_PRIMATES:=((evoGorGor1:0.008825,(evoHg19:0.0067,evoPanTro2:0.006667)evoHg19-evoPanTro2:0.00225)eG-eH-eC:0.00968,evoPonAbe2:0.018318);
 # TREE_AVG_MAMMALS:=((evoBosTau4:0.18908,evoCanFam2:0.16303)evoBosTau4-evoCanFam2:0.032898,(evoHg19:0.144018,(evoMm9:0.084509,evoRn4:0.091589)evoMm9-evoRn4:0.271974)eH-eM-eR:0.020593);
-TREE_AVG_PRIMATES:=((sGorilla:0.008825,(sHuman:0.0067,sChimp:0.006667)sHuman-sChimp:0.00225)sG-sH-sC:0.00968,sOrang:0.018318);
-TREE_AVG_MAMMALS:=((sCow:0.18908,sDog:0.16303)sCow-sDog:0.032898,(sHuman:0.144018,(sMouse:0.084509,sRat:0.091589)sMouse-sRat:0.271974)sH-sM-sR:0.020593);
+TREE_AVG_PRIMATES:=((simGorilla:0.008825,(simHuman:0.0067,simChimp:0.006667)sHuman-sChimp:0.00225)sG-sH-sC:0.00968,simOrang:0.018318);
+TREE_AVG_MAMMALS:=((simCow:0.18908,simDog:0.16303)sCow-sDog:0.032898,(simHuman:0.144018,(simMouse:0.084509,simRat:0.091589)sMouse-sRat:0.271974)sH-sM-sR:0.020593);
 STEP_AVG_PRIMATES:=0.0005
 STEP_AVG_MAMMALS:=0.01
 AVG_PRIMATES_JOBTREE:=/hive/users/dearl/simTreeWorking/jobTreeAvgPrimates
 AVG_MAMMALS_JOBTREE:=/hive/users/dearl/simTreeWorking/jobTreeAvgMammals
-TREE_CANCERTEAM:=(Jing:0.01, (Steve:0.003, (Zack:.005, Chris:.009)Zack-Chris:.001)S-Z-C:0.001);
 TREE_UTENSILSET:=(Knife:0.004, (Fork:0.003, (Ladle:0.002, (Spoon:0.001, Teaspoon:0.001)S-TS:.001)S-TS-Ladle:.001)S-TS-L-F:0.001);
 TREE_PRIMATES:=((human:0.006690,chimp:0.007571)human-chimp:0.024272,(colobus_monkey:0.015404,(baboon:0.008258,macaque:0.028617)baboon-macaque:0.008519)-colo-bab-mac:0.022120)all:0.023960;
 WORKING_JOBTREE:=/hive/users/dearl/simTreeWorking/myTree
 PRIMATE_JOBTREE:=/hive/users/dearl/simTreeWorking/primateJobTree
 OUT_AVG_PRIMATES:=/hive/users/dearl/simTreeWorking/AVG_PRIMATES/
 OUT_AVG_MAMMALS:=/hive/users/dearl/simTreeWorking/AVG_MAMMALS/
-OUT_CANCERTEAM:=/hive/users/dearl/simTreeWorking/cancerTeamTest
-CANCER_JOBTREE:=/hive/users/dearl/simTreeWorking/cancerJobTree
-CANCER_NETDISK:=/hive/users/dearl/simTreeWorking/cancerNetDisk
 RAND:=$(shell date '+%s' | perl -ple 's/^\d{6}//;')
 UTENSILSET_JOBTREE:=/hive/users/dearl/simTreeWorking/utensilJobTree$(RAND)
 UTENSILSET_NETDISK:=/hive/users/dearl/simTreeWorking/utensilNetDisk
-OUT_UTENSILSET:=/hive/users/dearl/simTreeWorking/AVG_PRIMATES/
+OUT_UTENSILSET:=/hive/users/dearl/simTreeWorking/UTENSILS/
 
 default:
 	cat Makefile
@@ -40,10 +36,6 @@ default:
 #
 #  There are two data types for the tests,
 #   - Primate tests, which simulate a set of genomes based on a primate tree
-#   - Cancer tests, which simulate a set of genomes based on an absurdist tree that uses
-#     our cancer genome research team members as a set of names. Before using the Cancer
-#     team as my demo set I was using fruits and vegetables, but I think the Cancer team is
-#     more fun.
 #
 ##############################
 
@@ -71,7 +63,7 @@ test:
 # not run in screen, run on hgwdev:
 ##############################
 repeatMaskPreRun:
-	simUtil_evolverFASTAextractor.py --simDir ${OUT_CANCERTEAM} --leavesOnly
+	simUtil_evolverFASTAextractor.py --simDir ${OUT_AVG_PRIMATES} --leavesOnly
 
 ##############################
 # CACTUS (Reconstruction) MUST BE RUN ON A CLUSTER, IN GNU SCREEN!!
