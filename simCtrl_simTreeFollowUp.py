@@ -83,6 +83,7 @@ def main():
                 newChild.attrib['command'] = transCMD
                 LST.commandRecorder(transCMD, commonParent)
             else:
+                # cycle is a leaf
                 name = LST.nameTree(newickTree.left)
                 childDir = os.path.join(workingDir, name)
                 followUpCommand = CYCLETRANS_PY +\
@@ -103,6 +104,7 @@ def main():
                 newChild.attrib['command'] = LST.treeBranchCommandBuilder(newickTree.right, 'Right Branch', options,
                                                                           commonParent, options.gParamsDir)
             else:
+                # cycle is a leaf
                 name = LST.nameTree(newickTree.right)
                 childDir = os.path.join(workingDir, name)
                 followUpCommand = CYCLETRANS_PY +\
@@ -138,11 +140,11 @@ def main():
         # STEM with distance
         #####
         newickTree = newickTreeParser(options.inputNewick, 0.0)
-        if (newickTree.distance < options.stepSize):
+        if newickTree.distance < options.stepSize:
             newickTree.distance = 0
         else:
             newickTree.distance = newickTree.distance - options.stepSize
-        if(newickTree.distance > 0):
+        if newickTree.distance > 0:
             newChild = ET.SubElement(childrenElm, 'child')
             newChild.attrib['command'] = LST.treeBranchCommandBuilder(newickTree, 'Stem', options, commonParent,
                                                                       options.gParamsDir)
@@ -163,12 +165,12 @@ def main():
     if( (not options.saveParent) and (options.isContinue) and
        (not options.isBranchChild) and (newickTree.distance > 0) ): # settings check
         shutil.rmtree(options.parentDir) # burn parent dir to the ground
-        if(options.logBranch):
+        if options.logBranch:
             (head, tail) = os.path.split(options.parentDir)
             LST.branchLog( '%25s: %s. saveParent:%d isContinue:%d distance:%f\n' % ('performing rmtree() on ',
                                                                                     tail, options.saveParent, options.isContinue, newickTree.distance))
     else:
-        if(options.logBranch):
+        if options.logBranch:
             (head, tail) = os.path.split(options.parentDir)
             LST.branchLog( 'will not delete parent (%s). saveParent:%d isContinue:%d isBranchChild:%d\n' % (tail, options.saveParent,
                                                                                                             options.isContinue, options.isBranchChild))

@@ -49,7 +49,7 @@ def findGrandParent(options):
 
 def customOptions(parser):
     parser.add_option('--isLeaf', action='store_true', dest='isLeaf',
-                      default=False, help='Is this a leaf run? If so, do not talign grand parent -> parent, talign parent -> child')
+                      default=False, help='Is this a leaf run? If so, do not talign grand parent -> parent, do talign parent -> child')
 
 def main(argv):
     parser=OptionParser()
@@ -60,21 +60,12 @@ def main(argv):
     LSC.standardOptionsCheck(options, usage)
     LSY.standardOptionsCheck(options, usage)
     findGrandParent(options)
-#    LSC.subTypeTimestamp(os.path.join(options.parentDir,'cycleInfo.xml'),
-#                         'talign', 'cycleStep_3_cycleMain_3_end')
-#    LSC.subTypeTimestamp(os.path.join(options.parentDir,'cycleInfo.xml'),
-#                         'talign', 'cycleStep_4_cycleMain_4_start')
-
     xmlTree = ET.parse(options.jobFile)
     jobElm=xmlTree.getroot()
     childrenElm = xmlTree.find('children')
 
-    if not options.isLeaf:
-        A = options.grandParentDir
-        B = options.parentDir
-    else:
-        A = options.parentDir
-        B = options.childDir
+    A = options.grandParentDir
+    B = options.parentDir
     
     ########################################
     # Transalign

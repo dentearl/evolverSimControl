@@ -18,9 +18,10 @@ import simulation.lib.libSimControl as LSC
 import simulation.lib.libSimTree as LST
 
 programs = ['simCtrl_simTreeFollowUp.py', 'simCtrl_cycleMain_1.py',
-            'simCtrl_commandEval.py', 'simCtrl_cycleSerialTransalign.py']
+            'simCtrl_commandEval.py']
 LSC.verifyPrograms(programs)
-(SIMTREE_FOLLOW_PY, CYCLEBEGIN_PY, CMD_EVAL_BIN, CYCLETRANS_PY) = programs
+(SIMTREE_FOLLOW_PY, CYCLEBEGIN_PY,
+ CMD_EVAL_BIN) = programs
 
 def usage():
     print 'USAGE: '+sys.argv[0]+' --parent <dir> --out [optional dir] --tree <newick tree in quotes> --params <parameter dir> --jobFile JOB_FILE '
