@@ -1,19 +1,22 @@
 SHELL:=/bin/bash
 SIMTREE:=simCtrl_simTree.py
 RUNSIM:=simCtrl_runSim.py
-GPARAMS:=/cluster/home/dearl/evolver/myToy/gParams/
+GPARAMS:=/cluster/home/dearl/simTreeWorking/gParams/
+GPARAMS30:=/cluster/home/dearl/simTreeWorking/gParams30/
 TOY_ROOT:=/cluster/home/dearl/evolver/myToy/root/
 AVG_ROOT:=/cluster/home/dearl/simTreeWorking/avgRoot/
 TREE_AVG_PRIMATES:=((simGorilla:0.008825,(simHuman:0.0067,simChimp:0.006667)sHuman-sChimp:0.00225)sG-sH-sC:0.00968,simOrang:0.018318);
 TREE_AVG_MAMMALS:=((simCow:0.18908,simDog:0.16303)sCow-sDog:0.032898,(simHuman:0.144018,(simMouse:0.084509,simRat:0.091589)sMouse-sRat:0.271974)sH-sM-sR:0.020593);
-TREE_UTENSILSET:=(Knife:0.004, (Fork:0.003, (Ladle:0.002, (Spoon:0.001, Teaspoon:0.001)S-TS:.001)S-TS-Ladle:.001)S-TS-L-F:0.001);
+TREE_UTENSILSET:=(Knife:0.004, (Fork:0.003, (Ladle:0.002, (Spoon:0.001, Teaspoon:0.001)S-TS:.001)S-TS-L:.001)S-TS-L-F:0.001);
 STEP_AVG_PRIMATES:=0.0005
 STEP_AVG_MAMMALS:=0.01
 AVG_PRIMATES_JOBTREE:=/hive/users/dearl/simTreeWorking/jobTreeAvgPrimates
+AVG_PRIMATES_JOBTREE30:=/hive/users/dearl/simTreeWorking/jobTreeAvgPrimates30
 AVG_MAMMALS_JOBTREE:=/hive/users/dearl/simTreeWorking/jobTreeAvgMammals
 WORKING_JOBTREE:=/hive/users/dearl/simTreeWorking/myTree
 PRIMATE_JOBTREE:=/hive/users/dearl/simTreeWorking/primateJobTree
 OUT_AVG_PRIMATES:=/hive/users/dearl/simTreeWorking/AVG_PRIMATES/
+OUT_AVG_PRIMATES30:=/hive/users/dearl/simTreeWorking/AVG_PRIMATES30/
 OUT_AVG_MAMMALS:=/hive/users/dearl/simTreeWorking/AVG_MAMMALS/
 RAND:=$(shell date '+%s' | perl -ple 's/^\d{6}//;')
 UTENSILSET_JOBTREE:=/hive/users/dearl/simTreeWorking/utensilJobTree$(RAND)
@@ -38,59 +41,34 @@ default:
 
 ##############################
 # PRODUCTION
-##############################
 avgPrimates:
 	jobTree.py --jobTree ${AVG_PRIMATES_JOBTREE} --batchSystem=parasol --command="${RUNSIM} --parent ${AVG_ROOT} --params ${GPARAMS} --tree '${TREE_AVG_PRIMATES}' --step ${STEP_AVG_PRIMATES} --out ${OUT_AVG_PRIMATES} --jobFile JOB_FILE --saveParent --seed 313370" --logDebug --retryCount 0
 avgMammals:
 	jobTree.py --jobTree ${AVG_MAMMALS_JOBTREE}  --batchSystem=parasol --command="${RUNSIM} --parent ${AVG_ROOT} --params ${GPARAMS} --tree '${TREE_AVG_MAMMALS}'  --step ${STEP_AVG_MAMMALS}  --out ${OUT_AVG_MAMMALS}  --jobFile JOB_FILE --saveParent --seed 13371121" --logDebug --retryCount 0
+avgPrimates30:
+	jobTree.py --jobTree ${AVG_PRIMATES_JOBTREE30} --batchSystem=parasol --command="${RUNSIM} --parent ${TOY_ROOT} --params ${GPARAMS30} --tree '${TREE_AVG_PRIMATES}' --step ${STEP_AVG_PRIMATES} --out ${OUT_AVG_PRIMATES30} --jobFile JOB_FILE --saveParent --seed 313370" --logDebug --retryCount 0
 
 ##############################
 # PARASOL TESTS (jobTree)
-##############################
 test:
 	jobTree.py --jobTree ${UTENSILSET_JOBTREE} --batchSystem=parasol --command="${RUNSIM} --parent ${TOY_ROOT} --params ${GPARAMS} --tree '${TREE_UTENSILSET}' --step 0.001 --out ${OUT_UTENSILSET} --jobFile JOB_FILE --logBranch --saveParent --seed 1" --logDebug --retryCount 0
 
 ##############################
 # SINGLE MACHINE TESTS (jobTree)
-##############################
 testSingle:
 	jobTree.py --jobTree ${UTENSILSET_JOBTREE} --batchSystem=single_machine --command="${RUNSIM} --parent ${TOY_ROOT} --params ${GPARAMS} --tree '${TREE_UTENSILSET}' --step 0.001 --out ${OUT_UTENSILSET} --jobFile JOB_FILE --logBranch --saveParent --seed 1" --logDebug --retryCount 0
 
 ##############################
-# not run in screen, run on hgwdev:
-##############################
+# first post-processing, need not be run in screen, need not be run on cluster:
 repeatMaskPreRun:
 	simUtil_evolverFASTAextractor.py --simDir ${OUT_AVG_PRIMATES} --leavesOnly
 
 ##############################
-# CACTUS (Reconstruction) MUST BE RUN ON A CLUSTER, IN GNU SCREEN!!
-##############################
-repeatMaskCancer:
-# not sure how to know (in an automated fashion) that the repeatMasking are all done...
-	repeatMasking_doCluster.py --genome ${OUT_CANCERTEAM}/Chris/seq.name.fa --workDir ${OUT_CANCERTEAM}/Chris/repeatMask --maxJob=80 &>/dev/null & 
-	repeatMasking_doCluster.py --genome ${OUT_CANCERTEAM}/Jing/seq.name.fa  --workDir ${OUT_CANCERTEAM}/Jing/repeatMask  --maxJob=80 &>/dev/null &
-	repeatMasking_doCluster.py --genome ${OUT_CANCERTEAM}/Steve/seq.name.fa --workDir ${OUT_CANCERTEAM}/Steve/repeatMask --maxJob=80 &>/dev/null &
-	repeatMasking_doCluster.py --genome ${OUT_CANCERTEAM}/Zack/seq.name.fa  --workDir ${OUT_CANCERTEAM}/Zack/repeatMask  --maxJob=80 &>/dev/null &
-repeatMaskCancerFinish:
-	for a in $(ls ${OUT_CANCERTEAM}/); do if [ -d ${OUT_CANCERTEAM}/$$a ]; then if [ -d ${OUT_CANCERTEAM}/$$a/repeatMask ]; \
-	then twoBitToFa ${OUT_CANCERTEAM}/$$a/repeatMask/seq.rmsk.2bit ${OUT_CANCERTEAM}/$$a/seq.masked.fa;\
-	fi; fi; done
-#	eval_fastaNameCorrector.py --name $$a < ${OUT_CANCERTEAM}/$$a/seq.masked.fa > ${OUT_CANCERTEAM}/$$a/seq.masked.clean.fa; 
-sonTraceCancer:
-	jobTree.py --batchSystem=parasol --command  "cactus_workflow.py --netDisk ${CANCER_NETDISK} --speciesTree '${TREE_CANCERTEAM}' \
-	${OUT_CANCERTEAM}/Jing/seq.masked.clean.fa \
-	${OUT_CANCERTEAM}/Steve/seq.masked.clean.fa \
-	${OUT_CANCERTEAM}/Zack/seq.masked.clean.fa \
-	${OUT_CANCERTEAM}/Chris/seq.masked.clean.fa --job JOB_FILE" --jobTree ${CANCER_JOBTREE} --logDebug
-	eval_evolverPairwiseExtractor.py --cycleDir ${OUT_CANCERTEAM} --leavesOnly
-	cactus_MAFGenerator --netDisk ${CANCER_NETDISK} --outputFile ${OUT_CANCERTEAM}/reconstruction.maf --netName 0 --logLevel DEBUG
-	for a in $$(ls ${OUT_CANCERTEAM}/*.clean.maf); do (eval_MAFComparator --logLevel DEBUG --mAFFile1 $$a \
-	--mAFFile2 ${OUT_CANCERTEAM}/reconstruction.maf --outputFile $$a.compare.xml --sampleNumber 1000000 &) ; done
-	eval_cycleStats.sh ${OUT_CANCERTEAM}
-	cactus_treeStats --netDisk ${CANCER_NETDISK} --netName 0 --outputFile ${OUT_CANCERTEAM}/cactusTreeStats.xml
+# final post-processesing MUST BE RUN ON A CLUSTER, IN GNU SCREEN!!
+repeatMaskPrimates:
+	simCtrl_postSimRepeatMaskCluster.py --simDir ${OUT_AVG_PRIMATES} --log --wait; simCtrl_postSimRepeatMaskFinish.py --simDir ${OUT_AVG_PRIMATES}
 
 ##############################
-# UTILITIES
-##############################
-extractCancerMAFs:
-	evolver_pairwiseExtractor.py --cycleDir ${OUT_CANCERTEAM} --leavesOnly
+# UTILITIES # RUN THIS ON KOLOSSUS OR HGWDEV. mafJoin has massive memory requirements when the mafs start to get big!
+extractMAFsPrimates:
+	jobTree.py --jobTree jobTreeMAFextraction$(RAND) --batchSystem=single_machine --command="simCtrl_postSimMAFextractor.py --simDir ${OUT_AVG_PRIMATES} --noParalogy --jobFile JOB_FILE" --logDebug --retryCount 0

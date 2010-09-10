@@ -54,6 +54,14 @@ class Node:
         self.children = []
         self.isLeaf   = False
 
+def findNode( nList, nName ):
+    ans = None
+    for n in nList:
+        if n.name == nName:
+            ans = n
+            continue
+    return ans
+
 def checkOptions(options):
     if (options.simDir == None):
         sys.stderr.write('%s: Error, specify simulation dir.\n' % sys.argv[0])
@@ -154,7 +162,7 @@ def buildMAFpairs(options, nodesList, leaves):
                                                   ' -in1 '+ os.path.join(options.simDir,c, 'root.aln.rev') + \
                                                   ' -in2 '+ os.path.join(options.simDir,n.name, 'root.aln.rev')  + \
                                                   ' -out '+ os.path.join(options.simDir,c, n.name+'.aln.rev') + \
-                                                  ' -noparalogy '+\
+                                                  ' -noparalogy'+\
                                                   ' -log '+ os.path.join(options.simDir,c, 'logs', 'transalign.'+n.name+'.log'))
                 else:
                     transCMD += LSC.commandPacker(TRANS_BIN+\
@@ -175,7 +183,12 @@ def buildMAFpairs(options, nodesList, leaves):
                 runningJobs = runningJobs + 1
             transCMD += '"'
             if options.isDebug:
-                print 'transCMD is '+transCMD
+                if transCMD != CMD_EVAL_BIN+ ' JOB_FILE ""':
+                    tcmd = transCMD.replace('&myCMD;&myCMD;','\n\t')
+                    tcmd = tcmd.replace('"', '')
+                    tcmd = tcmd.replace('/cluster/home/dearl/sonTrace/bin/simCtrl_commandEval.py JOB_FILE ', '')
+                    tcmd = tcmd.replace('&myCMD;','')
+                    print 'components of transCMD is(are): \n\t%s' % tcmd
             else:
                 if transCMD != CMD_EVAL_BIN+ ' JOB_FILE ""':
                     newChild = ET.SubElement(childrenElm, 'child')
@@ -216,6 +229,21 @@ def performMAFmerge(options, nodesList, leaves, nodeParentDict):
     cdF.maf + Froot.maf -> cdFroot.maf
     abEroot.maf + cdFroot.maf -> abcdEFroot.maf
     ... and then we drink root beers and have highfives.
+    OR, in the specific directory based data structure
+    that we actually use,
+    a/E.maf
+    b/E.maf
+    c/F.maf
+    d/F.maf
+    E/root.tmp.maf
+    F/root.tmp.maf
+    a/E.maf b/E.maf -> E/E.maf
+    E/E.maf E/root.tmp.maf -> E/root.maf
+    F/F.maf F/root.tmp.maf -> F/root.maf
+    E/root.maf F/root.maf -> root/all.maf
+    OR, most generally,
+    child0/parent.maf child1/parent.maf -> parent/parent.maf
+    parent/parent.maf parent/grandParent.tmp.maf -> parent/grandParent.maf
     """
     if not options.isDebug:
         xmlTree = ET.parse(options.jobFile)
@@ -231,30 +259,43 @@ def performMAFmerge(options, nodesList, leaves, nodeParentDict):
             os.path.exists(os.path.join(options.simDir, n.children[0], n.name+'.maf')) and 
             os.path.exists(os.path.join(options.simDir, n.children[1], n.name+'.maf'))):
             mergeCMD = CMD_EVAL_BIN + ' JOB_FILE "'
+            treelessRootStr = ''
+            if n.children[0] in leaves :
+                treelessRootStr += ' -treelessRoot1='+ str(n.name)
+            if n.children[1] in leaves :
+                treelessRootStr += ' -treelessRoot2='+ str(n.name)
             mergeCMD +=LSC.commandPacker(MAF_MERGE_BIN +\
+                                          treelessRootStr +\
                                          ' \''+str(n.name)+'\''+\
                                          ' '+os.path.join(options.simDir, n.children[0], n.name+'.maf')+\
                                          ' '+os.path.join(options.simDir, n.children[1], n.name+'.maf')+\
                                          ' ' + os.path.join(options.simDir, n.name, n.name+'.maf'))
             if n.name != 'root':
                 mergeCMD +=LSC.commandPacker(MAF_MERGE_BIN +\
+                                             ' -treelessRoot2='+ str(nodeParent)+\
                                              ' \''+str(n.name)+'\''+\
-                                             ' '+os.path.join(options.simDir, n.name, nodeParent+'.tmp.maf')+\
                                              ' '+os.path.join(options.simDir, n.name, n.name+'.maf')+\
+                                             ' '+os.path.join(options.simDir, n.name, nodeParent+'.tmp.maf')+\
                                              ' '+os.path.join(options.simDir, n.name, nodeParent+'.maf'))
+
             mergeCMD += '"'
             runningJobs = runningJobs + 1
             if not options.isDebug:
                 newChild = ET.SubElement(childrenElm, 'child')
                 newChild.attrib['command'] = mergeCMD
             else:
-                sys.stderr.write('n: %s\n  I wish to perform %s\n' %(n.name, mergeCMD))
+                mCMD = mergeCMD.replace('/cluster/home/dearl/sonTrace/bin/simCtrl_commandEval.py JOB_FILE "', '')
+                mCMD = mCMD.replace('&myApos;', '\'')
+                mCMD = mCMD.replace('&myCMD;&myCMD;', '\n')
+                mCMD = mCMD.replace('&myCMD;', '\n')
+                mCMD = mCMD.replace('"','')
+                sys.stderr.write('n: %s\n  I wish to perform:%s' %(n.name, mCMD))
         else:
             if options.isDebug:
                 print 'n: %s\n  Not running cycle for the following reasons:' %(n.name)
-                print os.path.join(options.simDir, n.name, n.name+'.maf') +': '+ str(os.path.exists(os.path.join(options.simDir, n.name, n.name+'.maf')))
-                print os.path.join(options.simDir, n.children[0], n.name+'.maf') +': '+ str(os.path.exists(os.path.join(options.simDir, n.children[0], n.name+'.maf')))
-                print os.path.join(options.simDir, n.children[1], n.name+'.maf') +': '+ str(os.path.exists(os.path.join(options.simDir, n.children[1], n.name+'.maf')))
+                print 'exists: '+os.path.join(options.simDir, n.name, n.name+'.maf') +': '+ str(os.path.exists(os.path.join(options.simDir, n.name, n.name+'.maf')))
+                print 'exists: '+os.path.join(options.simDir, n.children[0], n.name+'.maf') +': '+ str(os.path.exists(os.path.join(options.simDir, n.children[0], n.name+'.maf')))
+                print 'exists: '+os.path.join(options.simDir, n.children[1], n.name+'.maf') +': '+ str(os.path.exists(os.path.join(options.simDir, n.children[1], n.name+'.maf')))
     if runningJobs:
         followUpCommand = sys.argv[0] +\
                           ' --simDir '+options.simDir+\
