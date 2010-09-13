@@ -64,7 +64,7 @@ repeatMaskPreRun:
 	simUtil_evolverFASTAextractor.py --simDir ${OUT_AVG_PRIMATES} --leavesOnly
 
 ##############################
-# final post-processesing MUST BE RUN ON A CLUSTER, IN GNU SCREEN!!
+# final post-processesing MUST BE RUN ON A CLUSTER (swarm), IN GNU SCREEN!!
 repeatMaskPrimates:
 	simCtrl_postSimRepeatMaskCluster.py --simDir ${OUT_AVG_PRIMATES} --log --wait; simCtrl_postSimRepeatMaskFinish.py --simDir ${OUT_AVG_PRIMATES}
 

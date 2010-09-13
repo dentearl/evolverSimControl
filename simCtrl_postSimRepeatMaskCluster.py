@@ -32,7 +32,7 @@ def usage():
 def initOptions(parser):
     parser.add_option('-p', '--simDir',dest='simDir',
                       help='Simulation directory.')
-    parser.add_option('-l', '--log', dest='isLog',
+    parser.add_option('-l', '--log', dest='logFile',
                       default=False, action='store_true',
                       help='Record output from evolver suite information.')
     parser.add_option('-w', '--wait', dest='isWait',
@@ -87,9 +87,9 @@ def main():
             logPath = os.path.abspath('/dev/null')
         logFILE = open(logPath, 'w')
         maskCMD =  REPEATMASK_BIN
-        maskCMD += ' --genome '  os.path.join(thisDir, 'seq.name.fa')
-        maskCMD += ' --workDir ' os.path.join(thisDir, 'repeatMask')
-        maskCMD += ' --maxJob=' + numJobs
+        maskCMD += ' --genome '  + os.path.join(thisDir, 'seq.name.fa')
+        maskCMD += ' --workDir ' + os.path.join(thisDir, 'repeatMask')
+        maskCMD += ' --maxJob=' + str(numJobs)
         cmdArray.append(maskCMD)
         job = subprocess.Popen(maskCMD, shell=True, stderr=logFILE, stdout=logFILE)
         jobsArray.append(job)
