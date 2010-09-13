@@ -79,7 +79,7 @@ def main():
     dirsToProcess = findDirectories( options.simDir )
     jobsArray = [] # not used, here for future use
     cmdArray  = []
-    numJobs = min(1, int( options.maxJobs / len( dirsToProcess ) ))
+    numJobs = max(1, int( options.maxJobs / len( dirsToProcess ) ))
     for thisDir in dirsToProcess:
         if (options.logFile):
             logPath = os.path.abspath(os.path.join(thisDir, 'logs', 'repeatMasking.log'))
