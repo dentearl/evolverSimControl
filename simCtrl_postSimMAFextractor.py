@@ -158,18 +158,15 @@ def buildMAFpairs(options, nodesList, leaves):
             if not os.path.exists(os.path.join(options.simDir, c, n.name+'.aln.rev')):
                 print 'well, I can\'t seem to see %s' %(os.path.join(options.simDir, c, n.name+'.aln.rev'))
                 if options.noParalogy:
-                    transCMD += LSC.commandPacker(TRANS_BIN+\
-                                                  ' -in1 '+ os.path.join(options.simDir,c, 'root.aln.rev') + \
-                                                  ' -in2 '+ os.path.join(options.simDir,n.name, 'root.aln.rev')  + \
-                                                  ' -out '+ os.path.join(options.simDir,c, n.name+'.aln.rev') + \
-                                                  ' -noparalogy'+\
-                                                  ' -log '+ os.path.join(options.simDir,c, 'logs', 'transalign.'+n.name+'.log'))
+                    paralogyStatus = ' -noparalogy'
                 else:
-                    transCMD += LSC.commandPacker(TRANS_BIN+\
-                                                  ' -in1 '+ os.path.join(options.simDir,c, 'root.aln.rev') + \
-                                                  ' -in2 '+ os.path.join(options.simDir,n.name, 'root.aln.rev')  + \
-                                                  ' -out '+ os.path.join(options.simDir,c, n.name+'.aln.rev') + \
-                                                  ' -log '+ os.path.join(options.simDir,c, 'logs', 'transalign.'+n.name+'.log'))
+                    paralogyStatus = ''
+                transCMD += LSC.commandPacker(TRANS_BIN+\
+                                              ' -in1 '+ os.path.join(options.simDir,c, 'root.aln.rev') + \
+                                              ' -in2 '+ os.path.join(options.simDir,n.name, 'root.aln.rev')  + \
+                                              ' -out '+ os.path.join(options.simDir,c, n.name+'.aln.rev') + \
+                                              paralogyStatus+\
+                                              ' -log '+ os.path.join(options.simDir,c, 'logs', 'transalign.'+n.name+'.log'))
                 transCMD += LSC.commandPacker(CVT_BIN+\
                                              ' -fromrev '+os.path.join(options.simDir, c, n.name+'.aln.rev')+\
                                              ' -tomaf '+os.path.join(options.simDir, c, n.name+ext))
@@ -301,6 +298,9 @@ def performMAFmerge(options, nodesList, leaves, nodeParentDict):
                           ' --simDir '+options.simDir+\
                           ' --jobFile JOB_FILE '+\
                           ' --mergeStep '
+        if options.noParalogy:
+            followUpCommand += ' --noParalogy '
+        
     if options.isDebug:
         if runningJobs:
             sys.stderr.write('I wish to perform %s\n' %(followUpCommand))
