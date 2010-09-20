@@ -37,7 +37,10 @@ def initOptions(parser):
                       help='Record output from evolver suite information.')
     parser.add_option('-w', '--wait', dest='isWait',
                       default=False, action='store_true',
-                      help='Holds the script open until all the cluster jobs return. For use in a batch script.')
+                      help='Holds the script open until all the cluster jobs return. For use in a batch script where the next script requires completion of repeatMasking.')
+    parser.add_option('-d', '--debug', dest='isDebug',
+                      default=False, action='store_true',
+                      help='Issues no jobs, simply prints out the command to be issued.')
     parser.add_option('-m', '--maxJobs',dest='maxJobs',
                       type='int', default=200,
                       help='Total number of max jobs to divide among all repeat masking instances.')
@@ -77,6 +80,9 @@ def main():
     (options, args) = parser.parse_args()
     checkOptions(options)
     dirsToProcess = findDirectories( options.simDir )
+    if not dirsToProcess:
+        print 'Unable to locate any directories to process. Have you run simUtil_evolverFASTAextractor.py ?'
+        sys.exit(0)
     jobsArray = [] # not used, here for future use
     cmdArray  = []
     numJobs = max(1, int( options.maxJobs / len( dirsToProcess ) ))
@@ -91,8 +97,11 @@ def main():
         maskCMD += ' --workDir ' + os.path.join(thisDir, 'repeatMask')
         maskCMD += ' --maxJob=' + str(numJobs)
         cmdArray.append(maskCMD)
-        job = subprocess.Popen(maskCMD, shell=True, stderr=logFILE, stdout=logFILE)
-        jobsArray.append(job)
+        if options.isDebug:
+            print maskCMD
+        else:
+            job = subprocess.Popen(maskCMD, shell=True, stderr=logFILE, stdout=logFILE)
+            jobsArray.append(job)
     if options.isWait:
         i=-1
         for job in jobsArray:
