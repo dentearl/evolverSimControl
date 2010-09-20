@@ -44,11 +44,6 @@ def initOptions(parser):
     parser.add_option('-s', '--statXML',dest='statXML',
                       help='file to write run stats to.')
 
-def checkOptions(options):
-    """checkOptions() doesn't do anything at the moment
-    """
-    return
-
 def recordStats(file, i, name , t0, t1, r):
     """recordStats() writes out details of the command run
     to an xml file.
@@ -130,7 +125,6 @@ def main(argv):
     parser=OptionParser()
     initOptions(parser)
     (options, args) = parser.parse_args()
-    checkOptions(options)
     jobFile = args[0]
     command = args[1]
     if not os.path.exists(jobFile):
@@ -142,15 +136,13 @@ def main(argv):
     if not os.path.isdir(localDir):
         sys.stderr.write('%s: Experienced an error, localDir, (%s), is not a directory!\n' %(sys.argv[0], localDir))
         sys.exit(1)
-    commands = command.split('&myCMD;')
+    commands = LSC.commandUnPacker(command)
     i = -1
     for c in commands:
         d=c.strip()
-        if (not c) or (not d):
+        if not (c and d):
             continue
         i=i+1
-        c=c.replace('&myQuot;', '"')
-        c=c.replace("&myApos;", "'")
         c=c.replace('LOCAL_DIR', localDir)
         c=c.replace('JOB_XML', jobFile)
         t0=time.time()
