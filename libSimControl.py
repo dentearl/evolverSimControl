@@ -91,6 +91,25 @@ def commandPacker(c):
     a = '&myCMD;'+a+'&myCMD;'
     return a
 
+def commandUnPacker(c):
+    """commandUnPacker() takes in a string that has been packed using
+    commandPacker and returns a LIST of strings, one element per command.
+    """
+    if not isinstance(c, str):
+        raise BadInputError('commandUnPacker takes a single string.')
+    l = []
+    commands = c.split('&myCMD;')
+    del commands[0]
+    del commands[-1]
+    for a in commands:
+        a = a.strip()
+        if not a:
+            raise BadInputError('commandUnPacker does not take empty commands')
+        a = a.replace('&myQuot;', '"')
+        a = a.replace("&myApos;", "'")
+        l.append(a)
+    return l
+
 def discritizeTree(nt, ss):
     """discritizeTree() takes a newickTree (binaryTree object) and a step size
     and translates the tree branch distances into discrete steps using a ceiling

@@ -15,7 +15,7 @@ class CheckVerifyProgramsBadInput( unittest.TestCase ):
         self.assertRaises( LSC.ProgramDoesNotExistError, LSC.verifyPrograms,
                            ['_aoeu_AOEU_SNTH_snth_','I dont think this would exist __1_'] )
 
-class CheckCommandPacker( unittest.TestCase ):
+class CheckCommandPackerUnPacker( unittest.TestCase ):
     knownValues = (('echo "$SHELL"', '&myCMD;echo &myQuot;$SHELL&myQuot;&myCMD;'),
                    ('#echo "horses" // \'\'', '&myCMD;#echo &myQuot;horses&myQuot; // &myApos;&myApos;&myCMD;'))
     def test_BadInput( self ):
@@ -23,10 +23,22 @@ class CheckCommandPacker( unittest.TestCase ):
         self.assertRaises( LSC.BadInputError, LSC.commandPacker, ['hi there'])
         self.assertRaises( LSC.BadInputError, LSC.commandPacker, 20.0 )
         self.assertRaises( LSC.BadInputError, LSC.commandPacker, {'steve':'miranda'} )
+        self.assertRaises( LSC.BadInputError, LSC.commandUnPacker, ['hi there'])
+        self.assertRaises( LSC.BadInputError, LSC.commandUnPacker, 20.0 )
+        self.assertRaises( LSC.BadInputError, LSC.commandUnPacker, {'steve':'miranda'} )
     def test_commandPackerKnownValues( self ):
         """commandPacker should give known result with known input"""
-        for input, output in self.knownValues:
-            self.assertEqual( output, LSC.commandPacker( input ) )
+        for unpacked, packed in self.knownValues:
+            self.assertEqual( packed, LSC.commandPacker( unpacked ) )
+    def test_commandUnPackerKnownValues( self ):
+        """commandUnPacker should give known result with known input"""
+        for unpacked, packed in self.knownValues:
+            self.assertEqual( [ unpacked ], LSC.commandUnPacker( packed ) )
+    def test_commandPackerUnPackerRoundTrip( self ):
+        """commandPacker and commandUnPacker should work mostly as inverses"""
+        for unpacked, packed in self.knownValues:
+            self.assertEqual( [ unpacked ], LSC.commandUnPacker( LSC.commandPacker( unpacked ) ) )
+            self.assertEqual( packed, LSC.commandPacker( LSC.commandUnPacker( packed )[0] ) )
 
 class CheckFixName( unittest.TestCase ):
     knownValues = (('((simGorilla:0.008825,(simHuman:0.006700,simChimp:0.006667)sHuman-sChimp:0.002250)sG-sH-sC:0.009680,simOrang:0.018318):0.000000;',
