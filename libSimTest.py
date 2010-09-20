@@ -2,7 +2,7 @@ import unittest
 import libSimControl as LSC
 import libSimTree as LST
 
-class VerifyProgramsBadInput( unittest.TestCase ):
+class CheckVerifyProgramsBadInput( unittest.TestCase ):
     def test_InputNotList( self ):
         """input to verifyPrograms must a list"""
         self.assertRaises( LSC.BadInputError, LSC.verifyPrograms, 'banana_432215234231113')
