@@ -1,3 +1,8 @@
+class BadInputError( ValueError ):
+    pass
+class ProgramDoesNotExistError( ValueError ):
+    pass
+
 def standardOptions(parser):
     parser.add_option('-p', '--parent',dest='parentDir',
                       help='Parent directory.')
@@ -39,19 +44,20 @@ def standardOptionsCheck(options, usage):
 
 def verifyPrograms(programs):
     """verifyPrograms(programs) takes a list of executable names, and acts on the list object
-    to look up the full path to the executables, or if they are not found, to print an
-    error message and sys.exit(1)
+    to look up the full path to the executables, or if they are not found it raises an exeption
     """
-    import sys
+    if not isinstance(programs, list):
+        raise BadInputError('verifyPrograms takes a list of program names.')
     c=-1
-    for i in programs:
+    for p in programs:
+        if not isinstance( p, str ):
+            raise BadInputError('verifyPrograms list members should all be strings, "%s" not a string.' %str(p))
         c=c+1
-        i = which(i)
-        if(i == None):
-            sys.stderr.write('ERROR: Could not locate "%s" in PATH.\n' %(programs[c]))
-            sys.exit(1)
+        p = which(p)
+        if(p == None):
+            raise ProgramDoesNotExistError('ERROR: Could not locate "%s" in PATH.\n' %(programs[c]) )
         else:
-            programs[c] = i
+            programs[c] = p
 
 def which(program):
     """which() acts like the unix utitily which, but is portable between os.
@@ -70,7 +76,6 @@ def which(program):
             exe_file = os.path.join(path, program)
             if is_exe(exe_file):
                 return exe_file
-
     return None
 
 def commandPacker(c):
@@ -79,11 +84,12 @@ def commandPacker(c):
     is for this command to be passed to simCtrl_commandEval.py where it will
     be unpacked and then executed.
     """
+    if not isinstance(c, str):
+        raise BadInputError('commandPacker takes a single string.')
     a = c.replace('"', '&myQuot;')
     a = a.replace("'", "&myApos;")
     a = '&myCMD;'+a+'&myCMD;'
     return a
-
 
 def discritizeTree(nt, ss):
     """discritizeTree() takes a newickTree (binaryTree object) and a step size
