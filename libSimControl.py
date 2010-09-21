@@ -99,6 +99,9 @@ def commandUnPacker(c):
         raise BadInputError('commandUnPacker takes a single string.')
     l = []
     commands = c.split('&myCMD;')
+    # The input command will be flanked by &myCMD;, and splitting on this
+    # symbol will cause there to be an empty element at the start and the
+    # end of the list. We don't want these, so we remove them.
     del commands[0]
     del commands[-1]
     for a in commands:
