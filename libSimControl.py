@@ -104,7 +104,7 @@ def commandUnPacker(c):
     for a in commands:
         a = a.strip()
         if not a:
-            raise BadInputError('commandUnPacker does not take empty commands')
+            continue
         a = a.replace('&myQuot;', '"')
         a = a.replace("&myApos;", "'")
         l.append(a)
