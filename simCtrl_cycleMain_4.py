@@ -5,7 +5,7 @@ cycleMain_4.py
 
 cycleMain_4.py is a python wrapper for the evolver suite of genome
 evolution tools. cycleMain_4 is the fourth in a series of four
-wrappers that is written to interface with jobTree.py, a cluster
+wrappers that is written to interface with jobTree, a cluster
 interface written by Benedict Paten. Other members of the wrappers
 are:
     cycleMain_1.py cycleMain_2.py cycleMain_3.py cycleMain_4.py

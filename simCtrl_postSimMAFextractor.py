@@ -33,7 +33,7 @@ def initOptions(parser):
     parser.add_option('-p', '--simDir',dest='simDir',
                       help='Simulation directory.')
     parser.add_option('-j', '--jobFile',dest='jobFile',
-                      help='jobFile, passed in by jobTree.py.')
+                      help='jobFile, passed in by jobTree.')
     parser.add_option('-m', '--mergeStep',action='store_true', dest='isMergeStep',
                       default=False,
                       help='the .aln.rev and .maf files have been created, now merge them.')

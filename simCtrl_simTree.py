@@ -5,7 +5,7 @@ dent earl, dearl (a) soe ucsc edu
 16 oct 2009
 a recursive-ish script to control an entire tree's simulation.
 Give the parent, and a newick tree as a command line
-option and simTree launches an evolver cycle via jobTree.py.
+option and simTree launches an evolver cycle via jobTree.
 """
 ##############################
 from sonLib.bioio import newickTreeParser

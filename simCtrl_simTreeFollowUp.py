@@ -5,7 +5,7 @@
  19 oct 2009
  a recursive-sh script to control an entire tree's simulation.
  Given the parent, and a newick tree as a command line
- option and simTreeFollowUp launches simTree.py as a jobTree.py
+ option and simTreeFollowUp launches simTree.py as a jobTree
  child process (or two, if at a brach point).
 """
 ##############################
