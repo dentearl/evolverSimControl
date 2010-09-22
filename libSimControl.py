@@ -7,7 +7,7 @@ def standardOptions(parser):
     parser.add_option('-p', '--parent',dest='parentDir',
                       help='Parent directory.')
     parser.add_option('-j', '--jobFile',dest='jobFile',
-                      help='jobFile, passed in by jobTree.py.')
+                      help='jobFile, passed in by jobTree.')
     parser.add_option('-s', '--step',dest='stepSize', action="store",
                       type ='float', default=0.001,
                       help='stepSize for each cycle. [default: %default]')

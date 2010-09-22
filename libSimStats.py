@@ -4,7 +4,7 @@ def initOptions(parser):
     parser.add_option('-d', '--childDir',dest='childDir',
                       help='cycle directory.')
     parser.add_option('-j', '--jobFile',dest='jobFile',
-                      help='jobFile, passed in by jobTree.py.')
+                      help='jobFile, passed in by jobTree.')
     
 def checkOptions(options):
     import xml.etree.ElementTree as ET
