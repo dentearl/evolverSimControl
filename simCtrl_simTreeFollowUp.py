@@ -74,11 +74,7 @@ def main():
                 childDir = os.path.join(workingDir, name)
                 newChild = ET.SubElement(childrenElm, 'child')
                 transCMD = CYCLETRANS_PY +\
-                           ' --parent ' + commonParent +\
-                           ' --child '  + childDir +\
-                           ' --params ' + options.gParamsDir +\
-                           ' --step '   + str(options.stepSize) +\
-                           ' --seed '   + str(options.seed) +\
+                           ' --targetDir ' + commonParent +\
                            ' --jobFile JOB_FILE'
                 newChild.attrib['command'] = transCMD
                 LST.commandRecorder(transCMD, commonParent)
@@ -87,12 +83,7 @@ def main():
                 name = LST.nameTree(newickTree.left)
                 childDir = os.path.join(workingDir, name)
                 followUpCommand = CYCLETRANS_PY +\
-                                  ' --parent ' + commonParent +\
-                                  ' --child '  + childDir +\
-                                  ' --params ' + options.gParamsDir +\
-                                  ' --step '   + str(options.stepSize) +\
-                                  ' --seed '   + str(optionsseed) +\
-                                  ' --isLeaf ' +\
+                                  ' --targetDir ' + commonParent +\
                                   ' --jobFile JOB_FILE'
                 jobElm=xmlTree.getroot()
                 jobElm.attrib['command'] = followUpCommand
@@ -108,12 +99,7 @@ def main():
                 name = LST.nameTree(newickTree.right)
                 childDir = os.path.join(workingDir, name)
                 followUpCommand = CYCLETRANS_PY +\
-                                  ' --parent ' + commonParent +\
-                                  ' --child '  + childDir +\
-                                  ' --params ' + options.gParamsDir +\
-                                  ' --step '   + str(options.stepSize) +\
-                                  ' --seed '   + str(options.seed) +\
-                                  ' --isLeaf ' +\
+                                  ' --targetDir ' + commonParent +\
                                   ' --jobFile JOB_FILE'
                 jobElm=xmlTree.getroot()
                 jobElm.attrib['command'] = followUpCommand
@@ -125,12 +111,7 @@ def main():
                 name = LST.nameTree(newickTree)
                 childDir = os.path.join(workingDir, name)
                 followUpCommand = CYCLETRANS_PY +\
-                                  ' --parent ' + commonParent +\
-                                  ' --child '  + childDir +\
-                                  ' --params ' + options.gParamsDir +\
-                                  ' --step '   + str(options.stepSize) +\
-                                  ' --seed '   + str(options.seed) +\
-                                  ' --isLeaf ' +\
+                                  ' --targetDir ' + commonParent +\
                                   ' --jobFile JOB_FILE'
                 jobElm=xmlTree.getroot()
                 jobElm.attrib['command'] = followUpCommand
@@ -152,11 +133,7 @@ def main():
             childDir = os.path.join(workingDir, name)
             newChild = ET.SubElement(childrenElm, 'child')
             transCMD = CYCLETRANS_PY +\
-                       ' --parent ' + commonParent +\
-                       ' --child '  + childDir +\
-                       ' --params ' + options.gParamsDir +\
-                       ' --step '   + str(options.stepSize) +\
-                       ' --seed '   + str(options.seed) +\
+                       ' --targetDir ' + commonParent +\
                        ' --jobFile JOB_FILE'
             newChild.attrib['command'] = transCMD
             LST.commandRecorder(transCMD, commonParent)
