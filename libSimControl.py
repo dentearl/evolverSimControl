@@ -16,31 +16,43 @@ def standardOptions(parser):
     parser.add_option('-e', '--seed',dest='seed',default='random',
                       type='string', help='Random seed. [default: %default]')
 
-def standardOptionsCheck(options, usage):
+def standardOptionsCheck(options, usage, skip={}):
+    """standardOptionsCheck() allows for a skip dict to be passed in that will allow selective
+    checking for only the options that a script wants and not the ones it doesn't"""
     import os, sys, random
-    if (options.parentDir == None):
-        sys.stderr.write('%s: Error, specify parent dir.\n' % sys.argv[0])
-        usage()
-    if (options.jobFile == None):
-        sys.stderr.write('%s: Error, specify jobFile.\n' % sys.argv[0])
-        usage()
-    if (options.gParamsDir == None):
-        sys.stderr.write('%s: Error, specify params.\n' % sys.argv[0])
-        usage()
-    if (not os.path.isdir(options.parentDir)):
-        sys.stderr.write('%s: Error, Parent dir "%s" not a directory!\n' % (sys.argv[0], options.parentDir))
-        usage()
-    if (not os.path.isdir(options.gParamsDir)):
-        sys.stderr.write('%s: Error, Params dir "%s" not a directory!\n' % (sys.argv[0], options.gParamsDir))
-        usage()
-    if(not os.path.exists(options.jobFile)):
-        sys.stderr.write('%s: Error, jobFile does not exist.\n' % sys.argv[0])
-        usage()
-    options.parentDir  = os.path.abspath(options.parentDir)
-    (options.simDir, tail) = os.path.split(options.parentDir)
-    options.rootDir    = os.path.join(options.simDir, 'root')
-    options.gParamsDir = os.path.abspath(options.gParamsDir)
-    options.theParent  = os.path.basename(options.parentDir)
+    if 'parentDir' not in skip:
+        if (options.parentDir == None):
+            sys.stderr.write('%s: Error, specify parent dir.\n' % sys.argv[0])
+            usage()
+        if not os.path.isdir(options.parentDir):
+            sys.stderr.write('%s: Error, Parent dir "%s" not a directory!\n' % (sys.argv[0], options.parentDir))
+            usage()
+        options.parentDir  = os.path.abspath(options.parentDir)
+        (options.simDir, tail) = os.path.split(options.parentDir)
+        options.rootDir    = os.path.join(options.simDir, 'root')
+        options.theParent  = os.path.basename(options.parentDir)
+    if 'gParamsDir' not in skip:
+        if options.gParamsDir == None:
+            sys.stderr.write('%s: Error, specify params.\n' % sys.argv[0])
+            usage()
+        if not os.path.isdir(options.gParamsDir):
+            sys.stderr.write('%s: Error, Params dir "%s" not a directory!\n' % (sys.argv[0], options.gParamsDir))
+            usage()
+        options.gParamsDir = os.path.abspath(options.gParamsDir)
+    if 'jobFile' not in skip:
+        if options.jobFile == None:
+            sys.stderr.write('%s: Error, specify jobFile.\n' % sys.argv[0])
+            usage()
+        if not os.path.exists(options.jobFile):
+            sys.stderr.write('%s: Error, jobFile does not exist.\n' % sys.argv[0])
+            usage()
+    if 'stepSize' not in skip:
+        if options.stepSize == None:
+            sys.stderr.write('%s: Error, specify stepSize.\n' % sys.argv[0])
+            usage()
+        if options.stepSize <= 0:
+            sys.stderr.write('%s: Error, specify positive stepSize.\n' % sys.argv[0])
+            usage()
 
 def verifyPrograms(programs):
     """verifyPrograms(programs) takes a list of executable names, and acts on the list object
