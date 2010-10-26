@@ -264,6 +264,7 @@ def performMAFmerge(options, nodesList, leaves, nodeParentDict):
             mergeCMD +=LSC.commandPacker(MAF_MERGE_BIN +\
                                           treelessRootStr +\
                                          ' \''+str(n.name)+'\''+\
+                                         ' -maxBlkWidth=10000'+\
                                          ' '+os.path.join(options.simDir, n.children[0], n.name+'.maf')+\
                                          ' '+os.path.join(options.simDir, n.children[1], n.name+'.maf')+\
                                          ' ' + os.path.join(options.simDir, n.name, n.name+'.maf'))
@@ -271,6 +272,7 @@ def performMAFmerge(options, nodesList, leaves, nodeParentDict):
                 mergeCMD +=LSC.commandPacker(MAF_MERGE_BIN +\
                                              ' -treelessRoot2='+ str(nodeParent)+\
                                              ' \''+str(n.name)+'\''+\
+                                             ' -maxBlkWidth=10000'+\
                                              ' '+os.path.join(options.simDir, n.name, n.name+'.maf')+\
                                              ' '+os.path.join(options.simDir, n.name, nodeParent+'.tmp.maf')+\
                                              ' '+os.path.join(options.simDir, n.name, nodeParent+'.maf'))
