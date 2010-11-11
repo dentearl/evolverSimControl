@@ -56,6 +56,19 @@ def findParent(options):
     tObj = root.find('parentDir')
     options.parentDir = os.path.abspath( str(tObj.text) )
 
+def parentWasBranchOrRoot( options ):
+    """ returns True if the parent cycle was either a branch point or the root
+    """
+    if options.parentDir == options.rootDir:
+        return True
+    file = os.path.join(options.parentDir, 'cycleInfo.xml')
+    infoTree = ET.parse(file)
+    root = infoTree.getroot()
+    if len( root.findall('followUpCommand') ) == 3:
+        # 3 is a branch, 2 is a stem
+        return True
+    return False
+
 def customOptions(parser):
     parser.add_option('-t', '--targetDir',dest='targetDir',
                       help='Cycle directory to perform the transalign upon.')
@@ -106,17 +119,19 @@ def main(argv):
                                  ' -out '+os.path.join(B, 'inter-intra.aln.rev')+ \
                                  ' -log '+os.path.join(B, 'logs', 'transalign1.log'))
     # command_1
-    if A != options.rootDir:
-        transCMD += LSC.commandPacker(TRANS_BIN +\
-                                     ' -in1 '+os.path.join(A, 'root.aln.rev')+ \
-                                     ' -in2 '+os.path.join(B, 'inter-intra.aln.rev')+ \
-                                     ' -out '+os.path.join(B, 'root.aln.rev')+ \
-                                     ' -log '+os.path.join(B, 'logs', 'transalign2.log'))
-    else:
-        # base case, the parent *is* the root.
+    if parentWasBranchOrRoot( options ):
+        # In these cases the alignment above the branch point should not be carried
+        # into the the descendant genomes. Alignments should only go back to the most
+        # recent branch point.
         transCMD += LSC.commandPacker(LINK_BIN +\
                                       ' -s '+os.path.join(B,'inter-intra.aln.rev')+\
-                                      ' '+os.path.join(B,'root.aln.rev'))
+                                      ' '+os.path.join(B,'aln.rev'))
+    else:
+        transCMD += LSC.commandPacker(TRANS_BIN +\
+                                      ' -in1 '+os.path.join(A, 'aln.rev')+ \
+                                      ' -in2 '+os.path.join(B, 'inter-intra.aln.rev')+ \
+                                      ' -out '+os.path.join(B, 'aln.rev')+ \
+                                      ' -log '+os.path.join(B, 'logs', 'transalign2.log'))
     # command_2
     transCMD += LSC.commandPacker(EVO_BIN+\
                                   ' -cdsalns '+ os.path.join(B, 'intra', 'intra.aln.rev')+ \
@@ -137,7 +152,7 @@ def main(argv):
     # command_5
     transCMD +=LSC.commandPacker(EVO_BIN+\
                                  ' -nologcmdlineandtime '+\
-                                 ' -ancstats '+os.path.join(B, 'root.aln.rev') +\
+                                 ' -ancstats '+os.path.join(B, 'aln.rev') +\
                                  ' -log '+ os.path.join(B, 'stats', 'tmpstats.root.difflength.tmp'))
     # command_6
     transCMD +=LSC.commandPacker(EVO_BIN+\
@@ -146,17 +161,17 @@ def main(argv):
                                  ' -log '+ os.path.join(B, 'stats', 'tmpstats.difflength.tmp'))
     # command_7
     transCMD +=LSC.commandPacker(DRAWREV_BIN+\
-                                 ' -fromrev '+os.path.join(B, 'root.aln.rev') +\
+                                 ' -fromrev '+os.path.join(B, 'aln.rev') +\
                                  ' -tocmap '+os.path.join(B, 'stats', 'img.root.cmap.pdf') +\
                                  ' -blocksize '+str(DRAW_REV_BLOCK_SIZE))
     # command_8
     transCMD +=LSC.commandPacker(DRAWREV_BIN+\
-                                 ' -fromrev '+os.path.join(B, 'root.aln.rev')+\
+                                 ' -fromrev '+os.path.join(B, 'aln.rev')+\
                                  ' -tolmap ' +os.path.join(B, 'stats', 'img.root.lmap.png')+\
                                  ' -npp '    +str(DRAW_REV_NT_PER_PIX))
     # command_9
     transCMD +=LSC.commandPacker(EVO_BIN+\
-                                 ' -cdsalns '+ os.path.join(B, 'root.aln.rev')+ \
+                                 ' -cdsalns '+ os.path.join(B, 'aln.rev')+ \
                                  ' -alns '   + os.path.join(B, 'stats', 'cds_alns.rev')+ \
                                  ' -annots1 '+ os.path.join(options.rootDir, 'stats', 'cds_annots.gff')+ \
                                  ' -annots2 '+ os.path.join(B, 'annots.gff')+ \
