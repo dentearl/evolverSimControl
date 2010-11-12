@@ -36,7 +36,6 @@ def main():
     for line in sys.stdin:
         line=line.rstrip()
         line=line.replace('>', '>'+options.name+'.')
-        line=line.replace('chr', 'c')
         print('%s' %(line))
 
 if __name__ == "__main__":
