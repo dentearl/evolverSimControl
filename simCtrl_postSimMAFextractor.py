@@ -19,10 +19,11 @@ import simulation.lib.libSimControl as LSC
 import simulation.lib.libSimTree as LST
 
 programs = ['evolver_cvt', 'evolver_transalign',
-            'simCtrl_commandEval.py', 'mafJoin']
+            'simCtrl_commandEval.py', 'mafJoin',
+            'eval_MAFComparator']
 LSC.verifyPrograms(programs)
 (CVT_BIN, TRANS_BIN, CMD_EVAL_BIN,
- MAF_MERGE_BIN) = programs
+ MAF_MERGE_BIN, MAF_COMPARE_BIN) = programs
 
 def usage():
     print 'USAGE: '+sys.argv[0]+' --simDir <dir> --jobFile JOB_FILE'
@@ -34,18 +35,23 @@ def initOptions(parser):
                       help='Simulation directory.')
     parser.add_option('-j', '--jobFile',dest='jobFile',
                       help='jobFile, passed in by jobTree.')
+    parser.add_option('-v', '--verbose',action='store_true', dest='isVerbose',
+                      default=False,
+                      help='if --debug is on, prints out more verbose debug statements.')
     parser.add_option('-m', '--mergeStep',action='store_true', dest='isMergeStep',
                       default=False,
                       help='the .aln.rev and .maf files have been created, now merge them.')
     parser.add_option('-d', '--debug', action='store_true', dest='isDebug',
                       default=False, help='Turns on debug output, does not issue jobs')
+    parser.add_option('-c', '--compare', action='store_true', dest='isCompare',
+                      default=False, help='Turns on the extra commands to run eval_MAFComparator.')
     parser.add_option('--noParalogy', action='store_true', dest='noParalogy',
                       default=False, help='adds a flag -noparalogy to the transalign call, switches paralogous blocks off. ')
 
 class Node:
     """Nodes have one parent and two children,
     unless they are children in which case their
-    children list is None, or they are the root
+    children list is empty, or they are the root
     node in which case their parent is None.
     """
     def __init__(self):
@@ -111,9 +117,9 @@ def buildNodesList(nt, nodesList, leaves, parentNode=''):
     leftName  = (buildNodesList(nt.right, nodesList=nodesList, leaves=leaves, parentNode=n.name))
     rightName = (buildNodesList(nt.left,  nodesList=nodesList, leaves=leaves, parentNode=n.name))
     if leftName and rightName:
-        n.children.append(leftName)
-        n.children.append(rightName)
-        nodesList.append(n)
+        n.children.append( leftName )
+        n.children.append( rightName )
+        nodesList.append( n )
     if n.name in leaves:
         n.isLeaf = True
     if parentNode:
@@ -129,6 +135,14 @@ def printNodesList(nl, leaves):
                 print '  child %s (leaf)' %(c)
             else:
                 print '  child %s' %(c)
+
+def printCyclesDict( nd ):
+    if nd == None:
+        return
+    for n in nd:
+        print 'Name: %s (leaf:%s)' %( n, str( nd[ n ].isLeaf ) )
+        for c in nd[ n ].children:
+            print '  child %s (leaf:%s)' %(c, str( nd[ c ].isLeaf ))
 
 def buildMAFpairs(options, nodesList, leaves):
     """buldMAFpairs() takes the nodesList and creates all of the
@@ -155,28 +169,17 @@ def buildMAFpairs(options, nodesList, leaves):
             else:
                 ext = '.tmp.maf'
             transCMD = CMD_EVAL_BIN+ ' JOB_FILE "'
-            if not os.path.exists(os.path.join(options.simDir, c, n.name+'.aln.rev')):
-                print 'well, I can\'t seem to see %s' %(os.path.join(options.simDir, c, n.name+'.aln.rev'))
-                if options.noParalogy:
-                    paralogyStatus = ' -noparalogy'
-                else:
-                    paralogyStatus = ''
-                transCMD += LSC.commandPacker(TRANS_BIN+\
-                                              ' -in1 '+ os.path.join(options.simDir,c, 'root.aln.rev') + \
-                                              ' -in2 '+ os.path.join(options.simDir,n.name, 'root.aln.rev')  + \
-                                              ' -out '+ os.path.join(options.simDir,c, n.name+'.aln.rev') + \
-                                              paralogyStatus+\
-                                              ' -log '+ os.path.join(options.simDir,c, 'logs', 'transalign.'+n.name+'.log'))
+            if not os.path.exists(os.path.join(options.simDir, c, n.name + ext)):
+                if options.isVerbose and options.isDebug:
+                    print 'well, I can\'t seem to see %s' %(os.path.join(options.simDir, c, n.name+'.maf'))
                 transCMD += LSC.commandPacker(CVT_BIN+\
-                                             ' -fromrev '+os.path.join(options.simDir, c, n.name+'.aln.rev')+\
+                                             ' -fromrev '+os.path.join(options.simDir, c, 'aln.rev')+\
                                              ' -tomaf '+os.path.join(options.simDir, c, n.name+ext))
                 runningJobs = runningJobs + 1
-            if os.path.exists(os.path.join(options.simDir, c, n.name+'.aln.rev')) and \
+            if os.path.exists(os.path.join(options.simDir, c, 'aln.rev')) and \
                    not os.path.exists(os.path.join(options.simDir, c, n.name+ext)):
-                print '\nwell, I can\'t seem to see %s or %s\n' %(os.path.join(options.simDir, c, n.name+'.aln.rev'), os.path.join(options.simDir, c, n.name+ext))
-                transCMD += LSC.commandPacker(CVT_BIN+\
-                                              ' -fromrev '+os.path.join(options.simDir, c, n.name+'.aln.rev')+\
-                                              ' -tomaf '+os.path.join(options.simDir, c, n.name+ext))
+                if options.isVerbose:
+                    print '\nwell, I can\'t seem to see %s or %s\n' %(os.path.join(options.simDir, c, n.name+'.aln.rev'), os.path.join(options.simDir, c, n.name+ext))
                 runningJobs = runningJobs + 1
             transCMD += '"'
             if options.isDebug:
@@ -185,11 +188,16 @@ def buildMAFpairs(options, nodesList, leaves):
                     tcmd = tcmd.replace('"', '')
                     tcmd = tcmd.replace('/cluster/home/dearl/sonTrace/bin/simCtrl_commandEval.py JOB_FILE ', '')
                     tcmd = tcmd.replace('&myCMD;','')
-                    print 'components of transCMD is(are): \n\t%s' % tcmd
+                    if options.isVerbose:
+                        print 'components of transCMD is(are): \n\t%s' % tcmd
+                    else:
+                        print '%s\n' %tcmd
             else:
                 if transCMD != CMD_EVAL_BIN+ ' JOB_FILE ""':
-                    newChild = ET.SubElement(childrenElm, 'child')
-                    newChild.attrib['command'] = transCMD
+                    pass
+                    # transCMD is no longer necessary. dae 12 nov
+                    # newChild = ET.SubElement(childrenElm, 'child')
+                    # newChild.attrib['command'] = transCMD
     if runningJobs:
         followUpCommand = sys.argv[0] +\
                           ' --simDir '+options.simDir+\
@@ -205,9 +213,34 @@ def buildMAFpairs(options, nodesList, leaves):
         jobElm.attrib['command'] = followUpCommand
         xmlTree.write(options.jobFile)
     else:
-        sys.stderr.write('I wish to followUpCommand %s\n' %(followUpCommand))
+        sys.stderr.write('\nI wish to followUpCommand %s\n' %(followUpCommand))
 
-def performMAFmerge(options, nodesList, leaves, nodeParentDict):
+def compareCommand( maf1, maf2, out, missing=None ):
+    """ if isRoot, then childName is actually the nodeParent name.
+    """
+    compareStr  = MAF_COMPARE_BIN
+    compareStr += ' --mAFFile1=' + maf1
+    compareStr += ' --mAFFile2=' + maf2
+    compareStr += ' --outputFile=' + out
+    compareStr += ' --sampleNumber 100000000'
+    if missing:
+        compareStr += ' --ultraVerbose'
+        compareStr += ' > ' + missing
+    return compareStr
+
+def mergeCommand( maf1, maf2, out, treelessRootStr, name, drop=None):
+    mergeStr  = MAF_MERGE_BIN
+    mergeStr += treelessRootStr 
+    mergeStr += " '" + name + "'"
+    mergeStr += ' -maxBlkWidth=10000'
+    if drop:
+        mergeStr += ' -multiParentDropped=' + drop
+    mergeStr += ' ' + maf1
+    mergeStr += ' ' + maf2
+    mergeStr += ' ' + out
+    return mergeStr
+
+def performMAFmerge( options, nodesList, leaves, nodeParentDict, nodesDict ):
     """performMAFmerge() takes the nodesList and goes through the
     steps of progressively merging the MAFs, starting from the leaves
     and working its way up the tree.
@@ -256,26 +289,58 @@ def performMAFmerge(options, nodesList, leaves, nodeParentDict):
             os.path.exists(os.path.join(options.simDir, n.children[0], n.name+'.maf')) and 
             os.path.exists(os.path.join(options.simDir, n.children[1], n.name+'.maf'))):
             mergeCMD = CMD_EVAL_BIN + ' JOB_FILE "'
+
             treelessRootStr = ''
             if n.children[0] in leaves :
                 treelessRootStr += ' -treelessRoot1='+ str(n.name)
             if n.children[1] in leaves :
                 treelessRootStr += ' -treelessRoot2='+ str(n.name)
-            mergeCMD +=LSC.commandPacker(MAF_MERGE_BIN +\
-                                          treelessRootStr +\
-                                         ' \''+str(n.name)+'\''+\
-                                         ' -maxBlkWidth=10000'+\
-                                         ' '+os.path.join(options.simDir, n.children[0], n.name+'.maf')+\
-                                         ' '+os.path.join(options.simDir, n.children[1], n.name+'.maf')+\
-                                         ' ' + os.path.join(options.simDir, n.name, n.name+'.maf'))
+            ##############################
+            # the 'lookdown' aspect of the merge is performed for every node, including the root.
+            maf1 = os.path.join(options.simDir, n.children[0], n.name+'.maf')
+            maf2 = os.path.join(options.simDir, n.children[1], n.name+'.maf')
+            mergeOut  = os.path.join(options.simDir, n.name, n.name+'.maf')
+            drop = os.path.join(options.simDir, n.name, n.name+'.dropped.tab')
+            mergeStr = mergeCommand( maf1, maf2, mergeOut, treelessRootStr, str( n.name ), drop)
+            mergeCMD += LSC.commandPacker( mergeStr )
+
+            if options.isCompare and nodesDict[ n.children[0] ].isLeaf:
+                missing    = os.path.join(options.simDir, n.name, n.children[0] + '.'+n.name+'.missing.tab')
+                compareOut = os.path.join(options.simDir, n.name, n.children[0] +'.'+n.name+'.compared.xml')
+                compareStr = compareCommand( maf1, mergeOut, compareOut, missing )
+                mergeCMD  += LSC.commandPacker( compareStr )
+            if options.isCompare and nodesDict[ n.children[1] ].isLeaf:
+                missing    = os.path.join(options.simDir, n.name, n.children[1] + '.'+n.name+'.missing.tab')
+                compareOut = os.path.join(options.simDir, n.name, n.children[1] +'.'+n.name+'.compared.xml')
+                compareStr = compareCommand( maf2, mergeOut, compareOut, missing )
+                mergeCMD  += LSC.commandPacker( compareStr )
+            ##############################
+            # The 'lookup' aspect of the merge is only performed when we are not at the root
+            # This merge merges the results of the 'lookdown' merge, that is to say the maf that contains
+            # all descendant sequences including the node, with the node-parent maf, to produce a maf
+            # that the parent can use to merge its children.
             if n.name != 'root':
-                mergeCMD +=LSC.commandPacker(MAF_MERGE_BIN +\
-                                             ' -treelessRoot2='+ str(nodeParent)+\
-                                             ' \''+str(n.name)+'\''+\
-                                             ' -maxBlkWidth=10000'+\
-                                             ' '+os.path.join(options.simDir, n.name, n.name+'.maf')+\
-                                             ' '+os.path.join(options.simDir, n.name, nodeParent+'.tmp.maf')+\
-                                             ' '+os.path.join(options.simDir, n.name, nodeParent+'.maf'))
+                treelessRootStr = ' -treelessRoot2='+ str( nodeParent )
+                maf1 = os.path.join(options.simDir, n.name, n.name+'.maf')
+                maf2 = os.path.join(options.simDir, n.name, nodeParent+'.tmp.maf')
+                mergeOut  = os.path.join(options.simDir, n.name, nodeParent+'.maf')
+                drop = os.path.join(options.simDir, n.name, nodeParent+'.dropped.tab')
+                mergeStr = mergeCommand( maf1, maf2, mergeOut, treelessRootStr, str( n.name ), drop)
+                mergeCMD += LSC.commandPacker( mergeStr )
+
+                if options.isCompare:
+                    compareStr = compareCommand( maf2, mergeOut, compareOut, missing )
+                    mergeCMD += LSC.commandPacker( compareStr )
+                    ####################
+                    # this region commented out due to the new focus on suprious alignments. -10 Nov dae
+                    # compareStr  = MAF_COMPARE_BIN
+#                     compareStr += ' --mAFFile1=' + os.path.join(options.simDir, n.name, n.name+'.maf')
+#                     compareStr += ' --mAFFile2=' + os.path.join(options.simDir, n.name, nodeParent+'.maf')
+#                     compareStr += ' --outputFile=' + os.path.join(options.simDir, n.name, n.name+'.'+nodeParent+'.compared.xml')
+#                     compareStr += ' --sampleNumber 100000000'
+#                     compareStr += ' --ultraVerbose'
+#                     compareStr += ' > ' + os.path.join(options.simDir, n.name, n.name+'.'+nodeParent+'.missing.tab')
+#                     mergeCMD += LSC.commandPacker( compareStr )
 
             mergeCMD += '"'
             runningJobs = runningJobs + 1
@@ -288,9 +353,12 @@ def performMAFmerge(options, nodesList, leaves, nodeParentDict):
                 mCMD = mCMD.replace('&myCMD;&myCMD;', '\n')
                 mCMD = mCMD.replace('&myCMD;', '\n')
                 mCMD = mCMD.replace('"','')
-                sys.stderr.write('n: %s\n  I wish to perform:%s' %(n.name, mCMD))
+                if options.isVerbose:
+                    sys.stderr.write('n: %s\n  I wish to perform:%s' %(n.name, mCMD))
+                else:
+                    sys.stderr.write('%s' % mCMD )
         else:
-            if options.isDebug:
+            if options.isDebug and options.isVerbose:
                 print 'n: %s\n  Not running cycle for the following reasons:' %(n.name)
                 print 'exists: '+os.path.join(options.simDir, n.name, n.name+'.maf') +': '+ str(os.path.exists(os.path.join(options.simDir, n.name, n.name+'.maf')))
                 print 'exists: '+os.path.join(options.simDir, n.children[0], n.name+'.maf') +': '+ str(os.path.exists(os.path.join(options.simDir, n.children[0], n.name+'.maf')))
@@ -305,9 +373,9 @@ def performMAFmerge(options, nodesList, leaves, nodeParentDict):
         
     if options.isDebug:
         if runningJobs:
-            sys.stderr.write('I wish to perform %s\n' %(followUpCommand))
+            sys.stderr.write('\nI wish to perform %s\n' %(followUpCommand))
         else:
-            sys.stderr.write('I seem to think I\'m done -- I have no running jobs\n')
+            sys.stderr.write('I think I\'m done -- I have no running jobs\n')
     else:
         if runningJobs:
             jobElm.attrib['command'] = followUpCommand
@@ -319,6 +387,23 @@ def nodeParentDictBuilder(nl):
         for c in n.children:
             npd[c] = n.name
     return npd
+
+def buildCyclesDict( nl, leaves ):
+    """ this will be useful to lookup a node's leaf status.
+    """
+    nd = {}
+    parent = {}
+    for n in nl:
+        nd[ n.name ] = n
+        for c in n.children:
+            parent[ c ] = n.name
+    for l in leaves:
+        n = Node()
+        n.name = l
+        n.parent = parent[ l ]
+        n.isLeaf = True
+        nd[ n.name ] = n
+    return nd
 
 def main():
     parser=OptionParser()
@@ -333,21 +418,19 @@ def main():
     leaves={}
     extractLeaves(nt, leaves)
     nodesList=[]
+    cyclesDict={} # keyed by name 
     buildNodesList(nt, nodesList, leaves)
-    if options.isDebug:
-        printNodesList(nodesList, leaves)
+    cyclesDict = buildCyclesDict( nodesList, leaves )
+    if options.isDebug and options.isVerbose:
+        printNodesList( nodesList, leaves )
     if not options.isMergeStep:
-        # step two, create the command to build all MAFs
-        buildMAFpairs(options, nodesList, leaves)
+        # step two, create the commands to build all pairwise MAFs
+        buildMAFpairs( options, nodesList, leaves )
     else:
-        # step three, create the command to progressively combine MAFs
-        nodeParentDict = nodeParentDictBuilder(nodesList)
-        performMAFmerge(options, nodesList, leaves, nodeParentDict)
+        # step three, create the commands to progressively combine MAFs
+        nodeParentDict = nodeParentDictBuilder( nodesList )
+        performMAFmerge( options, nodesList, leaves, nodeParentDict, cyclesDict )
 
-    ####
-    # finished
-    if options.isDebug:
-        return
 
 if __name__ == "__main__":
     main()
