@@ -1,27 +1,50 @@
 SHELL:=/bin/bash
+JOBTREE:=jobTree
 SIMTREE:=simCtrl_simTree.py
 RUNSIM:=simCtrl_runSim.py
 GPARAMS:=/cluster/home/dearl/simTreeWorking/gParams/
 GPARAMS30:=/cluster/home/dearl/simTreeWorking/gParams30/
+GPARAMSBENCODE:=/cluster/home/dearl/simTreeWorking/gParamsBenCode/
 TOY_ROOT:=/cluster/home/dearl/evolver/myToy/root/
 AVG_ROOT:=/cluster/home/dearl/simTreeWorking/avgRoot/
-TREE_AVG_PRIMATES:=((simGorilla:0.008825,(simHuman:0.0067,simChimp:0.006667)sHuman-sChimp:0.00225)sG-sH-sC:0.00968,simOrang:0.018318);
-TREE_AVG_MAMMALS:=((simCow:0.18908,simDog:0.16303)sCow-sDog:0.032898,(simHuman:0.144018,(simMouse:0.084509,simRat:0.091589)sMouse-sRat:0.271974)sH-sM-sR:0.020593);
-TREE_UTENSILSET:=(Knife:0.004, (Fork:0.003, (Ladle:0.002, (Spoon:0.001, Teaspoon:0.001)S-TS:.001)S-TS-L:.001)S-TS-L-F:0.001);
-STEP_AVG_PRIMATES:=0.0005
-STEP_AVG_MAMMALS:=0.01
+BENCODE_ROOT1:=/cluster/home/dearl/simTreeWorking/benCodeChr4/
+BENCODE_ROOT2:=/cluster/home/dearl/simTreeWorking/benCodeChr6.1/
+BENCODE_ROOT3:=/cluster/home/dearl/simTreeWorking/benCodeChr6.2/
+AVG_PRIMATES_TREE:=((simGorilla:0.008825,(simHuman:0.0067,simChimp:0.006667)sHuman-sChimp:0.00225)sG-sH-sC:0.00968,simOrang:0.018318);
+AVG_MAMMALS_TREE:=((simCow:0.18908,simDog:0.16303)sCow-sDog:0.032898,(simHuman:0.144018,(simMouse:0.084509,simRat:0.091589)sMouse-sRat:0.271974)sH-sM-sR:0.020593);
+ODDARGUMENT_TREE:=((simCow:0.00189,simDog:0.0016303)sCow-sDog:0.0003298,(simHuman:0.00144018,(simMouse:0.00084509,simRat:0.00091589)sMouse-sRat:0.00271974)sH-sM-sR:0.00020593);
+UTENSILSET_TREE:=(Knife:0.004, (Fork:0.003, (Ladle:0.002, (Spoon:0.001, Teaspoon:0.001)S-TS:.001)S-TS-L:.001)S-TS-L-F:0.001);
+TRIVIAL_TREE:=(A:0.001, B:0.001);
+STEMSTART_TREE:=(Spoon:0.001, Teaspoon:0.001)S-TS:.001)All:0.005;
+AVG_PRIMATES_STEP:=0.0005
+AVG_MAMMALS_STEP:=0.01
 AVG_PRIMATES_JOBTREE:=/hive/users/dearl/simTreeWorking/jobTreeAvgPrimates
 AVG_PRIMATES_JOBTREE30:=/hive/users/dearl/simTreeWorking/jobTreeAvgPrimates30
+BENCODE_1P_JOBTREE:=/hive/users/dearl/simTreeWorking/jobTreeBenCode1p
+BENCODE_2P_JOBTREE:=/hive/users/dearl/simTreeWorking/jobTreeBenCode2p
+BENCODE_3P_JOBTREE:=/hive/users/dearl/simTreeWorking/jobTreeBenCode3p
+BENCODE_1M_JOBTREE:=/hive/users/dearl/simTreeWorking/jobTreeBenCode1m
+BENCODE_2M_JOBTREE:=/hive/users/dearl/simTreeWorking/jobTreeBenCode2m
+BENCODE_3M_JOBTREE:=/hive/users/dearl/simTreeWorking/jobTreeBenCode3m
 AVG_MAMMALS_JOBTREE:=/hive/users/dearl/simTreeWorking/jobTreeAvgMammals
-WORKING_JOBTREE:=/hive/users/dearl/simTreeWorking/myTree
-PRIMATE_JOBTREE:=/hive/users/dearl/simTreeWorking/primateJobTree
-OUT_AVG_PRIMATES:=/hive/users/dearl/simTreeWorking/AVG_PRIMATES/
-OUT_AVG_PRIMATES30:=/hive/users/dearl/simTreeWorking/AVG_PRIMATES30/
-OUT_AVG_MAMMALS:=/hive/users/dearl/simTreeWorking/AVG_MAMMALS/
+AVG_PRIMATES_OUT:=/hive/users/dearl/simTreeWorking/AVG_PRIMATES/
+AVG_PRIMATES30_OUT:=/hive/users/dearl/simTreeWorking/AVG_PRIMATES30/
+AVG_MAMMALS_OUT:=/hive/users/dearl/simTreeWorking/AVG_MAMMALS/
+BENCODE_1P_OUT:=/hive/users/dearl/simTreeWorking/BENCODE_1P/
+BENCODE_1M_OUT:=/hive/users/dearl/simTreeWorking/BENCODE_1M/
+BENCODE_2P_OUT:=/hive/users/dearl/simTreeWorking/BENCODE_2P/
+BENCODE_2M_OUT:=/hive/users/dearl/simTreeWorking/BENCODE_2M/
+BENCODE_3P_OUT:=/hive/users/dearl/simTreeWorking/BENCODE_3P/
+BENCODE_3M_OUT:=/hive/users/dearl/simTreeWorking/BENCODE_3M/
 RAND:=$(shell date '+%s' | perl -ple 's/^\d{6}//;')
 UTENSILSET_JOBTREE:=/hive/users/dearl/simTreeWorking/jobTreeUtensil$(RAND)
-UTENSILSET_NETDISK:=/hive/users/dearl/simTreeWorking/utensilNetDisk
-OUT_UTENSILSET:=/hive/users/dearl/simTreeWorking/UTENSILS/
+UTENSILSET_OUT:=/hive/users/dearl/simTreeWorking/UTENSILS/
+TRIVIAL_JOBTREE:=/hive/users/dearl/simTreeWorking/jobTreeTrivial$(RAND)
+TRIVIAL_OUT:=/hive/users/dearl/simTreeWorking/TRIVIAL/
+STEMSTART_JOBTREE:=/hive/users/dearl/simTreeWorking/jobTreeStemStart$(RAND)
+STEMSTART_OUT:=/hive/users/dearl/simTreeWorking/STEMSTART/
+ODDARGUMENT_JOBTREE:=/hive/users/dearl/simTreeWorking/jobTreeOddArgument$(RAND)
+ODDARGUMENT_OUT:=/hive/users/dearl/simTreeWorking/ODDARGUMENT
 
 default:
 	cat Makefile
@@ -30,9 +53,9 @@ default:
 #  This file is used for repetitive tests. There are four types of tests,
 #   - Production tests, which are full scale simulations using toy data input. Uses either
 #     parasol or standAlone, depending.
-#   - Parasol (cluster) tests, which use jobTree.py and uses mkdir as a standin for a cycle
-#   - Single Machine tests, which use jobTree.py and uses mkdir as a standin for a cycle
-#   - Stand Alone tests, which do NOT use jobTree.py and uses mkdir as a standin for a cycle
+#   - Parasol (cluster) tests, which use ${JOBTREE} and uses mkdir as a standin for a cycle
+#   - Single Machine tests, which use ${JOBTREE} and uses mkdir as a standin for a cycle
+#   - Stand Alone tests, which do NOT use ${JOBTREE} and uses mkdir as a standin for a cycle
 #
 #  There are two data types for the tests,
 #   - Primate tests, which simulate a set of genomes based on a primate tree
@@ -42,33 +65,59 @@ default:
 ##############################
 # PRODUCTION
 avgPrimates:
-	jobTree.py --jobTree ${AVG_PRIMATES_JOBTREE} --batchSystem=parasol --command="${RUNSIM} --parent ${AVG_ROOT} --params ${GPARAMS} --tree '${TREE_AVG_PRIMATES}' --step ${STEP_AVG_PRIMATES} --out ${OUT_AVG_PRIMATES} --jobFile JOB_FILE --saveParent --seed 313370" --logDebug --retryCount 0
+	${JOBTREE} --jobTree ${AVG_PRIMATES_JOBTREE} --batchSystem=parasol --command="${RUNSIM} --parent ${AVG_ROOT} --params ${GPARAMS} --tree '${AVG_PRIMATES_TREE}' --step ${AVG_PRIMATES_STEP} --out ${AVG_PRIMATES_OUT} --jobFile JOB_FILE --saveParent --seed 313370" --logDebug --retryCount 1
 avgMammals:
-	jobTree.py --jobTree ${AVG_MAMMALS_JOBTREE}  --batchSystem=parasol --command="${RUNSIM} --parent ${AVG_ROOT} --params ${GPARAMS} --tree '${TREE_AVG_MAMMALS}'  --step ${STEP_AVG_MAMMALS}  --out ${OUT_AVG_MAMMALS}  --jobFile JOB_FILE --saveParent --seed 13371121" --logDebug --retryCount 0
+	${JOBTREE} --jobTree ${AVG_MAMMALS_JOBTREE}  --batchSystem=parasol --command="${RUNSIM} --parent ${AVG_ROOT} --params ${GPARAMS} --tree '${AVG_MAMMALS_TREE}'  --step ${AVG_MAMMALS_STEP}  --out ${AVG_MAMMALS_OUT}  --jobFile JOB_FILE --saveParent --seed 13371121" --logDebug --retryCount 1
 avgPrimates30:
-	jobTree.py --jobTree ${AVG_PRIMATES_JOBTREE30} --batchSystem=parasol --command="${RUNSIM} --parent ${TOY_ROOT} --params ${GPARAMS30} --tree '${TREE_AVG_PRIMATES}' --step ${STEP_AVG_PRIMATES} --out ${OUT_AVG_PRIMATES30} --jobFile JOB_FILE --saveParent --seed 313370" --logDebug --retryCount 0
+	${JOBTREE} --jobTree ${AVG_PRIMATES_JOBTREE30} --batchSystem=parasol --command="${RUNSIM} --parent ${TOY_ROOT} --params ${GPARAMS30} --tree '${AVG_PRIMATES_TREE}' --step ${STEP_AVG_PRIMATES} --out ${AVG_PRIMATES30_OUT} --jobFile JOB_FILE --saveParent --seed 313370" --logDebug --retryCount 1
+benCode1p:
+	${JOBTREE} --jobTree ${BENCODE_1P_JOBTREE} --batchSystem=parasol --command="${RUNSIM} --parent ${BENCODE_ROOT1} --params ${GPARAMSBENCODE} --tree '${AVG_PRIMATES_TREE}' --step ${AVG_PRIMATES_STEP} --out ${BENCODE_1P_OUT} --jobFile JOB_FILE --saveParent --seed 313777351" --logDebug --retryCount 1
+benCode1m:
+	${JOBTREE} --jobTree ${BENCODE_1M_JOBTREE} --batchSystem=parasol --command="${RUNSIM} --parent ${BENCODE_ROOT1} --params ${GPARAMSBENCODE} --tree '${AVG_MAMMALS_TREE}' --step ${AVG_MAMMALS_STEP} --out ${BENCODE_1M_OUT} --jobFile JOB_FILE --saveParent --seed 3122171" --logDebug --retryCount 1
+benCode2p:
+	${JOBTREE} --jobTree ${BENCODE_2P_JOBTREE} --batchSystem=parasol --command="${RUNSIM} --parent ${BENCODE_ROOT2} --params ${GPARAMSBENCODE} --tree '${AVG_PRIMATES_TREE}' --step ${AVG_PRIMATES_STEP} --out ${BENCODE_2P_OUT} --jobFile JOB_FILE --saveParent --seed 318112777353" --logDebug --retryCount 1
+benCode2m:
+	${JOBTREE} --jobTree ${BENCODE_2M_JOBTREE} --batchSystem=parasol --command="${RUNSIM} --parent ${BENCODE_ROOT2} --params ${GPARAMSBENCODE} --tree '${AVG_MAMMALS_TREE}' --step ${AVG_MAMMALS_STEP} --out ${BENCODE_2M_OUT} --jobFile JOB_FILE --saveParent --seed 31227777993611" --logDebug --retryCount 1
+benCode3p:
+	${JOBTREE} --jobTree ${BENCODE_3P_JOBTREE} --batchSystem=parasol --command="${RUNSIM} --parent ${BENCODE_ROOT3} --params ${GPARAMSBENCODE} --tree '${AVG_PRIMATES_TREE}' --step ${AVG_PRIMATES_STEP} --out ${BENCODE_3P_OUT} --jobFile JOB_FILE --saveParent --seed 779833211459651" --logDebug --retryCount 1
+benCode3m:
+	${JOBTREE} --jobTree ${BENCODE_3M_JOBTREE} --batchSystem=parasol --command="${RUNSIM} --parent ${BENCODE_ROOT3} --params ${GPARAMSBENCODE} --tree '${AVG_MAMMALS_TREE}' --step ${AVG_MAMMALS_STEP} --out ${BENCODE_3M_OUT} --jobFile JOB_FILE --saveParent --seed 4977843112151919131147" --logDebug --retryCount 1
 
 ##############################
 # PARASOL TESTS (jobTree)
 test:
-	jobTree.py --jobTree ${UTENSILSET_JOBTREE} --batchSystem=parasol --command="${RUNSIM} --parent ${TOY_ROOT} --params ${GPARAMS30} --tree '${TREE_UTENSILSET}' --step 0.001 --out ${OUT_UTENSILSET} --jobFile JOB_FILE --logBranch --saveParent --seed 1" --logDebug --retryCount 0
+	${JOBTREE} --jobTree ${UTENSILSET_JOBTREE} --batchSystem=parasol --command="${RUNSIM} --parent ${TOY_ROOT} --params ${GPARAMS30} --tree '${UTENSILSET_TREE}' --step 0.001 --out ${UTENSILSET_OUT} --jobFile JOB_FILE --logBranch --saveParent --seed 1" --logDebug --retryCount 1
+trivial:
+	${JOBTREE} --jobTree ${TRIVIAL_JOBTREE} --batchSystem=parasol --command="${RUNSIM} --parent ${TOY_ROOT} --params ${GPARAMS30} --tree '${TRIVIAL_TREE}' --step 0.001 --out ${TRIVIAL_OUT} --jobFile JOB_FILE --logBranch --saveParent --seed 1" --logDebug --retryCount 1
+stemStart:
+	${JOBTREE} --jobTree ${STEMSTART_JOBTREE} --batchSystem=parasol --command="${RUNSIM} --parent ${TOY_ROOT} --params ${GPARAMS30} --tree '${STEMSTART_TREE}' --step 0.001 --out ${STEMSTART_OUT} --jobFile JOB_FILE --logBranch --saveParent --seed 1" --logDebug --retryCount 1
+oddArgument:
+	${JOBTREE} --jobTree ${ODDARGUMENT_JOBTREE} --batchSystem=parasol --command="${RUNSIM} --parent ${TOY_ROOT} --params ${GPARAMS30} --tree '${ODDARGUMENT_TREE}' --step 0.0001 --out ${ODDARGUMENT_OUT} --jobFile JOB_FILE --logBranch --saveParent --seed 1" --logDebug --retryCount 1
 
 ##############################
 # SINGLE MACHINE TESTS (jobTree)
 testSingle:
-	jobTree.py --jobTree ${UTENSILSET_JOBTREE} --batchSystem=single_machine --command="${RUNSIM} --parent ${TOY_ROOT} --params ${GPARAMS30} --tree '${TREE_UTENSILSET}' --step 0.001 --out ${OUT_UTENSILSET} --jobFile JOB_FILE --logBranch --saveParent --seed 1" --logDebug --retryCount 0
+	${JOBTREE} --jobTree ${UTENSILSET_JOBTREE} --batchSystem=single_machine --command="${RUNSIM} --parent ${TOY_ROOT} --params ${GPARAMS30} --tree '${TREE_UTENSILSET}' --step 0.001 --out ${OUT_UTENSILSET} --jobFile JOB_FILE --logBranch --saveParent --seed 1" --logDebug --retryCount 0
 
 ##############################
 # first post-processing, need not be run in screen, need not be run on cluster:
-repeatMaskPreRun:
-	simUtil_evolverFASTAextractor.py --simDir ${OUT_AVG_PRIMATES} --leavesOnly
+repeatMaskPreRunPrimates30:
+	simUtil_evolverFASTAextractor.py --simDir ${AVG_PRIMATES30_OUT} --leavesOnly
+repeatMaskPreRunPrimates:
+	simUtil_evolverFASTAextractor.py --simDir ${AVG_PRIMATES_OUT} --leavesOnly
+repeatMaskPreRunMammals:
+	simUtil_evolverFASTAextractor.py --simDir ${AVG_MAMMALS_OUT} --leavesOnly
 
 ##############################
 # final post-processesing MUST BE RUN ON A CLUSTER (swarm), IN GNU SCREEN!!
+repeatMaskPrimates30:
+	simCtrl_postSimRepeatMaskCluster.py --simDir ${AVG_PRIMATES30_OUT} --log --wait; simCtrl_postSimRepeatMaskFinish.py --simDir ${AVG_PRIMATES30_OUT}
 repeatMaskPrimates:
-	simCtrl_postSimRepeatMaskCluster.py --simDir ${OUT_AVG_PRIMATES} --log --wait; simCtrl_postSimRepeatMaskFinish.py --simDir ${OUT_AVG_PRIMATES}
+	simCtrl_postSimRepeatMaskCluster.py --simDir ${AVG_PRIMATES_OUT} --log --wait; simCtrl_postSimRepeatMaskFinish.py --simDir ${AVG_PRIMATES_OUT}
+repeatMaskMammals:
+	simCtrl_postSimRepeatMaskCluster.py --simDir ${AVG_MAMMALS_OUT} --log --wait; simCtrl_postSimRepeatMaskFinish.py --simDir ${AVG_MAMMALS_OUT}
 
 ##############################
-# UTILITIES # RUN THIS ON KOLOSSUS OR HGWDEV. mafJoin has massive memory requirements when the mafs start to get big!
+# UTILITIES # RUN THIS ON KOLOSSUS OR HGWDEV. mafJoin has MASSIVE memory requirements when the mafs start to get big!
 extractMAFsPrimates:
-	jobTree.py --jobTree jobTreeMAFextraction$(RAND) --batchSystem=single_machine --command="simCtrl_postSimMAFextractor.py --simDir ${OUT_AVG_PRIMATES} --noParalogy --jobFile JOB_FILE" --logDebug --retryCount 0
+	${JOBTREE} --jobTree jobTreeMAFextraction$(RAND) --batchSystem=single_machine --command="simCtrl_postSimMAFextractor.py --simDir ${AVG_PRIMATES_OUT} --noParalogy --jobFile JOB_FILE" --logDebug --retryCount 1
