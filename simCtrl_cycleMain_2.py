@@ -51,32 +51,6 @@ def main(argv):
     jobElm=xmlTree.getroot()
     childrenElm = xmlTree.find('children')
     
-   #  # 1st transalign
-#     if( os.path.isfile(os.path.join(options.parentDir, 'root.aln.rev'))):
-#         # align the inter step to the root via the parent's 'to-root' alignment.
-#         transCMD = CMD_EVAL_BIN+\
-#                    ' --statXML '+os.path.join(options.childDir, 'logs','trans.1.info.xml')+\
-#                    ' JOB_FILE "'
-#         transCMD +=LSC.commandPacker(TRANS_BIN+\
-#                                      ' -in1 '+ os.path.join(options.childDir, 'inter','inter.aln.rev') + \
-#                                      ' -in2 '+ os.path.join(options.parentDir,'root.aln.rev')  + \
-#                                      ' -out '+ 'LOCAL_DIR/'+options.theParent+'.inter.aln.rev '+\
-#                                      ' -log '+ 'LOCAL_DIR/transalign.inter.log')
-#         transCMD +=LSC.commandPacker(MV_BIN+\
-#                                      ' '+'LOCAL_DIR/'+options.theParent+'.inter.aln.rev '+ os.path.join(options.childDir, 'inter/'))
-#         transCMD +=LSC.commandPacker(MV_BIN+\
-#                                      ' '+'LOCAL_DIR/transalign.inter.log '+ os.path.join(options.childDir, 'logs/'))
-#         transCMD +='"'
-#     else:
-#         # base case, the parent *is* the root.
-#         transCMD = CMD_EVAL_BIN+\
-#                    ' JOB_FILE "'+\
-#                    LSC.commandPacker(LINK_BIN +\
-#                                      ' -s inter.aln.rev '+os.path.join(options.childDir,'inter', options.theParent+'.inter.aln.rev'))+\
-#                    '"'
-#    newChild = ET.SubElement(childrenElm, 'child')
-#    newChild.attrib['command'] = transCMD
-
     ##############################
     # Intra steps:
     # all chromosomes should be launched in child processes
@@ -92,16 +66,16 @@ def main(argv):
                                      ' -chrname '  +chrom+     \
                                      ' -branchlength '  +str(options.stepSize)+ \
                                      ' -seed '     +options.seed+\
-                                     ' -mes '      +os.path.join(options.childDir,'mobiles', 'mes.fa') + \
-                                     ' -inannots ' +os.path.join(options.childDir, 'inter','inter.outannots.gff')+ \
-                                     ' -statsfile '+os.path.join(options.childDir, 'stats',chrom+'.stats') +  \
-                                     ' -codonsubs '+os.path.join(options.childDir, 'intra',  chrom+'.codonsubs') +\
-                                     ' -outannots '+os.path.join(options.childDir, 'intra',  chrom+'.outannots.gff') + \
+                                     ' -mes '      +os.path.join(options.childDir, 'mobiles', 'mes.fa') + \
+                                     ' -inannots ' +os.path.join(options.childDir, 'inter', 'inter.outannots.gff')+ \
+                                     ' -statsfile '+os.path.join(options.childDir, 'stats', chrom+'.stats') +  \
+                                     ' -codonsubs '+os.path.join(options.childDir, 'intra', chrom+'.codonsubs') +\
+                                     ' -outannots '+os.path.join(options.childDir, 'intra', chrom+'.outannots.gff') + \
                                      ' -outgenome '+options.theChild + \
                                      ' -model '    +os.path.join(options.gParamsDir,'model.txt') + \
                                      ' -aln '      +'LOCAL_DIR/'+chrom+'.aln.rev' + \
                                      ' -outseq '   +'LOCAL_DIR/'+chrom+'.outseq.rev' + \
-                                     ' -log '      +os.path.join(options.childDir,  'logs', 'evo.'+chrom+'.log'))
+                                     ' -log '      +os.path.join(options.childDir,  'logs', 'intra.'+chrom+'.log'))
         intraCMD +=LSC.commandPacker(CVT_BIN +\
                                      ' -fromrev ' +'LOCAL_DIR/'+chrom+'.outseq.rev' + \
                                      ' -tofasta ' +'LOCAL_DIR/'+chrom+'.outseq.fa' + \

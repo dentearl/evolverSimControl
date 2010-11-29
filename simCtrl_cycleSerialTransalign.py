@@ -27,9 +27,11 @@ cycleSerialTransalign.py Handles:
 """
 ########################################
 import xml.etree.ElementTree as ET
+from sonLib.bioio import newickTreeParser
 import os, subprocess, sys
 from optparse import OptionParser
 import simulation.lib.libSimControl as LSC
+import simulation.lib.libSimTree as LST
 
 programs = ['evolver_transalign', 'touch', 'simCtrl_commandEval.py', 'evolver_gene_deactivate.sh',
             'simCtrl_cycleStats_1.py', 'simCtrl_completeTimestamp.py', 'ln', 'evolver_evo',
@@ -59,7 +61,7 @@ def findParent(options):
 def parentWasBranchOrRoot( options ):
     """ returns True if the parent cycle was either a branch point or the root
     """
-    if options.parentDir == options.rootDir:
+    if os.path.samefile( options.parentDir, options.rootDir ):
         return True
     file = os.path.join(options.parentDir, 'cycleInfo.xml')
     infoTree = ET.parse(file)
@@ -78,7 +80,7 @@ def customOptions(parser):
                       default=False, help='Performs no operations, prints out status of variables.')
     
         
-def customOptionsCheck(options, usage):
+def customOptionsCheck( options, usage ):
     if options.targetDir == None:
         sys.stderr.write('%s: Error, specify --targetDir.\n' % sys.argv[0])
         usage()
@@ -87,7 +89,14 @@ def customOptionsCheck(options, usage):
         usage()
     options.targetDir  = os.path.abspath(options.targetDir)
     (options.simDir, tail) = os.path.split(options.targetDir)
-    options.rootDir    = os.path.abspath(os.path.join(options.simDir, 'root'))
+
+    xmlTree = ET.parse( os.path.join( options.simDir, 'simulationInfo.xml' ) )
+    tree = xmlTree.find('tree')
+    nt = newickTreeParser( tree.text, 0.0 )
+    # rootName = LST.newickRootName( nt )
+    rootNameObj = xmlTree.find('rootDir')
+    options.rootName = os.path.basename( rootNameObj.text )
+    options.rootDir    = os.path.abspath( rootNameObj.text )
     if options.jobFile == None:
         sys.stderr.write('%s: Error, specify --jobFile.\n' % sys.argv[0])
         usage()
@@ -99,7 +108,7 @@ def main(argv):
     if not options.isDebug:
         customOptionsCheck(options, usage)
     else:
-        options.rootDir = 'rootDir'
+        options.rootDir = 'root'
     findParent(options)
 
     A = options.parentDir

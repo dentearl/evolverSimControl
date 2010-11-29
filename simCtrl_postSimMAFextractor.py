@@ -19,11 +19,10 @@ import simulation.lib.libSimControl as LSC
 import simulation.lib.libSimTree as LST
 
 programs = ['evolver_cvt', 'evolver_transalign',
-            'simCtrl_commandEval.py', 'mafJoin',
-            'eval_MAFComparator']
+            'simCtrl_commandEval.py', 'mafJoin']
 LSC.verifyPrograms(programs)
 (CVT_BIN, TRANS_BIN, CMD_EVAL_BIN,
- MAF_MERGE_BIN, MAF_COMPARE_BIN) = programs
+ MAF_MERGE_BIN ) = programs
 
 def usage():
     print 'USAGE: '+sys.argv[0]+' --simDir <dir> --jobFile JOB_FILE'
@@ -43,8 +42,6 @@ def initOptions(parser):
                       help='the .aln.rev and .maf files have been created, now merge them.')
     parser.add_option('-d', '--debug', action='store_true', dest='isDebug',
                       default=False, help='Turns on debug output, does not issue jobs')
-    parser.add_option('-c', '--compare', action='store_true', dest='isCompare',
-                      default=False, help='Turns on the extra commands to run eval_MAFComparator.')
     parser.add_option('--noParalogy', action='store_true', dest='noParalogy',
                       default=False, help='adds a flag -noparalogy to the transalign call, switches paralogous blocks off. ')
 
@@ -194,10 +191,8 @@ def buildMAFpairs(options, nodesList, leaves):
                         print '%s\n' %tcmd
             else:
                 if transCMD != CMD_EVAL_BIN+ ' JOB_FILE ""':
-                    pass
-                    # transCMD is no longer necessary. dae 12 nov
-                    # newChild = ET.SubElement(childrenElm, 'child')
-                    # newChild.attrib['command'] = transCMD
+                    newChild = ET.SubElement(childrenElm, 'child')
+                    newChild.attrib['command'] = transCMD
     if runningJobs:
         followUpCommand = sys.argv[0] +\
                           ' --simDir '+options.simDir+\
@@ -304,16 +299,6 @@ def performMAFmerge( options, nodesList, leaves, nodeParentDict, nodesDict ):
             mergeStr = mergeCommand( maf1, maf2, mergeOut, treelessRootStr, str( n.name ), drop)
             mergeCMD += LSC.commandPacker( mergeStr )
 
-            if options.isCompare and nodesDict[ n.children[0] ].isLeaf:
-                missing    = os.path.join(options.simDir, n.name, n.children[0] + '.'+n.name+'.missing.tab')
-                compareOut = os.path.join(options.simDir, n.name, n.children[0] +'.'+n.name+'.compared.xml')
-                compareStr = compareCommand( maf1, mergeOut, compareOut, missing )
-                mergeCMD  += LSC.commandPacker( compareStr )
-            if options.isCompare and nodesDict[ n.children[1] ].isLeaf:
-                missing    = os.path.join(options.simDir, n.name, n.children[1] + '.'+n.name+'.missing.tab')
-                compareOut = os.path.join(options.simDir, n.name, n.children[1] +'.'+n.name+'.compared.xml')
-                compareStr = compareCommand( maf2, mergeOut, compareOut, missing )
-                mergeCMD  += LSC.commandPacker( compareStr )
             ##############################
             # The 'lookup' aspect of the merge is only performed when we are not at the root
             # This merge merges the results of the 'lookdown' merge, that is to say the maf that contains
@@ -327,20 +312,6 @@ def performMAFmerge( options, nodesList, leaves, nodeParentDict, nodesDict ):
                 drop = os.path.join(options.simDir, n.name, nodeParent+'.dropped.tab')
                 mergeStr = mergeCommand( maf1, maf2, mergeOut, treelessRootStr, str( n.name ), drop)
                 mergeCMD += LSC.commandPacker( mergeStr )
-
-                if options.isCompare:
-                    compareStr = compareCommand( maf2, mergeOut, compareOut, missing )
-                    mergeCMD += LSC.commandPacker( compareStr )
-                    ####################
-                    # this region commented out due to the new focus on suprious alignments. -10 Nov dae
-                    # compareStr  = MAF_COMPARE_BIN
-#                     compareStr += ' --mAFFile1=' + os.path.join(options.simDir, n.name, n.name+'.maf')
-#                     compareStr += ' --mAFFile2=' + os.path.join(options.simDir, n.name, nodeParent+'.maf')
-#                     compareStr += ' --outputFile=' + os.path.join(options.simDir, n.name, n.name+'.'+nodeParent+'.compared.xml')
-#                     compareStr += ' --sampleNumber 100000000'
-#                     compareStr += ' --ultraVerbose'
-#                     compareStr += ' > ' + os.path.join(options.simDir, n.name, n.name+'.'+nodeParent+'.missing.tab')
-#                     mergeCMD += LSC.commandPacker( compareStr )
 
             mergeCMD += '"'
             runningJobs = runningJobs + 1

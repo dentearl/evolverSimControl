@@ -79,8 +79,9 @@ def main(argv):
     LSC.standardOptionsCheck(options, usage)
     LSY.standardOptionsCheck(options, usage)
 
-    if os.path.exists(options.childDir):
-        shutil.rmtree(options.childDir)   # yup, burn it to the ground! That'll learn ya to have name collisions!
+    if os.path.exists( options.childDir ):
+        sys.stderr.write( 'Directory [%s] already exists!\n' % options.childDir )
+        sys.exit( 1 )
 
     # cycleBeginStep
     # first thing to do will be to make the directories

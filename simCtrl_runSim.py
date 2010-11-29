@@ -49,10 +49,9 @@ def usage():
 def newickContainsReservedWord(nt):
     """newickContainsReservedWord() checks the newick to make sure that
     there are no reserved names used as IDs. At present the only reserved
-    name is 'root'.
+    name is 'parameters'.
     """
-    reservedWords = {'root':1,
-                     'parameters':1}
+    reservedWords = {'parameters':1}
     if nt == None:
         return False
     if nt.iD in reservedWords:
@@ -78,6 +77,8 @@ def initOptions(parser):
     """
     parser.add_option('--isFollowUp',dest='isFollowUp', action='store_true',
                       default=False, help='file to write run stats to.')
+    parser.add_option('--rootName',dest='rootName', 
+                      help='name of the root genome, to differentiate it from the input newick.')
 
 def main():
     parser=OptionParser()
@@ -88,10 +89,14 @@ def main():
     LSC.standardOptionsCheck(options, usage)
     LST.standardOptionsCheck(options, usage)
     # check newickTree for reserved words
-    nt = newickTreeParser(options.inputNewick, 0.0)
+    nt = newickTreeParser( options.inputNewick, 0.0 )
     if newickContainsReservedWord(nt):
         sys.stderr.write('%s: Error: newick tree contains reserved words.\n' %(sys.argv[0]))
         usage()
+    if not options.rootName:
+        rootName = LST.newickRootName( nt )
+    else:
+        rootName = options.rootName
     xmlTree = ET.parse(options.jobFile)
     childrenElm = xmlTree.find('children')
     if not options.isFollowUp:
@@ -100,9 +105,9 @@ def main():
         childCMD = CMD_EVAL_BIN+' JOB_FILE "'
         childCMD+= LSC.commandPacker(CP_BIN+\
                                      ' -r '+options.parentDir+\
-                                     ' '+os.path.join(options.outDir, 'root'))
-        childCMD+= LSC.commandPacker(ROOT_CYCLEXML_MAKER +\
-                                     ' --dir '+os.path.join(options.outDir,'root'))
+                                     ' '+os.path.join( options.outDir, rootName ))
+        childCMD+= LSC.commandPacker( ROOT_CYCLEXML_MAKER +\
+                                     ' --dir '+os.path.join(options.outDir, rootName ) )
         childCMD+= LSC.commandPacker(MKDIR_BIN+\
                                      ' '+os.path.join(options.outDir, 'parameters'))
         childCMD+= LSC.commandPacker(CP_BIN+\
@@ -118,12 +123,12 @@ def main():
         options.gParamsDir = os.path.join(options.outDir, 'parameters')
         newChild = ET.SubElement(childrenElm, 'child')
         newChild.attrib['command']=childCMD
-        options.parentDir = os.path.join(options.outDir, 'root')
+        options.parentDir = os.path.join(options.outDir, rootName)
         followUpCommand = sys.argv[0] +\
                           ' --parent '+options.parentDir+\
                           ' --tree "'+options.inputNewick + '"'+\
                           ' --params '+options.gParamsDir +\
-                          ' --step '+str(options.stepSize) +\
+                          ' --step '+str( options.stepSize ) +\
                           ' --seed '+options.seed +\
                           ' --jobFile JOB_FILE'+\
                           ' --isFollowUp '
@@ -143,7 +148,7 @@ def main():
             dt=datetime.utcnow()
             nowStr = dt.strftime("%a, %d %b %Y %H:%M:%S +0000")
             separator= '####################\n'
-            LST.branchLog('%s%s : Starting new run with tree %s\n%s' %(separator, nowStr, options.inputNewick, separator))
+            LST.branchLog('%s%s : Starting new run with tree %s\n%s' %( separator, nowStr, options.inputNewick, separator ))
 
         if(os.path.exists(os.path.join(options.outDir, 'simulationInfo.xml'))):
             os.remove(os.path.join(options.outDir, 'simulationInfo.xml'))

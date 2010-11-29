@@ -39,7 +39,7 @@ def main():
     parser=OptionParser()
     LSS.initOptions(parser)
     (options, args) = parser.parse_args()
-    LSS.checkOptions(options)
+    LSS.checkOptions( options, usage )
     LSC.subTypeTimestamp(os.path.join(options.childDir, 'cycleInfo.xml'), 'stats', 'cycleStep_5_cycleStats_1_end')
     LSC.subTypeTimestamp(os.path.join(options.childDir, 'cycleInfo.xml'), 'stats', 'cycleStep_6_cycleStats_2_start')
     
@@ -60,7 +60,7 @@ def main():
     statCMD = CMD_EVAL_BIN+\
               ' JOB_FILE "'+\
               LSC.commandPacker(MOBILE_REPORT_BIN+\
-                                ' '+os.path.join(options.childDir,'logs','evo.*.log')+\
+                                ' '+os.path.join(options.childDir,'logs','intra.*.log')+\
                                 ' --mobilesLog '+os.path.join(options.childDir,'logs','mobiles.log')+\
                                 ' > '+os.path.join(options.childDir,'stats','stats.mobiles.txt'))+'"'
     newChild = ET.SubElement(childrenElm, 'child')

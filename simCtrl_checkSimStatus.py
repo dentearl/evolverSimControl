@@ -358,16 +358,16 @@ def prettyTitle(n, s):
     t = prettyTime(s)
     return 'Cycle %s took %s.' %(n, t)
 
-def drawText(nt, ss, totalTreeDepth, scale=4, comStepsDict={}, prgStepsDict={}, isHtml=False, dir=''):
+def drawText(nt, ss, totalTreeDepth, rootName, scale=4, comStepsDict={}, prgStepsDict={}, isHtml=False, dir=''):
     """drawText() is in contrast to some other drawFORMAT() function that
     hasn't been written, but maybe one day will. drawText() draws the
     current state of the simulation as a tree using ASCII characters.
     """
     treeDepth=totalTreeDepthStepsFinder(nt, ss)
-    depthFirstWalk(nt, stepSize=ss, scale=scale, comStepsDict=comStepsDict, prgStepsDict=prgStepsDict, isHtml=isHtml, dir=dir)
-    drawScaleBar(treeDepth, scale, isHtml)
+    depthFirstWalk(nt, stepSize=ss, scale=scale, rootName=rootName, comStepsDict=comStepsDict, prgStepsDict=prgStepsDict, isHtml=isHtml, dir=dir)
+    drawScaleBar(treeDepth, scale, rootName, isHtml)
 
-def depthFirstWalk(nt, stepSize=0.001, d=0, branch='root', overlaps={}, scale=4, comStepsDict={}, prgStepsDict={}, isHtml=False, dir=''):
+def depthFirstWalk(nt, stepSize=0.001, depth=0, branch='root', rootName='root', overlaps={}, scale=4, comStepsDict={}, prgStepsDict={}, isHtml=False, dir=''):
     """depthFirstWalk() depthFirstWalk. Walks a binaryTree object and writes
     out an ASCII representation of the tree.
     You need to know which branch you've descended from, in order
@@ -383,29 +383,30 @@ def depthFirstWalk(nt, stepSize=0.001, d=0, branch='root', overlaps={}, scale=4,
                 |   |###|###|###|###|##+| Zack
                 |###| Zack-Chris
                     |###|###|###|###|###|###|###|+--|---| Chris
+    overlaps: depths where a pipe should be placed
+    depth: current depth
     """
     if scale < 1:
         return
     if nt == None:
         return 0
-#    print 'this is cycle %s and d=%d.' %(nt.iD, d)
-    originalLength=nt.distance
-    offset=''
-    for i in range(1,int(d)+1):
+    originalLength = nt.distance
+    offset=' '*( len(rootName) - scale )
+    for i in range(1, int(depth)+1):
         if str(i) in overlaps:
-            offset=offset+' '*scale+' |'
+            offset += ' '*scale+' |'
         elif str(i-1) in overlaps:
-            offset=offset+' '*scale
+            offset += ' '*scale
         else:
-            offset=offset+' '*scale+' '
+            offset += ' '*scale+' '
     if branch == 'root':
-        d=1
+        depth=1
         if isHtml:
-            offset=' '+str2link('root', dir)+'root</a>|'
+            offset = ' '+str2link(rootName, dir)+rootName+'</a>|'
         else:
-            offset=' root|'
+            offset = ' %s|' % rootName
     else:
-        offset=offset+'|'
+        offset+= '|'
     if isHtml:
         stringCap='</a>|'
     else:
@@ -438,41 +439,41 @@ def depthFirstWalk(nt, stepSize=0.001, d=0, branch='root', overlaps={}, scale=4,
         else:
             offset=offset+scale*symNone+stringCap
     if not nt.right or not nt.left:
-        print '%s %s' %(offset,nt.iD)
+        print '%s %s' %(offset, nt.iD)
         return 1
     nextOverlapsR=dict.copy(overlaps)
     nextOverlapsL=dict.copy(overlaps)
     if branch=='left':
         # any time you double back, you're going to have to draw a connecting
         # branch ('|').
-        nextOverlapsR[str(int(d))]=1
+        nextOverlapsR[str(int(depth))]=1
     if branch=='right':
-        nextOverlapsL[str(int(d))]=1
-    left = depthFirstWalk(nt.left, stepSize=stepSize, d=d+(math.ceil(originalLength/stepSize)), branch='left',
+        nextOverlapsL[str(int(depth))]=1
+    left = depthFirstWalk(nt.left, stepSize=stepSize, rootName=rootName, depth= depth+ (math.ceil(originalLength/stepSize)), branch='left',
                overlaps=nextOverlapsL, scale=scale, comStepsDict=comStepsDict, prgStepsDict=prgStepsDict, isHtml=isHtml, dir=dir)
     ##############################
     # FINALLY, print out the line and the name of the end cycle:
     if left:
-        if nt.iD != 'root':
-            print '%s %s' %(offset,nt.iD)
+        if nt.iD != rootName:
+            print '%s %s' %(offset, nt.iD)
         else:
-            print '%s' %(offset)
-    right= depthFirstWalk(nt.right, stepSize=stepSize, d=d+(math.ceil(originalLength/stepSize)), branch='right',
+            print '%s' %( offset )
+    right= depthFirstWalk(nt.right, stepSize=stepSize, rootName=rootName, depth=depth + (math.ceil(originalLength/stepSize)), branch='right',
                overlaps=nextOverlapsR, scale=scale, comStepsDict=comStepsDict, prgStepsDict=prgStepsDict, isHtml=isHtml, dir=dir) # +1 accounts for the '|' symbol
-    if (not left ) and right:
-        if nt.iD != 'root':
-            print '%s %s' %(offset,nt.iD)
+    if ( not left ) and right:
+        if nt.iD != rootName:
+            print '%s %s' %( offset, nt.iD )
         else:
-            print '%s' %(offset)
+            print '%s' %( offset )
     if left or right:
         return 1
 
-def drawScaleBar(numSteps, scale, isHtml):
-    scaleBar=' '
+def drawScaleBar(numSteps, scale, rootName, isHtml):
+    scaleBar=' '* ( len( rootName ) - scale + 1)
     for i in range(int(numSteps+1), 0, -1):
         if i >= 100:
             if not i%10:
-                scaleBar+=(int(scale/2) )*' '+str(i)+(scale-int(scale/2)-3)*' '+'|'
+                scaleBar+=(int(scale/2)-1 )*' '+str(i)+(scale-int(scale/2)-3)*' '+'|'
             else:
                 scaleBar+=scale*' '+'|'
         elif i >= 10:
@@ -576,7 +577,7 @@ def initOptions(parser):
     parser.add_option('--barimg',dest='barimg', default='',
                       help='URL to image file to be stretched to make barplots for html output.')
 
-def checkOptions(options):
+def checkOptions( options ):
     defaultStepSize = 0.001
     if not options.dir:
         options.dir=os.getcwd()
@@ -591,11 +592,13 @@ def checkOptions(options):
     infoTree = ET.parse(os.path.join(options.dir, 'simulationInfo.xml'))
     treeObj = infoTree.find('tree')
     options.inputNewick = treeObj.text
-    nt= newickTreeParser(options.inputNewick, 0.0)
+    nt= newickTreeParser( options.inputNewick, 0.0 )
     if nt.distance==0:
         if nt.iD == None:
             nt.iD = 'root'
             options.inputNewick = printBinaryTree(nt,1)
+    rootNameObj = infoTree.find('rootDir')
+    options.rootName = os.path.basename( rootNameObj.text )
     treeObj = infoTree.find('saveParent')
     sp=treeObj.text
     options.saveParent = {'true':True, 'false':False}.get(sp.lower()) # and you thought python couldn't be cryptic?
@@ -1115,7 +1118,7 @@ def packData(status, file):
     """packData() stores all of the Status in the appropriate pickle file.
     """
     FILE = open(file, 'w')
-    cPickle.dump(status, FILE, 2) # 2 here is the format protocol, 2=binary
+    cPickle.dump(status, FILE, 2) # 2 is the format protocol, 2=binary
     FILE.close()
     
 def main():
@@ -1164,7 +1167,7 @@ def main():
         if options.isHtml:
             print '<pre>'
         nt = newickTreeParser(options.inputNewick, 0.0)
-        drawText(nt, options.stepSize, status.totalTreeDepthSteps, scale=options.scale,
+        drawText(nt, options.stepSize, status.totalTreeDepthSteps, options.rootName, scale=options.scale,
                  comStepsDict=status.completedTreeSteps_dict, prgStepsDict=status.inProgressTreeSteps_dict,
                  isHtml=options.isHtml, dir=options.htmlDir)
     

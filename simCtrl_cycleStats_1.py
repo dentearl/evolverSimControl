@@ -35,7 +35,7 @@ def main(argv):
     parser=OptionParser()
     LSS.initOptions(parser)
     (options, args) = parser.parse_args()
-    LSS.checkOptions(options)
+    LSS.checkOptions( options, usage )
     LSC.typeTimestamp(os.path.join(options.childDir,'cycleInfo.xml'),
                       'stats', 'Start')
     LSC.subTypeTimestamp(os.path.join(options.childDir,'cycleInfo.xml'),
