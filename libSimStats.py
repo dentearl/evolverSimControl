@@ -6,7 +6,7 @@ def initOptions(parser):
     parser.add_option('-j', '--jobFile',dest='jobFile',
                       help='jobFile, passed in by jobTree.')
     
-def checkOptions(options):
+def checkOptions( options, usage ):
     import xml.etree.ElementTree as ET
     import os, sys
     if options.childDir == None:

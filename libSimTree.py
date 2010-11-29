@@ -16,6 +16,12 @@ def nameTree(nt, reportDistance=1):
     name=fixName(name)
     return name
 
+def newickRootName( nt ):
+    if nt.iD:
+        return nt.iD
+    else:
+        return 'root'
+
 def fixName(name):
     """fixName(name) takes all the nasty characters out of a newickTree and
     returns a str that is more amenable to being a file (or directory) name.

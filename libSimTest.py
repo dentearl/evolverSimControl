@@ -22,10 +22,10 @@ class CheckCommandPackerUnPacker( unittest.TestCase ):
         """commandPacker takes a single string as input"""
         self.assertRaises( LSC.BadInputError, LSC.commandPacker, ['hi there'])
         self.assertRaises( LSC.BadInputError, LSC.commandPacker, 20.0 )
-        self.assertRaises( LSC.BadInputError, LSC.commandPacker, {'steve':'miranda'} )
+        self.assertRaises( LSC.BadInputError, LSC.commandPacker, {'richard':'dawkins'} )
         self.assertRaises( LSC.BadInputError, LSC.commandUnPacker, ['hi there'])
         self.assertRaises( LSC.BadInputError, LSC.commandUnPacker, 20.0 )
-        self.assertRaises( LSC.BadInputError, LSC.commandUnPacker, {'steve':'miranda'} )
+        self.assertRaises( LSC.BadInputError, LSC.commandUnPacker, {'richard':'dawkins'} )
     def test_commandPackerKnownValues( self ):
         """commandPacker should give known result with known input"""
         for unpacked, packed in self.knownValues:
