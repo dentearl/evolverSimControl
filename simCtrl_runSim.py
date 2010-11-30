@@ -165,7 +165,7 @@ def main():
         tObj.text=str(options.saveParent)
         tObj=ET.SubElement(root, 'timestamps')
         timeStart      = ET.SubElement(tObj,'start')
-        timeLocal      = ET.SubElemnt( timeStart, 'humanLocal' )
+        timeLocal      = ET.SubElement( timeStart, 'humanLocal' )
         timeLocal.text = str( time.strftime("%a, %d %b %Y %H:%M:%S (%Z) ", time.localtime()) )
         timeHuman      = ET.SubElement( timeStart, 'humanUTC' )
         timeHuman.text = str( time.strftime("%a, %d %b %Y %H:%M:%S (UTC) ", time.gmtime()) )

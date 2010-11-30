@@ -752,7 +752,11 @@ def stepStatsBreakdown(runDir, cs_dict, isHtml, timeList, microTimeList,
             tsm = ts.find('micro')
             for t in transalignSteps:
                 tsc = tsm.find(t)
+                if not tsc:
+                    continue
                 tse = tsc.find('elapsed')
+                if not tse:
+                    continue
                 elapsed = tse.text
                 transAlignTimeDict[transAlignToNames[t]].append(float(elapsed))
         csAlreadyAdded[c] = True
@@ -1092,9 +1096,9 @@ def collectData(options, status):
         status.elapsedTreeTimeDict = {}
         status.variables['elapsedTreeTimeDict'] = True
     if 'timeList' not in status.variables:
-        status.timeList=[[], [], [], [], [] ,[] ,[] ,[]]
-        status.microTimeList=[[],[],[],[],[],[],[]]
-        status.transAlignTimeList=[[],[]]
+        status.timeList=[ [], [], [], [], [] ,[] ,[] ,[] ]
+        status.microTimeList=[ [],[],[],[],[],[],[] ]
+        status.transAlignTimeList=[ [],[] ]
         status.csAlreadyAdded={}
         status.variables['timeList'] = True
     newickTree = newickTreeParser(options.inputNewick, 0.0)
@@ -1158,6 +1162,9 @@ def main():
     if options.isHtml:
         print '</td></tr></table>'
         print '<br>'
+    print 'Generated at %s' %(time.strftime("%a, %d %b %Y %H:%M:%S (%Z)", time.localtime()))
+    if options.isHtml:
+        print '<br>'
     print 'Generated at %s' %(time.strftime("%a, %d %b %Y %H:%M:%S (UTC)", time.gmtime()))
     if options.isHtml:
         print '<br>'
@@ -1167,20 +1174,29 @@ def main():
         if options.isHtml:
             print '<pre>'
         nt = newickTreeParser(options.inputNewick, 0.0)
-        drawText(nt, options.stepSize, status.totalTreeDepthSteps, options.rootName, scale=options.scale,
-                 comStepsDict=status.completedTreeSteps_dict, prgStepsDict=status.inProgressTreeSteps_dict,
-                 isHtml=options.isHtml, dir=options.htmlDir)
+        drawText( nt, options.stepSize, status.totalTreeDepthSteps, options.rootName,
+                  scale=options.scale, comStepsDict=status.completedTreeSteps_dict,
+                  prgStepsDict=status.inProgressTreeSteps_dict,
+                  isHtml=options.isHtml, dir=options.htmlDir )
     
-    findStalledCycles(options.dir, status.completedTreeSteps_dict, status.inProgressTreeSteps_dict, options.isHtml, options.htmlDir)
+    findStalledCycles( options.dir, status.completedTreeSteps_dict,
+                       status.inProgressTreeSteps_dict, options.isHtml,
+                       options.htmlDir )
     if options.curCycles or options.isHtml:
-        listCurrentCycles(options.dir, status.completedTreeSteps_dict, status.inProgressTreeSteps_dict, options.isHtml, options.htmlDir)
+        listCurrentCycles( options.dir, status.completedTreeSteps_dict,
+                           status.inProgressTreeSteps_dict, options.isHtml,
+                           options.htmlDir )
     if options.stepStats or options.isHtml:
-        stepStatsBreakdown(options.dir, status.completedTreeSteps_dict, options.isHtml, status.timeList,
-                           status.microTimeList, status.transAlignTimeList, status.csAlreadyAdded, options.barimg)
+        stepStatsBreakdown( options.dir, status.completedTreeSteps_dict,
+                            options.isHtml, status.timeList,
+                           status.microTimeList, status.transAlignTimeList,
+                            status.csAlreadyAdded, options.barimg )
     if options.cycleStem or options.cycleStemHours or options.isHtml:
-        printStem( csDictToTimeList(status.completedTreeSteps_dict, options.dir) , options.isHtml, options.cycleStemHours)
+        printStem( csDictToTimeList(status.completedTreeSteps_dict, options.dir),
+                   options.isHtml, options.cycleStemHours )
     if options.cycleList or options.isHtml:
-        printSortedCycleTimes(status.completedTreeSteps_dict, options.isHtml, options.htmlDir)
+        printSortedCycleTimes( status.completedTreeSteps_dict, options.isHtml,
+                               options.htmlDir )
     
     if options.isHtml:
         finishHTML()

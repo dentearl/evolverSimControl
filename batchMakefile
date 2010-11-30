@@ -102,17 +102,17 @@ avgBurnin:
 benCodeBurnin:
 	${JOBTREE} --jobTree ${BENCODE_BURNIN_JOBTREE} --batchSystem=single_machine --command="${RUNSIM} --parent ${BENCODE_ROOT2} --params ${GPARAMSBENCODE} --tree '${AVG_BURNIN_TREE}' --step ${AVG_MAMMALS_STEP} --out ${BENCODE_BURNIN_OUT} --jobFile JOB_FILE --saveParent --seed 93133332170" --logDebug --retryCount 1
 assemblathonUltra:
-	${JOBTREE} --jobTree ${ASSEMBLATHON_JOBTREE}  --batchSystem=parasol --command="${RUNSIM} --parent ${ASSEMBLATHON_ROOT} --params ${ASSEMBLATHON_GPARAMS} --tree '${ASSEMBLATHON_ULTRA_TREE}'  --step ${ASSEMBLATHON_STEP}  --out ${ASSEMBLATHON_ULTRA_OUT}  --jobFile JOB_FILE --saveParent --seed 3922142511291" --logDebug --retryCount 1
-assemblyBurnin:
-	${JOBTREE} --jobTree ${ASSEMBLY_BURNIN_JOBTREE}  --batchSystem=parasol --command="${RUNSIM} --parent ${ASSEMBLY_BURNIN_ROOT} --rootName root --params ${ASSEMBLATHON_GPARAMS} --tree '${ASSEMBLY_BURNIN_TREE}'  --step ${ASSEMBLATHON_STEP}  --out ${ASSEMBLY_BURNIN_OUT}  --jobFile JOB_FILE --saveParent --seed 7392511291" --logDebug --retryCount 1
-assemblyBurnin2:
-	${JOBTREE} --jobTree ${ASSEMBLY_BURNIN2_JOBTREE}  --batchSystem=parasol --command="${RUNSIM} --parent ${ASSEMBLY_BURNIN2_ROOT} --params ${ASSEMBLATHON_GPARAMS} --tree '${ASSEMBLY_BURNIN2_TREE}'  --step ${ASSEMBLY_BURNIN_STEP}  --out ${ASSEMBLY_BURNIN2_OUT}  --jobFile JOB_FILE --saveParent --seed 39251129" --logDebug --retryCount 1
-assemblathon:
-	${JOBTREE} --jobTree ${ASSEMBLATHON_JOBTREE}  --batchSystem=parasol --command="${RUNSIM} --parent ${ASSEMBLATHON_ROOT} --params ${ASSEMBLATHON_GPARAMS} --tree '${ASSEMBLATHON_TREE}'  --step ${ASSEMBLATHON_STEP}  --out ${ASSEMBLATHON_OUT}  --jobFile JOB_FILE --saveParent --seed 39251129" --logDebug --retryCount 1
-assemblathonPopA:
-	${JOBTREE} --jobTree ${ASSEMBLATHON_POP_A_JOBTREE}  --batchSystem=parasol --command="${RUNSIM} --parent /hive/users/dearl/simTreeWorking/ASSEMBLATHON/A/ --params ${ASSEMBLATHON_GPARAMS} --tree '${ASSEMBLATHON_POP_A_TREE}'  --step 0.002  --out /hive/users/dearl/simTreeWorking/ASSEMBLATHON_POP_A/  --jobFile JOB_FILE --saveParent --seed 594673119" --logDebug --retryCount 1
-assemblathonPopB:
-	${JOBTREE} --jobTree ${ASSEMBLATHON_POP_B_JOBTREE}  --batchSystem=parasol --command="${RUNSIM} --parent /hive/users/dearl/simTreeWorking/ASSEMBLATHON/B/ --params ${ASSEMBLATHON_GPARAMS} --tree '${ASSEMBLATHON_POP_B_TREE}'  --step 0.002  --out /hive/users/dearl/simTreeWorking/ASSEMBLATHON_POP_B/  --jobFile JOB_FILE --saveParent --seed 21364919711" --logDebug --retryCount 1
+	${JOBTREE} --jobTree ${ASSEMBLATHON_JOBTREE}  --batchSystem=parasol --command="${RUNSIM} --parent ${ASSEMBLATHON_ROOT} --rootName ancestor --params ${ASSEMBLATHON_GPARAMS} --tree '${ASSEMBLATHON_ULTRA_TREE}'  --step ${ASSEMBLATHON_STEP}  --out ${ASSEMBLATHON_ULTRA_OUT}  --jobFile JOB_FILE --saveParent --seed 3922142511291" --logDebug --retryCount 1
+#assemblyBurnin:
+#	${JOBTREE} --jobTree ${ASSEMBLY_BURNIN_JOBTREE}  --batchSystem=parasol --command="${RUNSIM} --parent ${ASSEMBLY_BURNIN_ROOT} --rootName ancestor --params ${ASSEMBLATHON_GPARAMS} --tree '${ASSEMBLY_BURNIN_TREE}'  --step ${ASSEMBLATHON_STEP}  --out ${ASSEMBLY_BURNIN_OUT}  --jobFile JOB_FILE --saveParent --seed 7392511291" --logDebug --retryCount 1
+#assemblyBurnin2:
+#	${JOBTREE} --jobTree ${ASSEMBLY_BURNIN2_JOBTREE}  --batchSystem=parasol --command="${RUNSIM} --parent ${ASSEMBLY_BURNIN2_ROOT} --params ${ASSEMBLATHON_GPARAMS} --tree '${ASSEMBLY_BURNIN2_TREE}'  --step ${ASSEMBLY_BURNIN_STEP}  --out ${ASSEMBLY_BURNIN2_OUT}  --jobFile JOB_FILE --saveParent --seed 39251129" --logDebug --retryCount 1
+#assemblathon:
+#	${JOBTREE} --jobTree ${ASSEMBLATHON_JOBTREE}  --batchSystem=parasol --command="${RUNSIM} --parent ${ASSEMBLATHON_ROOT} --params ${ASSEMBLATHON_GPARAMS} --tree '${ASSEMBLATHON_TREE}'  --step ${ASSEMBLATHON_STEP}  --out ${ASSEMBLATHON_OUT}  --jobFile JOB_FILE --saveParent --seed 39251129" --logDebug --retryCount 1
+#assemblathonPopA:
+#	${JOBTREE} --jobTree ${ASSEMBLATHON_POP_A_JOBTREE}  --batchSystem=parasol --command="${RUNSIM} --parent /hive/users/dearl/simTreeWorking/ASSEMBLATHON/A/ --params ${ASSEMBLATHON_GPARAMS} --tree '${ASSEMBLATHON_POP_A_TREE}'  --step 0.002  --out /hive/users/dearl/simTreeWorking/ASSEMBLATHON_POP_A/  --jobFile JOB_FILE --saveParent --seed 594673119" --logDebug --retryCount 1
+#assemblathonPopB:
+#	${JOBTREE} --jobTree ${ASSEMBLATHON_POP_B_JOBTREE}  --batchSystem=parasol --command="${RUNSIM} --parent /hive/users/dearl/simTreeWorking/ASSEMBLATHON/B/ --params ${ASSEMBLATHON_GPARAMS} --tree '${ASSEMBLATHON_POP_B_TREE}'  --step 0.002  --out /hive/users/dearl/simTreeWorking/ASSEMBLATHON_POP_B/  --jobFile JOB_FILE --saveParent --seed 21364919711" --logDebug --retryCount 1
 benCode1p:
 	${JOBTREE} --jobTree ${BENCODE_1P_JOBTREE} --batchSystem=parasol --command="${RUNSIM} --parent ${BENCODE_ROOT1} --params ${GPARAMSBENCODE} --tree '${AVG_PRIMATES_TREE}' --step ${AVG_PRIMATES_STEP} --out ${BENCODE_1P_OUT} --jobFile JOB_FILE --saveParent --seed 313777351" --logDebug --retryCount 1
 benCode1m:
