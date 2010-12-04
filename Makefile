@@ -12,7 +12,7 @@ CFLAGS=${cflags} -std=c99 -pedantic
 all: ${progs} ${py_progs:%=${binPath}/%}
 
 ${binPath}/simUtil_paralogBlockMasker: simUtil_paralogBlockMasker.c
-	${CC} ${cflags} -I ${libPath} -I ${kentInc} -o $@ simUtil_paralogBlockMasker.c ${libPath}/sonLib.a
+	${CC} ${cflags} -I ${libPath} -o $@ simUtil_paralogBlockMasker.c ${libPath}/sonLib.a
 
 ${binPath}/%: %
 	@mkdir -p $(dir $@)
