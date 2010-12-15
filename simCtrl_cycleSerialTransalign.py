@@ -28,7 +28,9 @@ cycleSerialTransalign.py Handles:
 ########################################
 import xml.etree.ElementTree as ET
 from sonLib.bioio import newickTreeParser
-import os, subprocess, sys
+import os
+import subprocess
+import sys
 from optparse import OptionParser
 import simulation.lib.libSimControl as LSC
 import simulation.lib.libSimTree as LST
@@ -103,10 +105,10 @@ def customOptionsCheck( options, usage ):
 
 def main(argv):
     parser=OptionParser()
-    customOptions(parser)
-    (options, args) = parser.parse_args()
+    customOptions( parser )
+    ( options, args ) = parser.parse_args()
     if not options.isDebug:
-        customOptionsCheck(options, usage)
+        customOptionsCheck( options, usage )
     else:
         options.rootDir = 'root'
     findParent(options)

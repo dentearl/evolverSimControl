@@ -337,13 +337,13 @@ def prettyTime(t):
     t = t/7
     return '%.2f weeks' %(t)
 
-def directoriesOnly(list):
+def directoriesOnly( l ):
     """directoriesOnly() takes a list of items from a directory
     and purges anything from the list that is not a directory.
     """
-    for i in list:
-        if (not os.path.isdir(i)):
-            list.remove(i)
+    for i in l:
+        if not os.path.isdir( i ):
+            l.remove( i )
 
 def str2link(s, dir, title=''):
     if dir == '':

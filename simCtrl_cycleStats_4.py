@@ -54,8 +54,11 @@ def main():
                                 ' '+os.path.join(options.parentDir,'stats','merged_root.stats')+\
                                 ' > '+os.path.join(options.childDir,'stats','merged_root.stats'))
     statCMD +=LSC.commandPacker(EVOSTATS_BIN+\
+                                ' '+os.path.join(options.childDir,'stats','merged_cycle.stats')+\
+                                ' > '+os.path.join(options.childDir,'stats','events_cycle.txt'))
+    statCMD +=LSC.commandPacker(EVOSTATS_BIN+\
                                 ' '+os.path.join(options.childDir,'stats','merged_root.stats')+\
-                                ' > '+os.path.join(options.childDir,'stats','root_events.txt'))
+                                ' > '+os.path.join(options.childDir,'stats','events_root.txt'))
     statCMD +='"'
     
     newChild = ET.SubElement(childrenElm, 'child')

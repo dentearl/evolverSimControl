@@ -15,7 +15,9 @@ from sonLib.bioio import newickTreeParser
 from sonLib.bioio import printBinaryTree
 from optparse import OptionParser
 import xml.etree.ElementTree as ET
-import os, sys, time
+import os
+import sys
+import time
 from datetime import datetime # for logging
 import simulation.lib.libSimControl as LSC
 import simulation.lib.libSimTree as LST
@@ -97,6 +99,9 @@ def main():
         rootName = LST.newickRootName( nt )
     else:
         rootName = options.rootName
+    if not os.path.exists( os.path.join( options.parentDir, 'seq.rev')):
+        sys.stderr.write('ERROR: Unable to find seq.rev in --parentDir [%s].\n' % options.parentDir)
+        sys.exit(1)
     xmlTree = ET.parse(options.jobFile)
     childrenElm = xmlTree.find('children')
     if not options.isFollowUp:
