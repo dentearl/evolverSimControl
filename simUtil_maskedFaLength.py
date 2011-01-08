@@ -7,7 +7,9 @@
 # unmasked sequence (i.e. CAPITAL ACTG)
 #
 ##############################
-import os, re, sys
+import os
+import re
+import sys
 
 def usage():
     sys.stderr.write('USAGE: %s file.fa\n' %(sys.argv[0]))
