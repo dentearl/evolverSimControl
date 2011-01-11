@@ -15,6 +15,8 @@ def standardOptions(parser):
                       help='Parameter directory.')
     parser.add_option('-e', '--seed',dest='seed',default='random',
                       type='string', help='Random seed. [default: %default]')
+    parser.add_option('--noMEs', action='store_true', dest='noMEs',
+                      default=False, help='Turns off all mobile element and RPG modules in the sim.')
 
 def standardOptionsCheck(options, usage, skip={}):
     """standardOptionsCheck() allows for a skip dict to be passed in that will allow selective

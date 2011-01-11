@@ -61,8 +61,8 @@ def standardOptions(parser):
                       help='Out directory.')
     parser.add_option('-t', '--tree',dest='inputNewick',
                       help='Newick tree.')
-    parser.add_option('-y', '--saveParent', action='store_true', dest='saveParent',
-                      default=False, help='Save all cycles.')
+    parser.add_option('-y', '--removeParent', action='store_true', dest='removeParent',
+                      default=False, help='Remove cycles that are not nodes in order to save disk space (not recommended).')
     parser.add_option('-b', '--isBranchChild', action='store_true', dest='isBranchChild',
                       default=False, help='Establishes the parent as un-deletable.')
     parser.add_option('-c', '--isContinue', action='store_true', dest='isContinue',
@@ -175,8 +175,10 @@ def treeBranchCommandBuilder(nt, branchStr, options, commonParent, gParamsDir):
         childCMD = childCMD + ' --isBranchChild '
     if options.logBranch:
         childCMD = childCMD + ' --logBranch '
-    if options.saveParent:
-        childCMD = childCMD + ' --saveParent '
+    if options.removeParent:
+        childCMD = childCMD + ' --removeParent '
+    if options.noMEs:
+        childCMD = childCMD + ' --noMEs '
     if options.testTree:
         childCMD = childCMD + ' --testTree '
     if options.logBranch:
