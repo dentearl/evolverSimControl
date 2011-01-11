@@ -18,7 +18,7 @@ import xml.etree.ElementTree as ET
 import os
 import sys
 import time
-from datetime import datetime # for logging
+from datetime import datetime
 import simulation.lib.libSimControl as LSC
 import simulation.lib.libSimTree as LST
 
@@ -39,9 +39,9 @@ programs = ['simCtrl_simTree.py','simCtrl_rootCycleInfoCreator.py', 'cp',
             'simCtrl_cycleStats_3.py', 'simCtrl_cycleStats_4.py',
             'simCtrl_simTreeFollowUp.py', 'simCtrl_wrapperTRF.py',
             'simCtrl_completeTimestamp.py']
-LSC.verifyPrograms(programs)
-(SIMTREE_PY, ROOT_CYCLEXML_MAKER,
- CP_BIN, MKDIR_BIN, CMD_EVAL_BIN) = programs[0:5]
+LSC.verifyPrograms( programs )
+( SIMTREE_PY, ROOT_CYCLEXML_MAKER,
+  CP_BIN, MKDIR_BIN, CMD_EVAL_BIN ) = programs[ 0:5 ]
 
 def usage():
     print 'USAGE: '+sys.argv[0]+' --root [dir] --out --tree [newick tree in quotes] --params [parameter dir] --stepSize [0.001] --jobFile JOB_FILE '
@@ -78,7 +78,7 @@ def initOptions(parser):
     parser object
     """
     parser.add_option('--isFollowUp',dest='isFollowUp', action='store_true',
-                      default=False, help='file to write run stats to.')
+                      default=False, help='file to write run-stats to.')
     parser.add_option('--rootName',dest='rootName', 
                       help='name of the root genome, to differentiate it from the input newick.')
 
@@ -137,15 +137,15 @@ def main():
                           ' --seed '+options.seed +\
                           ' --jobFile JOB_FILE'+\
                           ' --isFollowUp '
-        if (options.outDir != None):
+        if options.outDir != None:
             followUpCommand = followUpCommand + ' --out ' + options.outDir
-        if(options.saveParent):
-            followUpCommand = followUpCommand + ' --saveParent '
-        if(options.isBranchChild):
+        if options.removeParent:
+            followUpCommand = followUpCommand + ' --removeParent '
+        if options.isBranchChild:
             followUpCommand = followUpCommand + ' --isBranchChild '
-        if(options.testTree):
+        if options.testTree:
             followUpCommand = followUpCommand + ' --testTree '
-        if(options.logBranch):
+        if options.logBranch:
             followUpCommand = followUpCommand + ' --logBranch '
         jobElm=xmlTree.getroot()
         jobElm.attrib['command'] = followUpCommand
@@ -157,18 +157,18 @@ def main():
 
         if(os.path.exists(os.path.join(options.outDir, 'simulationInfo.xml'))):
             os.remove(os.path.join(options.outDir, 'simulationInfo.xml'))
-        root=ET.Element('info')
-        tObj=ET.SubElement(root, 'rootDir')
-        tObj.text=str(options.parentDir)
-        tObj=ET.SubElement(root, 'gParamsDir')
-        tObj.text=str(options.gParamsDir)
-        tObj=ET.SubElement(root, 'tree')
-        tObj.text=str(options.inputNewick)
-        tObj=ET.SubElement(root, 'stepSize')
-        tObj.text=str(options.stepSize)
-        tObj=ET.SubElement(root, 'saveParent')
-        tObj.text=str(options.saveParent)
-        tObj=ET.SubElement(root, 'timestamps')
+        root=ET.Element( 'info' )
+        tObj=ET.SubElement( root, 'rootDir' )
+        tObj.text=str( options.parentDir )
+        tObj=ET.SubElement( root, 'gParamsDir' )
+        tObj.text=str( options.gParamsDir )
+        tObj=ET.SubElement( root, 'tree')
+        tObj.text=str( options.inputNewick )
+        tObj=ET.SubElement( root, 'stepSize' )
+        tObj.text=str( options.stepSize )
+        tObj=ET.SubElement( root, 'removeParent' )
+        tObj.text=str( options.removeParent )
+        tObj=ET.SubElement( root, 'timestamps')
         timeStart      = ET.SubElement(tObj,'start')
         timeLocal      = ET.SubElement( timeStart, 'humanLocal' )
         timeLocal.text = str( time.strftime("%a, %d %b %Y %H:%M:%S (%Z) ", time.localtime()) )
@@ -176,10 +176,10 @@ def main():
         timeHuman.text = str( time.strftime("%a, %d %b %Y %H:%M:%S (UTC) ", time.gmtime()) )
         timeEpoch      = ET.SubElement( timeStart, 'epochUTC' )
         timeEpoch.text = str(time.time())
-        cmd = ET.SubElement(root, 'command')
+        cmd = ET.SubElement( root, 'command')
         cmd.text = ' '.join(sys.argv)
-        info=ET.ElementTree(root)
-        info.write(os.path.join(options.outDir,'simulationInfo.xml'))
+        info=ET.ElementTree( root )
+        info.write( os.path.join( options.outDir,'simulationInfo.xml' ) )
     else:
         # since the root/ dir exists, we can make the first call to simTree.py
         # WRITE INFO.XML IF this is the first run of the simulation.

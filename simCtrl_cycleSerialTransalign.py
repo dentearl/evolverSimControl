@@ -51,10 +51,10 @@ def usage():
     print __doc__
     sys.exit(2)
 
-def findParent(options):
+def findParent( options ):
     # open the parent dir's cycleInfo file
-    file = os.path.join(options.targetDir, 'cycleInfo.xml')
-    infoTree = ET.parse(file)
+    file = os.path.join( options.targetDir, 'cycleInfo.xml' )
+    infoTree = ET.parse( file )
     root = infoTree.getroot()
     # find the parent of the parent, record it as the grandParent
     tObj = root.find('parentDir')

@@ -599,9 +599,9 @@ def checkOptions( options ):
             options.inputNewick = printBinaryTree(nt,1)
     rootNameObj = infoTree.find('rootDir')
     options.rootName = os.path.basename( rootNameObj.text )
-    treeObj = infoTree.find('saveParent')
+    treeObj = infoTree.find('removeParent')
     sp=treeObj.text
-    options.saveParent = {'true':True, 'false':False}.get(sp.lower()) # and you thought python couldn't be cryptic?
+    options.removeParent = {'true':True, 'false':False}.get(sp.lower()) # and you thought python couldn't be cryptic?
     #                  # converts the strings 'true', 'false' to the Logical type python wants
     options.htmlDir = options.htmlDir.rstrip('/')
     

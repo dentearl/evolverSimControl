@@ -46,10 +46,10 @@ def main():
     ##############################
     # End of pre-processing.
     ##############################
-    newickTree = newickTreeParser(options.inputNewick, 0.0)
+    newickTree = newickTreeParser( options.inputNewick, 0.0 )
     xmlTree = ET.parse(options.jobFile)
     childrenElm = xmlTree.find('children')
-    nextTree = newickTreeParser(options.inputNewick, 0.0)
+    nextTree = newickTreeParser( options.inputNewick, 0.0 )
     if newickTree.distance > 0:
         newChild = ET.SubElement(childrenElm, 'child')
         newChild.attrib['command'] = LST.cycleBranchCommandBuilder(newickTree, nextTree, 'stem', options.stepSize,
@@ -66,15 +66,15 @@ def main():
                       ' --jobFile JOB_FILE'
     if (options.outDir != None):
         followUpCommand = followUpCommand + ' --out ' + options.outDir
-    if(options.saveParent):
-        followUpCommand = followUpCommand + ' --saveParent '
-    if(options.isContinue):
+    if( options.removeParent ):
+        followUpCommand = followUpCommand + ' --removeParent '
+    if( options.isContinue ):
         followUpCommand = followUpCommand + ' --isContinue '
-    if(options.isBranchChild):
+    if( options.isBranchChild ):
         followUpCommand = followUpCommand + ' --isBranchChild '
-    if(options.testTree):
+    if( options.testTree ):
         followUpCommand = followUpCommand + ' --testTree '
-    if(options.logBranch):
+    if( options.logBranch ):
         followUpCommand = followUpCommand + ' --logBranch '
         LST.branchLog( '%25s: %s\n' % ('simTreeFollowUp.py', followUpCommand))
     jobElm=xmlTree.getroot()

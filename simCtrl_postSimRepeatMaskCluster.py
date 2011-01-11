@@ -20,9 +20,9 @@ import xml.etree.ElementTree as ET
 import simulation.lib.libSimControl as LSC
 import simulation.lib.libSimTree as LST
 
-programs = ['repeatMasking_doCluster.py', 'parasol']
+programs = ['repeatMasking_doCluster.py', 'parasol', 'cat']
 LSC.verifyPrograms(programs)
-( REPEATMASK_BIN, PARASOL ) = programs
+( REPEATMASK_BIN, PARASOL, CAT ) = programs
 
 def usage():
     print 'USAGE: '+sys.argv[0]+' --simDir <dir> [ optional: --maxJobs <number> --log ]'
@@ -38,12 +38,21 @@ def initOptions(parser):
     parser.add_option('-w', '--wait', dest='isWait',
                       default=False, action='store_true',
                       help='Holds the script open until all the cluster jobs return. For use in a batch script where the next script requires completion of repeatMasking.')
+    parser.add_option('--useMELibs', dest='useMELibs',
+                      default=False, action='store_true',
+                      help='generates a single MELib.fa for the cycle directory and uses that MELib.fa as a library for repeatMasker.')
+    parser.add_option('--useThisMELib', dest='useThisMELib',
+                      default='', type='string',
+                      help='Uses a single, specified, MELib.fa as a library for repeatMasker.')
     parser.add_option('-d', '--debug', dest='isDebug',
                       default=False, action='store_true',
                       help='Issues no jobs, simply prints out the command to be issued.')
     parser.add_option('-m', '--maxJobs',dest='maxJobs',
                       type='int', default=200,
                       help='Total number of max jobs to divide among all repeat masking instances.')
+    parser.add_option('-c', '--chunkSize',dest='chunkSize',
+                      type='int', default=0,
+                      help='Size, in bp, to break sequence into. Smaller chunks means more jobs on the cluster.')
 
 def checkOptions(options):
     if (options.simDir == None):
@@ -61,6 +70,12 @@ def checkOptions(options):
     options.inputNewick=treeObj.text
     treeObj = infoTree.find('rootDir')
     options.rootDir=treeObj.text
+    if options.useThisMELib != '':
+        if not os.path.exists( options.useThisMELib ):
+            sys.stderr.write('%s: Error, unable to find --useThisMELib %s .\n' % ( sys.argv[0], options.useThisMELib ) )
+            usage()
+        else:
+            options.useThisMELib = os.path.abspath( options.useThisMELib )
 
 def findDirectories( simDir ):
     allItems  = glob.glob(os.path.join(simDir, '*'))
@@ -72,43 +87,75 @@ def findDirectories( simDir ):
     for a in allDirs:
         if os.path.exists(os.path.join(a,'seq.name.fa')):
             readyDirs.append(a)
+    if readyDirs == []:
+        print 'Unable to locate any directories to process. Have you run simUtil_evolverFASTAextractor.py ?'
+        sys.exit( 0 )
     return readyDirs
+
+def createMELib( d ):
+    CMD = [ CAT ]
+    CMD.append( os.path.join( d, 'mobiles', 'LTR.fa') )
+    CMD.append( os.path.join( d, 'mobiles', 'ME.fa') )
+    CMD.append( os.path.join( d, 'mobiles', 'mes.fa') )
+    out = subprocess.Popen( CMD, stdout=subprocess.PIPE, stderr=subprocess.PIPE )
+    f = open( os.path.join( d, 'mobiles', 'MELib.fa'), 'w' )
+    f.write( out.stdout.read() )
+    f.close()
+
+def issueJobs( dirsToProcess, options ):
+    jobsArray = [] 
+    cmdArray  = []
+    numJobs = max(1, int( options.maxJobs / len( dirsToProcess ) ))
+    for thisDir in dirsToProcess:
+        if ( options.logFile ):
+            logPath = os.path.abspath(os.path.join(thisDir, 'logs', 'repeatMasking.log'))
+        else:
+            logPath = os.path.abspath('/dev/null')
+        if options.useMELibs:
+            createMELib( thisDir )
+        logFILE = open(logPath, 'w')
+        maskCMD =  [ REPEATMASK_BIN ]
+        maskCMD.append('--genome')
+        maskCMD.append('%s' % os.path.join(thisDir, 'seq.name.fa') )
+        maskCMD.append('--workDir')
+        maskCMD.append('%s' % os.path.join(thisDir, 'repeatMask') )
+        maskCMD.append('--maxJob')
+        maskCMD.append('%s' % str(numJobs) )
+        if options.useMELibs:
+            maskCMD.append('--lib')
+            maskCMD.append('%s' % os.path.join(thisDir, 'mobiles', 'MELib.fa') )
+        if options.useThisMELib != '':
+            maskCMD.append('--lib')
+            maskCMD.append('%s' % options.useThisMELib )
+        if options.chunkSize:
+            maskCMD.append('--chunkSize')
+            maskCMD.append('%s' % str(options.chunkSize) )
+        cmdArray.append( ' '.join( maskCMD ) )
+        if options.isDebug:
+            print maskCMD
+        else:
+            job = subprocess.Popen( maskCMD, stderr=logFILE, stdout=logFILE )
+            jobsArray.append( job )
+    return ( jobsArray, cmdArray )
+
+def waitOnJobs( jobsArray, cmdArray, options ):
+    if options.isWait and not options.isDebug:
+        i=-1
+        for job in jobsArray:
+            i=i+1
+            job.wait()
+            if( job.returncode ):
+                sys.stderr.write('%s: Error in a sub-processes "%s", returncode: %s, stderr: %s. Check logfile in cycleDir/logs/repeatMasking.log for details.\n' %( sys.argv[0], cmdArray[i], job.returncode, job.stderr ))
 
 def main():
     parser=OptionParser()
     initOptions(parser)
     (options, args) = parser.parse_args()
     checkOptions(options)
+    
     dirsToProcess = findDirectories( options.simDir )
-    if not dirsToProcess:
-        print 'Unable to locate any directories to process. Have you run simUtil_evolverFASTAextractor.py ?'
-        sys.exit(0)
-    jobsArray = [] # not used, here for future use
-    cmdArray  = []
-    numJobs = max(1, int( options.maxJobs / len( dirsToProcess ) ))
-    for thisDir in dirsToProcess:
-        if (options.logFile):
-            logPath = os.path.abspath(os.path.join(thisDir, 'logs', 'repeatMasking.log'))
-        else:
-            logPath = os.path.abspath('/dev/null')
-        logFILE = open(logPath, 'w')
-        maskCMD =  REPEATMASK_BIN
-        maskCMD += ' --genome '  + os.path.join(thisDir, 'seq.name.fa')
-        maskCMD += ' --workDir ' + os.path.join(thisDir, 'repeatMask')
-        maskCMD += ' --maxJob=' + str(numJobs)
-        cmdArray.append(maskCMD)
-        if options.isDebug:
-            print maskCMD
-        else:
-            job = subprocess.Popen(maskCMD, shell=True, stderr=logFILE, stdout=logFILE)
-            jobsArray.append(job)
-    if options.isWait:
-        i=-1
-        for job in jobsArray:
-            i=i+1
-            job.wait()
-            if(job.returncode):
-                sys.stderr.write('%s: Error in a sub-processes "%s", returncode: %s.\n' %(sys.argv[0], cmdArray[i], job.returncode))
+    ( jobsArray, cmdArray ) = issueJobs( dirsToProcess, options )
+    waitOnJobs( jobsArray, cmdArray, options )
         
 if __name__ == "__main__":
     main()

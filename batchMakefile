@@ -89,76 +89,92 @@ default:
 ##############################
 # PRODUCTION
 avgPrimates:
-	${JOBTREE} --jobTree ${AVG_PRIMATES_JOBTREE} --batchSystem=parasol --command="${RUNSIM} --parent ${AVG_BURNIN_OUT}ancestor/ --rootName ancestor --params ${GPARAMS} --tree '${AVG_PRIMATES_TREE}' --step ${AVG_PRIMATES_STEP} --out ${AVG_PRIMATES_OUT} --jobFile JOB_FILE --saveParent --seed 313370" --logDebug --retryCount 1
+	${JOBTREE} --jobTree ${AVG_PRIMATES_JOBTREE} --batchSystem=parasol --command="${RUNSIM} --parent ${AVG_BURNIN_OUT}ancestor/ --rootName ancestor --params ${GPARAMS} --tree '${AVG_PRIMATES_TREE}' --step ${AVG_PRIMATES_STEP} --out ${AVG_PRIMATES_OUT} --jobFile JOB_FILE --seed 313370" --logDebug --retryCount 1
 avgMammals:
-	${JOBTREE} --jobTree ${AVG_MAMMALS_JOBTREE}  --batchSystem=parasol --command="${RUNSIM} --parent ${AVG_BURNIN_OUT}ancestor/ --rootName ancestor --params ${GPARAMS} --tree '${AVG_MAMMALS_TREE}'  --step ${AVG_MAMMALS_STEP}  --out ${AVG_MAMMALS_OUT}  --jobFile JOB_FILE --saveParent --seed 13371121" --logDebug --retryCount 1
+	${JOBTREE} --jobTree ${AVG_MAMMALS_JOBTREE}  --batchSystem=parasol --command="${RUNSIM} --parent ${AVG_BURNIN_OUT}ancestor/ --rootName ancestor --params ${GPARAMS} --tree '${AVG_MAMMALS_TREE}'  --step ${AVG_MAMMALS_STEP}  --out ${AVG_MAMMALS_OUT}  --jobFile JOB_FILE  --seed 13371121" --logDebug --retryCount 1
 avgPrimates30:
-	${JOBTREE} --jobTree ${AVG_PRIMATES_JOBTREE30} --batchSystem=parasol --command="${RUNSIM} --parent ${AVG30_BURNIN_OUT}ancestor/ --rootName ancestor --params ${GPARAMS30} --tree '${AVG_PRIMATES_TREE}' --step ${AVG_PRIMATES_STEP} --out ${AVG_PRIMATES30_OUT} --jobFile JOB_FILE --saveParent --seed 313370" --logDebug --retryCount 1
+	${JOBTREE} --jobTree ${AVG_PRIMATES_JOBTREE30} --batchSystem=parasol --command="${RUNSIM} --parent ${AVG30_BURNIN_OUT}ancestor/ --rootName ancestor --params ${GPARAMS30} --tree '${AVG_PRIMATES_TREE}' --step ${AVG_PRIMATES_STEP} --out ${AVG_PRIMATES30_OUT} --jobFile JOB_FILE  --seed 313370" --logDebug --retryCount 1
 avgMammals30:
-	${JOBTREE} --jobTree ${AVG_MAMMALS_JOBTREE30} --batchSystem=parasol --command="${RUNSIM} --parent ${AVG30_BURNIN_OUT}ancestor/ --rootName ancestor --params ${GPARAMS30} --tree '${AVG_MAMMALS_TREE}' --step ${AVG_MAMMALS_STEP} --out ${AVG_MAMMALS30_OUT} --jobFile JOB_FILE --saveParent --seed 313370321" --logDebug --retryCount 1
+	${JOBTREE} --jobTree ${AVG_MAMMALS_JOBTREE30} --batchSystem=parasol --command="${RUNSIM} --parent ${AVG30_BURNIN_OUT}ancestor/ --rootName ancestor --params ${GPARAMS30} --tree '${AVG_MAMMALS_TREE}' --step ${AVG_MAMMALS_STEP} --out ${AVG_MAMMALS30_OUT} --jobFile JOB_FILE  --seed 313370321" --logDebug --retryCount 1
 avgBurnin:
-	${JOBTREE} --jobTree ${AVG_BURNIN_JOBTREE} --batchSystem=single_machine --command="${RUNSIM} --parent ${AVG_ROOT} --rootName root --params ${GPARAMS} --tree '${AVG_BURNIN_TREE}' --step ${AVG_MAMMALS_STEP} --out ${AVG_BURNIN_OUT} --jobFile JOB_FILE --saveParent --seed 9313370" --logDebug --retryCount 4
+	${JOBTREE} --jobTree ${AVG_BURNIN_JOBTREE} --batchSystem=single_machine --command="${RUNSIM} --parent ${AVG_ROOT} --rootName root --params ${GPARAMS} --tree '${AVG_BURNIN_TREE}' --step ${AVG_MAMMALS_STEP} --out ${AVG_BURNIN_OUT} --jobFile JOB_FILE  --seed 9313370" --logDebug --retryCount 4
 avg30Burnin:
-	${JOBTREE} --jobTree ${AVG30_BURNIN_JOBTREE} --batchSystem=single_machine --command="${RUNSIM} --parent ${TOY_ROOT} --rootName root --params ${GPARAMS30} --tree '${AVG_BURNIN_TREE}' --step ${AVG_MAMMALS_STEP} --out ${AVG30_BURNIN_OUT} --jobFile JOB_FILE --saveParent --seed 11414131" --logDebug --retryCount 4
+	${JOBTREE} --jobTree ${AVG30_BURNIN_JOBTREE} --batchSystem=single_machine --command="${RUNSIM} --parent ${TOY_ROOT} --rootName root --params ${GPARAMS30} --tree '${AVG_BURNIN_TREE}' --step ${AVG_MAMMALS_STEP} --out ${AVG30_BURNIN_OUT} --jobFile JOB_FILE  --seed 11414131" --logDebug --retryCount 4
 benCodeBurnin:
-	${JOBTREE} --jobTree ${BENCODE_BURNIN_JOBTREE} --batchSystem=single_machine --command="${RUNSIM} --parent ${BENCODE_ROOT2} --rootName root --params ${GPARAMSBENCODE} --tree '${AVG_BURNIN_TREE}' --step ${AVG_MAMMALS_STEP} --out ${BENCODE_BURNIN_OUT} --jobFile JOB_FILE --saveParent --seed 17" --logDebug --retryCount 4
+	${JOBTREE} --jobTree ${BENCODE_BURNIN_JOBTREE} --batchSystem=single_machine --command="${RUNSIM} --parent ${BENCODE_ROOT2} --rootName root --params ${GPARAMSBENCODE} --tree '${AVG_BURNIN_TREE}' --step ${AVG_MAMMALS_STEP} --out ${BENCODE_BURNIN_OUT} --jobFile JOB_FILE  --seed 17" --logDebug --retryCount 4
 assemblathonUltra:
-	${JOBTREE} --jobTree ${ASSEMBLATHON_JOBTREE}  --batchSystem=parasol --command="${RUNSIM} --parent ${ASSEMBLATHON_ROOT} --rootName ancestor --params ${ASSEMBLATHON_GPARAMS} --tree '${ASSEMBLATHON_ULTRA_TREE}'  --step ${ASSEMBLATHON_STEP}  --out ${ASSEMBLATHON_ULTRA_OUT}  --jobFile JOB_FILE --saveParent --seed 3922142511291" --logDebug --retryCount 1
+	${JOBTREE} --jobTree ${ASSEMBLATHON_JOBTREE}  --batchSystem=parasol --command="${RUNSIM} --parent ${ASSEMBLATHON_ROOT} --rootName ancestor --params ${ASSEMBLATHON_GPARAMS} --tree '${ASSEMBLATHON_ULTRA_TREE}'  --step ${ASSEMBLATHON_STEP}  --out ${ASSEMBLATHON_ULTRA_OUT}  --jobFile JOB_FILE  --seed 3922142511291" --logDebug --retryCount 1
 assemblyBurnin:
-	${JOBTREE} --jobTree ${ASSEMBLY_BURNIN_JOBTREE}  --batchSystem=parasol --command="${RUNSIM} --parent ${ASSEMBLY_BURNIN_ROOT} --rootName root --params ${ASSEMBLATHON_GPARAMS} --tree '${ASSEMBLY_BURNIN_TREE}'  --step ${ASSEMBLATHON_STEP}  --out ${ASSEMBLY_BURNIN_OUT}  --jobFile JOB_FILE --saveParent --seed 7392511291" --logDebug --retryCount 4
+	${JOBTREE} --jobTree ${ASSEMBLY_BURNIN_JOBTREE}  --batchSystem=parasol --command="${RUNSIM} --parent ${ASSEMBLY_BURNIN_ROOT} --rootName root --params ${ASSEMBLATHON_GPARAMS} --tree '${ASSEMBLY_BURNIN_TREE}'  --step ${ASSEMBLATHON_STEP}  --out ${ASSEMBLY_BURNIN_OUT}  --jobFile JOB_FILE  --seed 7392511291" --logDebug --retryCount 4
 benCode1p:
-	${JOBTREE} --jobTree ${BENCODE_1P_JOBTREE} --batchSystem=parasol --command="${RUNSIM} --parent ${BENCODE_ROOT1} --params ${GPARAMSBENCODE} --tree '${AVG_PRIMATES_TREE}' --step ${AVG_PRIMATES_STEP} --out ${BENCODE_1P_OUT} --jobFile JOB_FILE --saveParent --seed 313777351" --logDebug --retryCount 1
+	${JOBTREE} --jobTree ${BENCODE_1P_JOBTREE} --batchSystem=parasol --command="${RUNSIM} --parent ${BENCODE_ROOT1} --params ${GPARAMSBENCODE} --tree '${AVG_PRIMATES_TREE}' --step ${AVG_PRIMATES_STEP} --out ${BENCODE_1P_OUT} --jobFile JOB_FILE  --seed 313777351" --logDebug --retryCount 1
 benCode1m:
-	${JOBTREE} --jobTree ${BENCODE_1M_JOBTREE} --batchSystem=parasol --command="${RUNSIM} --parent ${BENCODE_ROOT1} --params ${GPARAMSBENCODE} --tree '${AVG_MAMMALS_TREE}' --step ${AVG_MAMMALS_STEP} --out ${BENCODE_1M_OUT} --jobFile JOB_FILE --saveParent --seed 3122171" --logDebug --retryCount 1
+	${JOBTREE} --jobTree ${BENCODE_1M_JOBTREE} --batchSystem=parasol --command="${RUNSIM} --parent ${BENCODE_ROOT1} --params ${GPARAMSBENCODE} --tree '${AVG_MAMMALS_TREE}' --step ${AVG_MAMMALS_STEP} --out ${BENCODE_1M_OUT} --jobFile JOB_FILE  --seed 3122171" --logDebug --retryCount 1
 benCode2p:
-	${JOBTREE} --jobTree ${BENCODE_2P_JOBTREE} --batchSystem=single_machine --command="${RUNSIM} --rootName ancestor --parent ${BENCODE_BURNIN_OUT}ancestor/ --params ${GPARAMSBENCODE} --tree '${AVG_PRIMATES_TREE}' --step ${AVG_PRIMATES_STEP} --out ${BENCODE_2P_OUT} --jobFile JOB_FILE --saveParent --seed 317353" --logDebug --retryCount 1
+	${JOBTREE} --jobTree ${BENCODE_2P_JOBTREE} --batchSystem=single_machine --command="${RUNSIM} --rootName ancestor --parent ${BENCODE_BURNIN_OUT}ancestor/ --params ${GPARAMSBENCODE} --tree '${AVG_PRIMATES_TREE}' --step ${AVG_PRIMATES_STEP} --out ${BENCODE_2P_OUT} --jobFile JOB_FILE  --seed 317353" --logDebug --retryCount 1
 benCode2m:
-	${JOBTREE} --jobTree ${BENCODE_2M_JOBTREE} --batchSystem=single_machine --command="${RUNSIM} --rootName ancestor --parent ${BENCODE_BURNIN_OUT}ancestor/ --params ${GPARAMSBENCODE} --tree '${AVG_MAMMALS_TREE}' --step ${AVG_MAMMALS_STEP} --out ${BENCODE_2M_OUT} --jobFile JOB_FILE --saveParent --seed 1227773611" --logDebug --retryCount 1
+	${JOBTREE} --jobTree ${BENCODE_2M_JOBTREE} --batchSystem=single_machine --command="${RUNSIM} --rootName ancestor --parent ${BENCODE_BURNIN_OUT}ancestor/ --params ${GPARAMSBENCODE} --tree '${AVG_MAMMALS_TREE}' --step ${AVG_MAMMALS_STEP} --out ${BENCODE_2M_OUT} --jobFile JOB_FILE  --seed 1227773611" --logDebug --retryCount 1
 benCode3p:
-	${JOBTREE} --jobTree ${BENCODE_3P_JOBTREE} --batchSystem=parasol --command="${RUNSIM} --parent ${BENCODE_ROOT3} --params ${GPARAMSBENCODE} --tree '${AVG_PRIMATES_TREE}' --step ${AVG_PRIMATES_STEP} --out ${BENCODE_3P_OUT} --jobFile JOB_FILE --saveParent --seed 779833211459651" --logDebug --retryCount 1
+	${JOBTREE} --jobTree ${BENCODE_3P_JOBTREE} --batchSystem=parasol --command="${RUNSIM} --parent ${BENCODE_ROOT3} --params ${GPARAMSBENCODE} --tree '${AVG_PRIMATES_TREE}' --step ${AVG_PRIMATES_STEP} --out ${BENCODE_3P_OUT} --jobFile JOB_FILE  --seed 779833211459651" --logDebug --retryCount 1
 benCode3m:
-	${JOBTREE} --jobTree ${BENCODE_3M_JOBTREE} --batchSystem=parasol --command="${RUNSIM} --parent ${BENCODE_ROOT3} --params ${GPARAMSBENCODE} --tree '${AVG_MAMMALS_TREE}' --step ${AVG_MAMMALS_STEP} --out ${BENCODE_3M_OUT} --jobFile JOB_FILE --saveParent --seed 4977843112151919131147" --logDebug --retryCount 1
+	${JOBTREE} --jobTree ${BENCODE_3M_JOBTREE} --batchSystem=parasol --command="${RUNSIM} --parent ${BENCODE_ROOT3} --params ${GPARAMSBENCODE} --tree '${AVG_MAMMALS_TREE}' --step ${AVG_MAMMALS_STEP} --out ${BENCODE_3M_OUT} --jobFile JOB_FILE  --seed 4977843112151919131147" --logDebug --retryCount 1
 
 ##############################
 # PARASOL TESTS (jobTree)
 test:
-	${JOBTREE} --jobTree ${UTENSILSET_JOBTREE} --batchSystem=parasol --command="${RUNSIM} --parent ${BENCODE_ROOT2} --rootName rootDir --params ${GPARAMSBENCODE} --tree '${UTENSILSET_TREE}' --step 0.001 --out ${UTENSILSET_OUT} --jobFile JOB_FILE --logBranch --saveParent --seed 1" --logDebug --retryCount 1
+	${JOBTREE} --jobTree ${UTENSILSET_JOBTREE} --batchSystem=parasol --command="${RUNSIM} --parent ${BENCODE_ROOT2} --rootName rootDir --params ${GPARAMSBENCODE} --tree '${UTENSILSET_TREE}' --step 0.001 --out ${UTENSILSET_OUT} --jobFile JOB_FILE --logBranch  --seed 1" --logDebug --retryCount 1
 trivial:
-	${JOBTREE} --jobTree ${TRIVIAL_JOBTREE} --batchSystem=parasol --command="${RUNSIM} --parent ${TOY_ROOT} --params ${GPARAMS30} --tree '${TRIVIAL_TREE}' --step 0.001 --out ${TRIVIAL_OUT} --jobFile JOB_FILE --logBranch --saveParent --seed 1" --logDebug --retryCount 1
+	${JOBTREE} --jobTree ${TRIVIAL_JOBTREE} --batchSystem=parasol --command="${RUNSIM} --parent ${TOY_ROOT} --params ${GPARAMS30} --tree '${TRIVIAL_TREE}' --step 0.001 --out ${TRIVIAL_OUT} --jobFile JOB_FILE --logBranch  --seed 1" --logDebug --retryCount 1
 stemStart:
-	${JOBTREE} --jobTree ${STEMSTART_JOBTREE} --batchSystem=parasol --command="${RUNSIM} --parent ${TOY_ROOT} --params ${GPARAMS30} --tree '${STEMSTART_TREE}' --step 0.001 --out ${STEMSTART_OUT} --jobFile JOB_FILE --logBranch --saveParent --seed 1" --logDebug --retryCount 1
+	${JOBTREE} --jobTree ${STEMSTART_JOBTREE} --batchSystem=parasol --command="${RUNSIM} --parent ${TOY_ROOT} --params ${GPARAMS30} --tree '${STEMSTART_TREE}' --step 0.001 --out ${STEMSTART_OUT} --jobFile JOB_FILE --logBranch  --seed 1" --logDebug --retryCount 1
 
 ##############################
 # SINGLE MACHINE TESTS (jobTree)
 testSingle:
-	${JOBTREE} --jobTree ${UTENSILSET_JOBTREE} --batchSystem=single_machine --command="${RUNSIM} --parent ${TOY_ROOT} --params ${GPARAMS30} --tree '${TREE_UTENSILSET}' --step 0.001 --out ${OUT_UTENSILSET} --jobFile JOB_FILE --logBranch --saveParent --seed 1" --logDebug --retryCount 0
+	${JOBTREE} --jobTree ${UTENSILSET_JOBTREE} --batchSystem=single_machine --command="${RUNSIM} --parent ${TOY_ROOT} --params ${GPARAMS30} --tree '${TREE_UTENSILSET}' --step 0.001 --out ${OUT_UTENSILSET} --jobFile JOB_FILE --logBranch --seed 1" --logDebug --retryCount 0
 
 ##############################
 # first post-processing, need not be run in screen, need not be run on cluster:
 repeatMaskPreRunPrimates30:
 	simUtil_evolverFASTAextractor.py --simDir ${AVG_PRIMATES30_OUT} --leavesOnly
+repeatMaskPreRunMammals30:
+	simUtil_evolverFASTAextractor.py --simDir ${AVG_MAMMALS30_OUT} --leavesOnly
 repeatMaskPreRunPrimates:
 	simUtil_evolverFASTAextractor.py --simDir ${AVG_PRIMATES_OUT} --leavesOnly
 repeatMaskPreRunMammals:
 	simUtil_evolverFASTAextractor.py --simDir ${AVG_MAMMALS_OUT} --leavesOnly
+repeatMaskPreRunAssemblathon:
+	simUtil_evolverFASTAextractor.py --simDir /hive/users/dearl/simTreeWorking/ASSEMBLATHON_ULTRA/ --leavesOnly
 
 ##############################
 # final post-processesing MUST BE RUN ON A CLUSTER (swarm), IN GNU SCREEN!!
 repeatMaskPrimates30:
-	simCtrl_postSimRepeatMaskCluster.py --simDir ${AVG_PRIMATES30_OUT} --log --wait; simCtrl_postSimRepeatMaskFinish.py --simDir ${AVG_PRIMATES30_OUT}
+	simCtrl_postSimRepeatMaskCluster.py --simDir ${AVG_PRIMATES30_OUT} --log --wait; --chunkSize 50000 simCtrl_postSimRepeatMaskFinish.py --simDir ${AVG_PRIMATES30_OUT}
+repeatMaskMammals30:
+	simCtrl_postSimRepeatMaskCluster.py --simDir ${AVG_MAMMALS30_OUT} --log --wait; --chunkSize 50000 simCtrl_postSimRepeatMaskFinish.py --simDir ${AVG_MAMMALS30_OUT}
 repeatMaskPrimates:
-	simCtrl_postSimRepeatMaskCluster.py --simDir ${AVG_PRIMATES_OUT} --log --wait; simCtrl_postSimRepeatMaskFinish.py --simDir ${AVG_PRIMATES_OUT}
+	simCtrl_postSimRepeatMaskCluster.py --simDir ${AVG_PRIMATES_OUT} --log --wait; --chunkSize 100000 simCtrl_postSimRepeatMaskFinish.py --simDir ${AVG_PRIMATES_OUT}
 repeatMaskMammals:
-	simCtrl_postSimRepeatMaskCluster.py --simDir ${AVG_MAMMALS_OUT} --log --wait; simCtrl_postSimRepeatMaskFinish.py --simDir ${AVG_MAMMALS_OUT}
+	simCtrl_postSimRepeatMaskCluster.py --simDir ${AVG_MAMMALS_OUT} --log --wait; --chunkSize 100000 simCtrl_postSimRepeatMaskFinish.py --simDir ${AVG_MAMMALS_OUT}
+repeatMaskBen2p:
+	simCtrl_postSimRepeatMaskCluster.py --simDir ${BENCODE_2P_OUT} --useThisMELib ${BENCODE_2P_OUT}ancestor/mobiles/MELib.fa --chunkSize 12000 --log --wait; simCtrl_postSimRepeatMaskFinish.py --simDir ${BENCODE_2P_OUT}
+repeatMaskBen2m:
+	simCtrl_postSimRepeatMaskCluster.py --simDir ${BENCODE_2M_OUT} --useThisMELib ${BENCODE_2M_OUT}ancestor/mobiles/MELib.fa --chunkSize 12000 --log --wait; simCtrl_postSimRepeatMaskFinish.py --simDir ${BENCODE_2M_OUT}
+repeatMaskAssemblathon:
+	simCtrl_postSimRepeatMaskCluster.py --simDir /hive/users/dearl/simTreeWorking/ASSEMBLATHON_ULTRA/ --useMELib --log --wait; simCtrl_postSimRepeatMaskFinish.py --simDir /hive/users/dearl/simTreeWorking/ASSEMBLATHON_ULTRA/
 
 ##############################
 # UTILITIES # RUN THIS ON KOLOSSUS OR HGWDEV. mafJoin has MASSIVE memory requirements when the mafs start to get big!
 extractMAFsPrimates:
 	${JOBTREE} --jobTree jobTreeMAFextraction$(RAND) --batchSystem=single_machine --command="simCtrl_postSimMAFextractor.py --simDir ${AVG_PRIMATES_OUT} --jobFile JOB_FILE" --logDebug --retryCount 1
+extractMAFsPrimates30:
+	${JOBTREE} --jobTree jobTreeMAFextraction$(RAND) --batchSystem=single_machine --command="simCtrl_postSimMAFextractor.py --simDir ${AVG_PRIMATES30_OUT} --jobFile JOB_FILE" --logDebug --retryCount 1
 extractMAFsMammals:
 	${JOBTREE} --jobTree jobTreeMAFextraction$(RAND) --batchSystem=single_machine --command="simCtrl_postSimMAFextractor.py --simDir ${AVG_MAMMALS_OUT} --jobFile JOB_FILE" --logDebug --retryCount 1
+extractMAFsMammals30:
+	${JOBTREE} --jobTree jobTreeMAFextraction$(RAND) --batchSystem=single_machine --command="simCtrl_postSimMAFextractor.py --simDir ${AVG_MAMMALS30_OUT} --jobFile JOB_FILE" --logDebug --retryCount 1
 extractMAFsBencode2M:
-	${JOBTREE} --jobTree jobTreeMAFextraction$(RAND) --batchSystem=single_machine --command="simCtrl_postSimMAFextractor.py --simDir ${BENCODE_2M_OUT} --jobFile JOB_FILE" --logDebug --retryCount 1
+	${JOBTREE} --jobTree jobTreeMAFextraction$(RAND) --batchSystem=single_machine --command="simCtrl_postSimMAFextractor.py --simDir ${BENCODE_2M_OUT}  --jobFile JOB_FILE" --logDebug --retryCount 1
 # Smaller simulations can be run on swarm okay:
 extractMAFsBencode2P:
 	${JOBTREE} --jobTree jobTreeMAFextraction$(RAND) --batchSystem=single_machine --command="simCtrl_postSimMAFextractor.py --simDir ${BENCODE_2P_OUT} --jobFile JOB_FILE" --logDebug --retryCount 1
@@ -169,3 +185,7 @@ transalignMopUpAvg30:
 	${JOBTREE} --jobTree jobTreeTransalignMopUp$(RAND) --batchSystem=single_machine --command="simCtrl_transalignMopUp.py --simDir ${AVG30_BURNIN_OUT} --jobFile JOB_FILE" --logDebug --retryCount 1
 transalignMopUpAvg:
 	${JOBTREE} --jobTree jobTreeTransalignMopUp$(RAND) --batchSystem=single_machine --command="simCtrl_transalignMopUp.py --simDir ${AVG_BURNIN_OUT} --jobFile JOB_FILE" --logDebug --retryCount 1
+transalignMopUpAvg120Mammals:
+	${JOBTREE} --jobTree jobTreeTransalignMopUp$(RAND) --batchSystem=single_machine --command="simCtrl_transalignMopUp.py --simDir ${AVG_MAMMALS_OUT} --jobFile JOB_FILE" --logDebug --retryCount 1
+transalignMopUpAvg30Mammals:
+	${JOBTREE} --jobTree jobTreeTransalignMopUp$(RAND) --batchSystem=single_machine --command="simCtrl_transalignMopUp.py --simDir ${AVG_MAMMALS30_OUT} --jobFile JOB_FILE" --logDebug --retryCount 1

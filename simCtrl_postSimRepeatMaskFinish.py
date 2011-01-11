@@ -69,13 +69,16 @@ def main():
     jobsArray = [] 
     cmdArray  = []
     for thisDir in dirsToProcess:
+        if not os.path.exists( os.path.join( thisDir, 'repeatMask', 'seq.rmsk.2bit')  ):
+            sys.stderr.write('%s: Error, file %s does not exist!\n' %(sys.argv[0], os.path.join(thisDir, 'repeatMask', 'seq.rmsk.2bit')))
+            sys.exit( 1 )
         logPath = os.path.abspath('/dev/null')
         logFILE = open(logPath, 'w')
-        convertCMD =  TWOBIT2FA_BIN
-        convertCMD += ' '+ os.path.join(thisDir, 'repeatMask', 'seq.rmsk.2bit')
-        convertCMD += ' '+ os.path.join(thisDir, 'seq.masked.fa')
-        cmdArray.append(convertCMD)
-        job = subprocess.Popen(convertCMD, shell=True, stderr=logFILE, stdout=logFILE)
+        convertCMD =  [ TWOBIT2FA_BIN ]
+        convertCMD.append(os.path.join(thisDir, 'repeatMask', 'seq.rmsk.2bit') )
+        convertCMD.append(os.path.join(thisDir, 'seq.masked.fa') )
+        cmdArray.append( ' '.join( convertCMD ) )
+        job = subprocess.Popen(convertCMD, stderr=logFILE, stdout=logFILE)
         jobsArray.append(job)
     i=-1
     for job in jobsArray:

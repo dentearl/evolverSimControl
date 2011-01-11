@@ -172,8 +172,16 @@ def buildMAFpairs( options, nodesList, leaves ):
                                       ' -tomaf '+os.path.join(options.rootDir, 'burnin.tmp.maf'))
         transCMD += '"'
         runningJobs = runningJobs + 1
-        newChild = ET.SubElement( childrenElm, 'child' )
-        newChild.attrib['command'] = transCMD
+        if not options.isDebug:
+            newChild = ET.SubElement( childrenElm, 'child' )
+            newChild.attrib['command'] = transCMD
+        else:
+            mCMD = transCMD.replace('/cluster/home/dearl/sonTrace/bin/simCtrl_commandEval.py JOB_FILE "', '')
+            mCMD = mCMD.replace('&myApos;', '\'')
+            mCMD = mCMD.replace('&myCMD;&myCMD;', '\n')
+            mCMD = mCMD.replace('&myCMD;', '\n')
+            mCMD = mCMD.replace('"','')
+            sys.stderr.write('\n%s' %( mCMD ))
     for n in nodesList:
         for c in n.children:
             if c in leaves:
@@ -191,7 +199,7 @@ def buildMAFpairs( options, nodesList, leaves ):
             if os.path.exists(os.path.join(options.simDir, c, 'aln.rev')) and \
                    not os.path.exists(os.path.join(options.simDir, c, n.name+ext)):
                 if options.isVerbose:
-                    print '\nwell, I can\'t seem to see %s or %s\n' %(os.path.join(options.simDir, c, n.name+'.aln.rev'), os.path.join(options.simDir, c, n.name+ext))
+                    print '\nwell, I can\'t seem to see %s\n' %( os.path.join(options.simDir, c, n.name+ext) )
                 runningJobs = runningJobs + 1
             transCMD += '"'
             if options.isDebug:
@@ -242,7 +250,7 @@ def mergeCommand( maf1, maf2, out, treelessRootStr, name, drop=None):
     mergeStr  = MAF_MERGE_BIN
     mergeStr += treelessRootStr 
     mergeStr += " '" + name + "'"
-    mergeStr += ' -maxBlkWidth=10000'
+    mergeStr += ' -maxBlkWidth=1000' #' -maxBlkWidth=10000'
     mergeStr += ' -maxInputBlkWidth=1000'
     if drop:
         mergeStr += ' -multiParentDropped=' + drop
@@ -341,7 +349,7 @@ def performMAFmerge( options, nodesList, leaves, nodeParentDict, nodesDict ):
                 mCMD = mCMD.replace('&myCMD;', '\n')
                 mCMD = mCMD.replace('"','')
                 if options.isVerbose:
-                    sys.stderr.write('n: %s\n  I wish to perform:%s' %(n.name, mCMD))
+                    sys.stderr.write('n: %s\n  I wish to perform:%s' %( n.name, mCMD ))
                 else:
                     sys.stderr.write('%s' % mCMD )
         else:
@@ -368,13 +376,24 @@ def performMAFmerge( options, nodesList, leaves, nodeParentDict, nodesDict ):
             mergeStr = mergeCommand( maf1, maf2, mergeOut, treelessRootStr, options.rootName, drop )
             mergeCMD += LSC.commandPacker( mergeStr )
             mergeCMD += '"'
-            newChild = ET.SubElement( childrenElm, 'child' )
-            newChild.attrib['command'] = mergeCMD
-            xmlTree.write( options.jobFile )
+            runningJobs = runningJobs + 1
+            followUpCommand = sys.argv[0] +\
+                              ' --simDir '+options.simDir+\
+                              ' --jobFile JOB_FILE '+\
+                              ' --mergeStep '
+            if not options.isDebug:
+                newChild = ET.SubElement( childrenElm, 'child' )
+                newChild.attrib['command'] = mergeCMD
+                xmlTree.write( options.jobFile )
             
     if options.isDebug:
         if runningJobs:
-            sys.stderr.write('\nI wish to perform %s\n' %( followUpCommand ))
+            mCMD = mergeCMD.replace('/cluster/home/dearl/sonTrace/bin/simCtrl_commandEval.py JOB_FILE "', '')
+            mCMD = mCMD.replace('&myApos;', '\'')
+            mCMD = mCMD.replace('&myCMD;&myCMD;', '\n')
+            mCMD = mCMD.replace('&myCMD;', '\n')
+            mCMD = mCMD.replace('"','')
+            sys.stderr.write('\nI wish to perform %s\n%s\n' %( mCMD, followUpCommand ))
         else:
             sys.stderr.write('I think I\'m done -- I have no running jobs\n')
     else:
@@ -396,7 +415,7 @@ def burninRootName( options ):
         if r:
             if r.group(1) not in names:
                 names[ r.group(1) ] = True
-    if  1 < len( names ) < 3:
+    if  len( names ) == 2:
         for n in names:
             if n != options.rootName:
                 return n

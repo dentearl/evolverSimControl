@@ -139,18 +139,18 @@ def main():
             LST.commandRecorder(transCMD, commonParent)
 
     newickTree = newickTreeParser(options.inputNewick, 0.0) # we check to see if this is a leaf.
-    if( (not options.saveParent) and (options.isContinue) and
+    if( (options.removeParent) and (options.isContinue) and
        (not options.isBranchChild) and (newickTree.distance > 0) ): # settings check
         shutil.rmtree(options.parentDir) # burn parent dir to the ground
         if options.logBranch:
             (head, tail) = os.path.split(options.parentDir)
-            LST.branchLog( '%25s: %s. saveParent:%d isContinue:%d distance:%f\n' % ('performing rmtree() on ',
-                                                                                    tail, options.saveParent, options.isContinue, newickTree.distance))
+            LST.branchLog( '%25s: %s. removeParent:%d isContinue:%d distance:%f\n' % ('performing rmtree() on ',
+                                                                                      tail, options.removeParent, options.isContinue, newickTree.distance))
     else:
         if options.logBranch:
             (head, tail) = os.path.split(options.parentDir)
-            LST.branchLog( 'will not delete parent (%s). saveParent:%d isContinue:%d isBranchChild:%d\n' % (tail, options.saveParent,
-                                                                                                            options.isContinue, options.isBranchChild))
+            LST.branchLog( 'will not delete parent (%s). removeParent:%d isContinue:%d isBranchChild:%d\n' % (tail, options.removeParent,
+                                                                                                              options.isContinue, options.isBranchChild))
     jobElm=xmlTree.getroot()
     xmlTree.write(options.jobFile)
 
