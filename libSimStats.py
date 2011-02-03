@@ -5,6 +5,8 @@ def initOptions(parser):
                       help='cycle directory.')
     parser.add_option('-j', '--jobFile',dest='jobFile',
                       help='jobFile, passed in by jobTree.')
+    parser.add_option('--noMEs', action='store_true', dest='noMEs',
+                      default=False, help='Turns off all mobile element and RPG modules in the sim.')
     
 def checkOptions( options, usage ):
     import xml.etree.ElementTree as ET

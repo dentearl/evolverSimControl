@@ -85,19 +85,23 @@ def standardOptionsCheck(options, usage):
     if(not os.path.exists(options.outDir)):
         os.mkdir(options.outDir)
 
-def cycleBranchCommandBuilder(nt, nxt, branchString, stepSize, workingDir, parentDir, gParamsDir, seed, logBranch, isTestTree):
+def cycleBranchCommandBuilder( nt, nxt, branchString, stepSize, workingDir, parentDir,
+                               gParamsDir, seed, logBranch, isTestTree, noMEs ):
+    """ This command is passed from simCtrl_simTree.py to simCtrl_cycleMain1.py and starts
+    the cascade of scripts that run a single cycle.
+    """
     import simulation.lib.libSimTree as LST
     import simulation.lib.libSimControl as LSC
     import os
     programs = ['simCtrl_cycleMain_1.py']
-    LSC.verifyPrograms(programs)
+    LSC.verifyPrograms( programs )
     CYCLEBEGIN_PY = programs[0]
     nxt.distance = nxt.distance - stepSize
-    if(nxt.distance < 0):
+    if nxt.distance < 0:
         nxt.distance = 0
-    name = LST.nameTree(nxt)
-    childPath = os.path.join(workingDir, name)
-    if (nt.distance < stepSize):
+    name = LST.nameTree( nxt )
+    childPath = os.path.join( workingDir, name )
+    if nt.distance < stepSize:
         cycleStepSize = nt.distance
     else:
         cycleStepSize = stepSize
@@ -110,14 +114,16 @@ def cycleBranchCommandBuilder(nt, nxt, branchString, stepSize, workingDir, paren
             seed -= 1
         else:
             seed += 10
-        seed = abs(seed)
-    childCMD = CYCLEBEGIN_PY +\
-               ' --parent ' + parentDir +\
-               ' --child '  + childPath +\
-               ' --params ' + gParamsDir +\
-               ' --step '   + str(cycleStepSize) +\
-               ' --seed '   + str(seed) +\
-               ' --jobFile JOB_FILE'
+        seed = abs( seed )
+    childCMD  = CYCLEBEGIN_PY
+    childCMD += ' --parent ' + parentDir
+    childCMD += ' --child '  + childPath
+    childCMD += ' --params ' + gParamsDir
+    childCMD += ' --step '   + str( cycleStepSize )
+    childCMD += ' --seed '   + str( seed )
+    if noMEs:
+        childCMD += ' --noMEs '
+    childCMD += ' --jobFile JOB_FILE'
     ##################################################
     # TEST TREE COMMAND
     if(isTestTree):
@@ -142,7 +148,10 @@ def commandRecorder(cmd, dir):
     info=ET.ElementTree(root)
     info.write(inputXML)
 
-def treeBranchCommandBuilder(nt, branchStr, options, commonParent, gParamsDir):
+def treeBranchCommandBuilder( nt, branchStr, options, commonParent, gParamsDir ):
+    """This command is used by simCtrl_runSim and simCtrl_simTreeFollowUp to initiate a new call
+    to simCtrl_simTree.py.
+    """
     from sonLib.bioio import printBinaryTree
     import simulation.lib.libSimTree as LST
     import simulation.lib.libSimControl as LSC
@@ -160,27 +169,27 @@ def treeBranchCommandBuilder(nt, branchStr, options, commonParent, gParamsDir):
         else:
             options.seed += 10
         options.seed = abs(options.seed)
-    childCMD = SIMTREE_PY +\
-               ' --parent '+commonParent+\
-               ' --tree "' +treeString+'"'+\
-               ' --params '+gParamsDir+\
-               ' --step '  +str(options.stepSize) +\
-               ' --seed '  +str(options.seed)+\
-               ' --jobFile JOB_FILE'
+    childCMD  = SIMTREE_PY
+    childCMD += ' --parent '+commonParent
+    childCMD += ' --tree "' +treeString+'"'
+    childCMD += ' --params '+gParamsDir
+    childCMD += ' --step '  +str(options.stepSize)
+    childCMD += ' --seed '  +str(options.seed)
+    childCMD += ' --jobFile JOB_FILE'
     if (options.outDir != None):
         childCMD = childCMD + ' --out ' + options.outDir
     if options.isContinue:
-        childCMD = childCMD + ' --isContinue '
+        childCMD = childCMD + ' --isContinue'
     if branchStr != 'Stem':
-        childCMD = childCMD + ' --isBranchChild '
+        childCMD = childCMD + ' --isBranchChild'
     if options.logBranch:
-        childCMD = childCMD + ' --logBranch '
+        childCMD = childCMD + ' --logBranch'
     if options.removeParent:
-        childCMD = childCMD + ' --removeParent '
+        childCMD = childCMD + ' --removeParent'
     if options.noMEs:
-        childCMD = childCMD + ' --noMEs '
+        childCMD = childCMD + ' --noMEs'
     if options.testTree:
-        childCMD = childCMD + ' --testTree '
+        childCMD = childCMD + ' --testTree'
     if options.logBranch:
         LST.branchLog( '%25s: %s\n' % (branchStr+' to simTree.py',childCMD))
     if not options.testTree:
