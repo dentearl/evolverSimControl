@@ -47,28 +47,26 @@ def main():
     jobElm=xmlTree.getroot()
     childrenElm = xmlTree.find('children')
 
-    statCMD = CMD_EVAL_BIN+\
-              ' JOB_FILE "'
-    statCMD +=LSC.commandPacker(MERGE_BIN+\
-                                ' '+os.path.join(options.childDir,'stats','merged_cycle.stats')+\
-                                ' '+os.path.join(options.parentDir,'stats','merged_root.stats')+\
-                                ' > '+os.path.join(options.childDir,'stats','merged_root.stats'))
-    statCMD +=LSC.commandPacker(EVOSTATS_BIN+\
-                                ' '+os.path.join(options.childDir,'stats','merged_cycle.stats')+\
-                                ' > '+os.path.join(options.childDir,'stats','events_cycle.txt'))
-    statCMD +=LSC.commandPacker(EVOSTATS_BIN+\
-                                ' '+os.path.join(options.childDir,'stats','merged_root.stats')+\
-                                ' > '+os.path.join(options.childDir,'stats','events_root.txt'))
+    statCMD  = CMD_EVAL_BIN + ' JOB_FILE "'
+    statCMD += LSC.commandPacker( MERGE_BIN+\
+                                  ' '+os.path.join(options.childDir,'stats','merged_cycle.stats')+\
+                                  ' '+os.path.join(options.parentDir,'stats','merged_root.stats')+\
+                                  ' > '+os.path.join(options.childDir,'stats','merged_root.stats') )
+    statCMD += LSC.commandPacker( EVOSTATS_BIN+\
+                                  ' '+os.path.join(options.childDir,'stats','merged_cycle.stats')+\
+                                  ' > '+os.path.join(options.childDir,'stats','events_cycle.txt') )
+    statCMD += LSC.commandPacker( EVOSTATS_BIN+\
+                                  ' '+os.path.join(options.childDir,'stats','merged_root.stats')+\
+                                  ' > '+os.path.join(options.childDir,'stats','events_root.txt') )
     statCMD +='"'
     
     newChild = ET.SubElement(childrenElm, 'child')
     newChild.attrib['command'] = statCMD
 
-    followUpCommand = CMD_EVAL_BIN+\
-                      ' JOB_FILE "'+\
-                      LSC.commandPacker(TIMESTAMP_BIN+\
-                                        ' --cycleDir '+options.childDir+\
-                                        ' --timeType=stats ')+'"'
+    followUpCommand  = CMD_EVAL_BIN
+    followUpCommand +=' JOB_FILE "'
+    followUpCommand += LSC.commandPacker( TIMESTAMP_BIN + ' --cycleDir ' + options.childDir + ' --timeType=stats ' )
+    followUpCommand += '"'
     jobElm.attrib['command'] = followUpCommand
     xmlTree.write(options.jobFile)
 

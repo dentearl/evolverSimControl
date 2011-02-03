@@ -78,8 +78,8 @@ def main():
         convertCMD.append(os.path.join(thisDir, 'repeatMask', 'seq.rmsk.2bit') )
         convertCMD.append(os.path.join(thisDir, 'seq.masked.fa') )
         cmdArray.append( ' '.join( convertCMD ) )
-        job = subprocess.Popen(convertCMD, stderr=logFILE, stdout=logFILE)
-        jobsArray.append(job)
+        job = subprocess.Popen( convertCMD, stderr=logFILE, stdout=logFILE )
+        jobsArray.append( job )
     i=-1
     for job in jobsArray:
         i=i+1

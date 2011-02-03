@@ -1,11 +1,12 @@
 SHELL:=/bin/bash
-RAND:=$(shell date '+%s' | perl -ple 's/^\d{6}//;')
+UNIQ:=$(shell date '+%s' | perl -ple 's/^\d{6}//;')
 JOBTREE:=jobTree
 SIMTREE:=simCtrl_simTree.py
 RUNSIM:=simCtrl_runSim.py
 GPARAMS:=/hive/users/dearl/simTreeWorking/gParams/
 GPARAMS30:=/hive/users/dearl/simTreeWorking/gParams30/
 GPARAMSBENCODE:=/hive/users/dearl/simTreeWorking/gParamsBenCode/
+GPARAMSBENCODENOMES:=/hive/users/dearl/simTreeWorking/gParamsBenCodeNoMEs/
 ASSEMBLATHON_GPARAMS:=/hive/users/dearl/simTreeWorking/gParamsAssembly/
 
 TOY_ROOT:=/hive/users/dearl/evolver/myToy/root/
@@ -34,21 +35,19 @@ ASSEMBLATHON_STEP:=0.005
 AVG_PRIMATES_JOBTREE:=/hive/users/dearl/simTreeWorking/jobTreeAvgPrimates
 AVG_PRIMATES_JOBTREE30:=/hive/users/dearl/simTreeWorking/jobTreeAvgPrimates30
 AVG_MAMMALS_JOBTREE30:=/hive/users/dearl/simTreeWorking/jobTreeAvgMammals30
-BENCODE_1P_JOBTREE:=/hive/users/dearl/simTreeWorking/jobTreeBenCode1p
 BENCODE_2P_JOBTREE:=/hive/users/dearl/simTreeWorking/jobTreeBenCode2p
-BENCODE_3P_JOBTREE:=/hive/users/dearl/simTreeWorking/jobTreeBenCode3p
-BENCODE_1M_JOBTREE:=/hive/users/dearl/simTreeWorking/jobTreeBenCode1m
+BENCODE_2P_NOMES_JOBTREE:=/hive/users/dearl/simTreeWorking/jobTreeBenCode2pNoMes
 BENCODE_2M_JOBTREE:=/hive/users/dearl/simTreeWorking/jobTreeBenCode2m
-BENCODE_3M_JOBTREE:=/hive/users/dearl/simTreeWorking/jobTreeBenCode3m
+BENCODE_2M_NOMES_JOBTREE:=/hive/users/dearl/simTreeWorking/jobTreeBenCode2mNoMes
 AVG_MAMMALS_JOBTREE:=/hive/users/dearl/simTreeWorking/jobTreeAvgMammals
 ASSEMBLY_BURNIN_JOBTREE:=/hive/users/dearl/simTreeWorking/jobTreeAssemblyBurnin
 ASSEMBLATHON_JOBTREE:=/hive/users/dearl/simTreeWorking/jobTreeAssemblathon
-UTENSILSET_JOBTREE:=/hive/users/dearl/simTreeWorking/jobTreeUtensil$(RAND)
-TRIVIAL_JOBTREE:=/hive/users/dearl/simTreeWorking/jobTreeTrivial$(RAND)
-STEMSTART_JOBTREE:=/hive/users/dearl/simTreeWorking/jobTreeStemStart$(RAND)
+UTENSILSET_JOBTREE:=/hive/users/dearl/simTreeWorking/jobTreeUtensil$(UNIQ)
+TRIVIAL_JOBTREE:=/hive/users/dearl/simTreeWorking/jobTreeTrivial$(UNIQ)
+STEMSTART_JOBTREE:=/hive/users/dearl/simTreeWorking/jobTreeStemStart$(UNIQ)
 AVG_BURNIN_JOBTREE:=/hive/users/dearl/simTreeWorking/jobTreeAvgBurnin
 AVG30_BURNIN_JOBTREE:=/hive/users/dearl/simTreeWorking/jobTreeAvg30Burnin
-BENCODE_BURNIN_JOBTREE:=/hive/users/dearl/simTreeWorking/jobTreeBenCodeBurnin
+BENCODE_BURNIN_NOMES_JOBTREE:=/hive/users/dearl/simTreeWorking/jobTreeBenCodeBurninNoMes
 
 AVG_PRIMATES_OUT:=/hive/users/dearl/simTreeWorking/AVG_PRIMATES/
 AVG_PRIMATES30_OUT:=/hive/users/dearl/simTreeWorking/AVG_PRIMATES30/
@@ -61,9 +60,11 @@ ASSEMBLATHON_OUT:=/hive/users/dearl/simTreeWorking/ASSEMBLATHON/
 ASSEMBLATHON_ULTRA_OUT:=/hive/users/dearl/simTreeWorking/ASSEMBLATHON_ULTRA/
 BENCODE_1P_OUT:=/hive/users/dearl/simTreeWorking/BENCODE_1P/
 BENCODE_1M_OUT:=/hive/users/dearl/simTreeWorking/BENCODE_1M/
-BENCODE_BURNIN_OUT:=/hive/users/dearl/simTreeWorking/BENCODE_BURNIN/
+BENCODE_BURNIN_OUT_NOMES:=/hive/users/dearl/simTreeWorking/BENCODE_BURNIN_NOMES/
 BENCODE_2P_OUT:=/hive/users/dearl/simTreeWorking/BENCODE_2P/
+BENCODE_2P_NOMES_OUT:=/hive/users/dearl/simTreeWorking/BENCODE_2P_NOMES/
 BENCODE_2M_OUT:=/hive/users/dearl/simTreeWorking/BENCODE_2M/
+BENCODE_2M_NOMES_OUT:=/hive/users/dearl/simTreeWorking/BENCODE_2M_NOMES/
 BENCODE_3P_OUT:=/hive/users/dearl/simTreeWorking/BENCODE_3P/
 BENCODE_3M_OUT:=/hive/users/dearl/simTreeWorking/BENCODE_3M/
 UTENSILSET_OUT:=/hive/users/dearl/simTreeWorking/UTENSILS/
@@ -102,22 +103,20 @@ avg30Burnin:
 	${JOBTREE} --jobTree ${AVG30_BURNIN_JOBTREE} --batchSystem=single_machine --command="${RUNSIM} --parent ${TOY_ROOT} --rootName root --params ${GPARAMS30} --tree '${AVG_BURNIN_TREE}' --step ${AVG_MAMMALS_STEP} --out ${AVG30_BURNIN_OUT} --jobFile JOB_FILE  --seed 11414131" --logDebug --retryCount 4
 benCodeBurnin:
 	${JOBTREE} --jobTree ${BENCODE_BURNIN_JOBTREE} --batchSystem=single_machine --command="${RUNSIM} --parent ${BENCODE_ROOT2} --rootName root --params ${GPARAMSBENCODE} --tree '${AVG_BURNIN_TREE}' --step ${AVG_MAMMALS_STEP} --out ${BENCODE_BURNIN_OUT} --jobFile JOB_FILE  --seed 17" --logDebug --retryCount 4
+benCodeBurninNoMes:
+	${JOBTREE} --jobTree ${BENCODE_BURNIN_NOMES_JOBTREE} --batchSystem=parasol --command="${RUNSIM} --parent ${BENCODE_ROOT2} --rootName root --params ${GPARAMSBENCODENOMES} --noMEs --tree '${AVG_BURNIN_TREE}' --step ${AVG_MAMMALS_STEP} --out ${BENCODE_BURNIN_OUT_NOMES} --jobFile JOB_FILE  --seed 17" --logDebug --retryCount 0
 assemblathonUltra:
 	${JOBTREE} --jobTree ${ASSEMBLATHON_JOBTREE}  --batchSystem=parasol --command="${RUNSIM} --parent ${ASSEMBLATHON_ROOT} --rootName ancestor --params ${ASSEMBLATHON_GPARAMS} --tree '${ASSEMBLATHON_ULTRA_TREE}'  --step ${ASSEMBLATHON_STEP}  --out ${ASSEMBLATHON_ULTRA_OUT}  --jobFile JOB_FILE  --seed 3922142511291" --logDebug --retryCount 1
 assemblyBurnin:
 	${JOBTREE} --jobTree ${ASSEMBLY_BURNIN_JOBTREE}  --batchSystem=parasol --command="${RUNSIM} --parent ${ASSEMBLY_BURNIN_ROOT} --rootName root --params ${ASSEMBLATHON_GPARAMS} --tree '${ASSEMBLY_BURNIN_TREE}'  --step ${ASSEMBLATHON_STEP}  --out ${ASSEMBLY_BURNIN_OUT}  --jobFile JOB_FILE  --seed 7392511291" --logDebug --retryCount 4
-benCode1p:
-	${JOBTREE} --jobTree ${BENCODE_1P_JOBTREE} --batchSystem=parasol --command="${RUNSIM} --parent ${BENCODE_ROOT1} --params ${GPARAMSBENCODE} --tree '${AVG_PRIMATES_TREE}' --step ${AVG_PRIMATES_STEP} --out ${BENCODE_1P_OUT} --jobFile JOB_FILE  --seed 313777351" --logDebug --retryCount 1
-benCode1m:
-	${JOBTREE} --jobTree ${BENCODE_1M_JOBTREE} --batchSystem=parasol --command="${RUNSIM} --parent ${BENCODE_ROOT1} --params ${GPARAMSBENCODE} --tree '${AVG_MAMMALS_TREE}' --step ${AVG_MAMMALS_STEP} --out ${BENCODE_1M_OUT} --jobFile JOB_FILE  --seed 3122171" --logDebug --retryCount 1
 benCode2p:
 	${JOBTREE} --jobTree ${BENCODE_2P_JOBTREE} --batchSystem=single_machine --command="${RUNSIM} --rootName ancestor --parent ${BENCODE_BURNIN_OUT}ancestor/ --params ${GPARAMSBENCODE} --tree '${AVG_PRIMATES_TREE}' --step ${AVG_PRIMATES_STEP} --out ${BENCODE_2P_OUT} --jobFile JOB_FILE  --seed 317353" --logDebug --retryCount 1
 benCode2m:
 	${JOBTREE} --jobTree ${BENCODE_2M_JOBTREE} --batchSystem=single_machine --command="${RUNSIM} --rootName ancestor --parent ${BENCODE_BURNIN_OUT}ancestor/ --params ${GPARAMSBENCODE} --tree '${AVG_MAMMALS_TREE}' --step ${AVG_MAMMALS_STEP} --out ${BENCODE_2M_OUT} --jobFile JOB_FILE  --seed 1227773611" --logDebug --retryCount 1
-benCode3p:
-	${JOBTREE} --jobTree ${BENCODE_3P_JOBTREE} --batchSystem=parasol --command="${RUNSIM} --parent ${BENCODE_ROOT3} --params ${GPARAMSBENCODE} --tree '${AVG_PRIMATES_TREE}' --step ${AVG_PRIMATES_STEP} --out ${BENCODE_3P_OUT} --jobFile JOB_FILE  --seed 779833211459651" --logDebug --retryCount 1
-benCode3m:
-	${JOBTREE} --jobTree ${BENCODE_3M_JOBTREE} --batchSystem=parasol --command="${RUNSIM} --parent ${BENCODE_ROOT3} --params ${GPARAMSBENCODE} --tree '${AVG_MAMMALS_TREE}' --step ${AVG_MAMMALS_STEP} --out ${BENCODE_3M_OUT} --jobFile JOB_FILE  --seed 4977843112151919131147" --logDebug --retryCount 1
+benCode2pNoMes:
+	${JOBTREE} --jobTree ${BENCODE_2P_NOMES_JOBTREE} --batchSystem=single_machine --command="${RUNSIM} --rootName ancestor --parent ${BENCODE_BURNIN_OUT_NOMES}ancestor/ --params ${GPARAMSBENCODENOMES} --tree '${AVG_PRIMATES_TREE}' --step ${AVG_PRIMATES_STEP} --out ${BENCODE_2P_NOMES_OUT} --jobFile JOB_FILE --noMEs --seed 317353" --logDebug --retryCount 1
+benCode2mNoMes:
+	${JOBTREE} --jobTree ${BENCODE_2M_NOMES_JOBTREE} --batchSystem=single_machine --command="${RUNSIM} --rootName ancestor --parent ${BENCODE_BURNIN_OUT_NOMES}ancestor/ --params ${GPARAMSBENCODENOMES} --tree '${AVG_MAMMALS_TREE}' --step ${AVG_MAMMALS_STEP} --out ${BENCODE_2M_NOMES_OUT} --jobFile JOB_FILE  --noMEs --seed 1227773611" --logDebug --retryCount 1
 
 ##############################
 # PARASOL TESTS (jobTree)
@@ -157,35 +156,44 @@ repeatMaskPrimates:
 repeatMaskMammals:
 	simCtrl_postSimRepeatMaskCluster.py --simDir ${AVG_MAMMALS_OUT} --log --wait; --chunkSize 100000 simCtrl_postSimRepeatMaskFinish.py --simDir ${AVG_MAMMALS_OUT}
 repeatMaskBen2p:
-	simCtrl_postSimRepeatMaskCluster.py --simDir ${BENCODE_2P_OUT} --useThisMELib ${BENCODE_2P_OUT}ancestor/mobiles/MELib.fa --chunkSize 12000 --log --wait; simCtrl_postSimRepeatMaskFinish.py --simDir ${BENCODE_2P_OUT}
+	simCtrl_postSimRepeatMaskCluster.py --simDir ${BENCODE_2P_OUT} --useThisMELib ${BENCODE_2P_OUT}ancestor/mobiles/MELib.fa --chunkSize 12000 --maxJobs 300 --log --wait; simCtrl_postSimRepeatMaskFinish.py --simDir ${BENCODE_2P_OUT}
+repeatMaskBen2pNoMes:
+	simCtrl_postSimRepeatMaskCluster.py --simDir ${BENCODE_2P_NOMES_OUT} --chunkSize 12000 --log --wait; simCtrl_postSimRepeatMaskFinish.py --maxJobs 300 --simDir ${BENCODE_2P_NOMES_OUT}
 repeatMaskBen2m:
-	simCtrl_postSimRepeatMaskCluster.py --simDir ${BENCODE_2M_OUT} --useThisMELib ${BENCODE_2M_OUT}ancestor/mobiles/MELib.fa --chunkSize 12000 --log --wait; simCtrl_postSimRepeatMaskFinish.py --simDir ${BENCODE_2M_OUT}
+	simCtrl_postSimRepeatMaskCluster.py --simDir ${BENCODE_2M_OUT} --useThisMELib ${BENCODE_2M_OUT}ancestor/mobiles/MELib.fa --chunkSize 12000 --maxjobs 300 --log --wait; simCtrl_postSimRepeatMaskFinish.py --simDir ${BENCODE_2M_OUT}
+repeatMaskBen2mNoMes:
+	simCtrl_postSimRepeatMaskCluster.py --simDir ${BENCODE_2M_NOMES_OUT} --chunkSize 12000 --log --wait; simCtrl_postSimRepeatMaskFinish.py --maxJobs 300 --simDir ${BENCODE_2M_NOMES_OUT}
 repeatMaskAssemblathon:
 	simCtrl_postSimRepeatMaskCluster.py --simDir /hive/users/dearl/simTreeWorking/ASSEMBLATHON_ULTRA/ --useMELib --log --wait; simCtrl_postSimRepeatMaskFinish.py --simDir /hive/users/dearl/simTreeWorking/ASSEMBLATHON_ULTRA/
 
 ##############################
 # UTILITIES # RUN THIS ON KOLOSSUS OR HGWDEV. mafJoin has MASSIVE memory requirements when the mafs start to get big!
 extractMAFsPrimates:
-	${JOBTREE} --jobTree jobTreeMAFextraction$(RAND) --batchSystem=single_machine --command="simCtrl_postSimMAFextractor.py --simDir ${AVG_PRIMATES_OUT} --jobFile JOB_FILE" --logDebug --retryCount 1
+	${JOBTREE} --jobTree jobTreeMAFextraction$(UNIQ) --batchSystem=single_machine --command="simCtrl_postSimMAFextractor.py --simDir ${AVG_PRIMATES_OUT} --jobFile JOB_FILE" --logDebug --retryCount 1
 extractMAFsPrimates30:
-	${JOBTREE} --jobTree jobTreeMAFextraction$(RAND) --batchSystem=single_machine --command="simCtrl_postSimMAFextractor.py --simDir ${AVG_PRIMATES30_OUT} --jobFile JOB_FILE" --logDebug --retryCount 1
+	${JOBTREE} --jobTree jobTreeMAFextraction$(UNIQ) --batchSystem=single_machine --command="simCtrl_postSimMAFextractor.py --simDir ${AVG_PRIMATES30_OUT} --jobFile JOB_FILE" --logDebug --retryCount 1
 extractMAFsMammals:
-	${JOBTREE} --jobTree jobTreeMAFextraction$(RAND) --batchSystem=single_machine --command="simCtrl_postSimMAFextractor.py --simDir ${AVG_MAMMALS_OUT} --jobFile JOB_FILE" --logDebug --retryCount 1
+	${JOBTREE} --jobTree jobTreeMAFextraction$(UNIQ) --batchSystem=single_machine --command="simCtrl_postSimMAFextractor.py --simDir ${AVG_MAMMALS_OUT} --jobFile JOB_FILE" --logDebug --retryCount 1
 extractMAFsMammals30:
-	${JOBTREE} --jobTree jobTreeMAFextraction$(RAND) --batchSystem=single_machine --command="simCtrl_postSimMAFextractor.py --simDir ${AVG_MAMMALS30_OUT} --jobFile JOB_FILE" --logDebug --retryCount 1
-extractMAFsBencode2M:
-	${JOBTREE} --jobTree jobTreeMAFextraction$(RAND) --batchSystem=single_machine --command="simCtrl_postSimMAFextractor.py --simDir ${BENCODE_2M_OUT}  --jobFile JOB_FILE" --logDebug --retryCount 1
+	${JOBTREE} --jobTree jobTreeMAFextraction$(UNIQ) --batchSystem=single_machine --command="simCtrl_postSimMAFextractor.py --simDir ${AVG_MAMMALS30_OUT} --jobFile JOB_FILE" --logDebug --retryCount 1
+extractMAFsBencode2p:
+	${JOBTREE} --jobTree jobTreeMAFextraction$(UNIQ) --batchSystem=single_machine --command="simCtrl_postSimMAFextractor.py --simDir ${BENCODE_2P_OUT} --jobFile JOB_FILE" --logDebug --retryCount 1
+extractMAFsBencode2pNoMes:
+	${JOBTREE} --jobTree jobTreeMAFextraction$(UNIQ) --batchSystem=single_machine --command="simCtrl_postSimMAFextractor.py --simDir ${BENCODE_2P_NOMES_OUT} --jobFile JOB_FILE" --logDebug --retryCount 1
+extractMAFsBencode2m:
+	${JOBTREE} --jobTree jobTreeMAFextraction$(UNIQ) --batchSystem=single_machine --command="simCtrl_postSimMAFextractor.py --simDir ${BENCODE_2M_OUT}  --jobFile JOB_FILE" --logDebug --retryCount 1
+extractMAFsBencode2mNoMes:
+	${JOBTREE} --jobTree jobTreeMAFextraction$(UNIQ) --batchSystem=single_machine --command="simCtrl_postSimMAFextractor.py --simDir ${BENCODE_2M_NOMES_OUT}  --jobFile JOB_FILE" --logDebug --retryCount 1
 # Smaller simulations can be run on swarm okay:
-extractMAFsBencode2P:
-	${JOBTREE} --jobTree jobTreeMAFextraction$(RAND) --batchSystem=single_machine --command="simCtrl_postSimMAFextractor.py --simDir ${BENCODE_2P_OUT} --jobFile JOB_FILE" --logDebug --retryCount 1
+
 
 ##############################
 # Mopup
 transalignMopUpAvg30:
-	${JOBTREE} --jobTree jobTreeTransalignMopUp$(RAND) --batchSystem=single_machine --command="simCtrl_transalignMopUp.py --simDir ${AVG30_BURNIN_OUT} --jobFile JOB_FILE" --logDebug --retryCount 1
+	${JOBTREE} --jobTree jobTreeTransalignMopUp$(UNIQ) --batchSystem=single_machine --command="simCtrl_transalignMopUp.py --simDir ${AVG30_BURNIN_OUT} --jobFile JOB_FILE" --logDebug --retryCount 1
 transalignMopUpAvg:
-	${JOBTREE} --jobTree jobTreeTransalignMopUp$(RAND) --batchSystem=single_machine --command="simCtrl_transalignMopUp.py --simDir ${AVG_BURNIN_OUT} --jobFile JOB_FILE" --logDebug --retryCount 1
+	${JOBTREE} --jobTree jobTreeTransalignMopUp$(UNIQ) --batchSystem=single_machine --command="simCtrl_transalignMopUp.py --simDir ${AVG_BURNIN_OUT} --jobFile JOB_FILE" --logDebug --retryCount 1
 transalignMopUpAvg120Mammals:
-	${JOBTREE} --jobTree jobTreeTransalignMopUp$(RAND) --batchSystem=single_machine --command="simCtrl_transalignMopUp.py --simDir ${AVG_MAMMALS_OUT} --jobFile JOB_FILE" --logDebug --retryCount 1
+	${JOBTREE} --jobTree jobTreeTransalignMopUp$(UNIQ) --batchSystem=single_machine --command="simCtrl_transalignMopUp.py --simDir ${AVG_MAMMALS_OUT} --jobFile JOB_FILE" --logDebug --retryCount 1
 transalignMopUpAvg30Mammals:
-	${JOBTREE} --jobTree jobTreeTransalignMopUp$(RAND) --batchSystem=single_machine --command="simCtrl_transalignMopUp.py --simDir ${AVG_MAMMALS30_OUT} --jobFile JOB_FILE" --logDebug --retryCount 1
+	${JOBTREE} --jobTree jobTreeTransalignMopUp$(UNIQ) --batchSystem=single_machine --command="simCtrl_transalignMopUp.py --simDir ${AVG_MAMMALS30_OUT} --jobFile JOB_FILE" --logDebug --retryCount 1

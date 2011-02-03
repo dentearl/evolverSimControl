@@ -58,52 +58,52 @@ def main(argv):
     for line in FILE:
         chrom = line.rstrip()
         newChild = ET.SubElement(childrenElm, 'child')
-        intraCMD = CMD_EVAL_BIN+\
-                   ' --statXML '+os.path.join(options.childDir, 'logs','micro.'+chrom+'.info.xml')+\
-                   ' JOB_FILE "'
-        intraCMD +=LSC.commandPacker(EVO_BIN +\
-                                     ' -inseq '    +os.path.join(options.childDir, 'inter', 'inter.outseq.rev') +\
-                                     ' -chrname '  +chrom+     \
-                                     ' -branchlength '  +str(options.stepSize)+ \
-                                     ' -seed '     +options.seed+\
-                                     ' -mes '      +os.path.join(options.childDir, 'mobiles', 'mes.fa') + \
-                                     ' -inannots ' +os.path.join(options.childDir, 'inter', 'inter.outannots.gff')+ \
-                                     ' -statsfile '+os.path.join(options.childDir, 'stats', chrom+'.stats') +  \
-                                     ' -codonsubs '+os.path.join(options.childDir, 'intra', chrom+'.codonsubs') +\
-                                     ' -outannots '+os.path.join(options.childDir, 'intra', chrom+'.outannots.gff') + \
-                                     ' -outgenome '+options.theChild + \
-                                     ' -model '    +os.path.join(options.gParamsDir,'model.txt') + \
-                                     ' -aln '      +'LOCAL_DIR/'+chrom+'.aln.rev' + \
-                                     ' -outseq '   +'LOCAL_DIR/'+chrom+'.outseq.rev' + \
-                                     ' -log '      +os.path.join(options.childDir,  'logs', 'intra.'+chrom+'.log'))
-        intraCMD +=LSC.commandPacker(CVT_BIN +\
-                                     ' -fromrev ' +'LOCAL_DIR/'+chrom+'.outseq.rev' + \
-                                     ' -tofasta ' +'LOCAL_DIR/'+chrom+'.outseq.fa' + \
-                                     ' -log '     +os.path.join(options.childDir,  'logs', 'intra.'+chrom+'.tofasta.log'))
-        intraCMD +=LSC.commandPacker(TRF_WRAP_BIN +\
-                                     ' LOCAL_DIR/'+chrom+'.outseq.fa' + \
-                                     ' 2 7 7 80 10 50 500 -d -h ')
-        intraCMD +=LSC.commandPacker(ECHO_BIN +\
-                                     ' \' \' ')
-        intraCMD +=LSC.commandPacker(MV_BIN+\
-                                     ' '+'LOCAL_DIR/'+chrom+'.*.dat '+ os.path.join(options.childDir, 'intra/'))
-        intraCMD +=LSC.commandPacker(MV_BIN+\
-                                     ' '+'LOCAL_DIR/'+chrom+'.outseq.rev '+ os.path.join(options.childDir, 'intra/')+' ')
-        intraCMD +=LSC.commandPacker(MV_BIN+\
-                                     ' '+'LOCAL_DIR/'+chrom+'.aln.rev '+ os.path.join(options.childDir, 'intra/')+' ')
+        intraCMD  = CMD_EVAL_BIN
+        intraCMD += ' --statXML '+os.path.join(options.childDir, 'logs','micro.'+chrom+'.info.xml')
+        intraCMD += ' JOB_FILE "'
+        CMD  = EVO_BIN
+        CMD += ' -inseq '    +os.path.join(options.childDir, 'inter', 'inter.outseq.rev')
+        CMD += ' -chrname '  +chrom
+        CMD += ' -branchlength '  +str(options.stepSize)
+        CMD += ' -seed '     +options.seed
+        if not options.noMEs:
+            CMD += ' -mes '      +os.path.join(options.childDir, 'mobiles', 'mes.fa')
+        CMD += ' -inannots ' +os.path.join(options.childDir, 'inter', 'inter.outannots.gff')
+        CMD += ' -statsfile '+os.path.join(options.childDir, 'stats', chrom+'.stats')
+        CMD += ' -codonsubs '+os.path.join(options.childDir, 'intra', chrom+'.codonsubs')
+        CMD += ' -outannots '+os.path.join(options.childDir, 'intra', chrom+'.outannots.gff')
+        CMD += ' -outgenome '+options.theChild
+        CMD += ' -model '    +os.path.join(options.gParamsDir,'model.txt')
+        CMD += ' -aln '      +'LOCAL_DIR/'+chrom+'.aln.rev'
+        CMD += ' -outseq '   +'LOCAL_DIR/'+chrom+'.outseq.rev'
+        CMD += ' -log '      +os.path.join(options.childDir,  'logs', 'intra.'+chrom+'.log')
+        intraCMD += LSC.commandPacker( CMD )
+        
+        CMD  = CVT_BIN
+        CMD += ' -fromrev ' + 'LOCAL_DIR/' + chrom + '.outseq.rev'
+        CMD += ' -tofasta ' + 'LOCAL_DIR/' + chrom + '.outseq.fa'
+        CMD += ' -log '     + os.path.join( options.childDir,  'logs', 'intra.'+chrom+'.tofasta.log' )
+        intraCMD += LSC.commandPacker( CMD )
+        
+        CMD  = TRF_WRAP_BIN + ' LOCAL_DIR/'+chrom+'.outseq.fa 2 7 7 80 10 50 500 -d -h '
+        intraCMD += LSC.commandPacker( CMD )
+        intraCMD += LSC.commandPacker( ECHO_BIN + ' \' \' ' )
+        intraCMD += LSC.commandPacker( MV_BIN + ' LOCAL_DIR/' + chrom + '.*.dat ' + os.path.join( options.childDir, 'intra/' ) )
+        intraCMD += LSC.commandPacker( MV_BIN + ' LOCAL_DIR/' + chrom + '.outseq.rev ' + os.path.join( options.childDir, 'intra/' ) + ' ' )
+        intraCMD += LSC.commandPacker( MV_BIN + ' LOCAL_DIR/' + chrom + '.aln.rev '+ os.path.join( options.childDir, 'intra/' ) + ' ' )
         intraCMD +='"'
         newChild.attrib['command'] = intraCMD
     FILE.close()
     
     jobElm=xmlTree.getroot()
-    followUpCommand = CYCLE_MAIN3 + \
-                      ' --parent ' + options.parentDir +\
-                      ' --child '  + options.childDir +\
-                      ' --params ' + options.gParamsDir +\
-                      ' --seed '   + options.seed+\
-                      ' --jobFile JOB_FILE '
-#     if options.isLeaf:
-#         followUpCommand += ' --isLeaf '
+    followUpCommand  = CYCLE_MAIN3
+    followUpCommand += ' --parent ' + options.parentDir
+    followUpCommand += ' --child '  + options.childDir
+    followUpCommand += ' --params ' + options.gParamsDir
+    followUpCommand += ' --seed '   + options.seed
+    if options.noMEs:
+        followUpCommand += ' --noMEs'
+    followUpCommand += ' --jobFile JOB_FILE '
     jobElm.attrib['command'] = followUpCommand
     ##############################
     # finished

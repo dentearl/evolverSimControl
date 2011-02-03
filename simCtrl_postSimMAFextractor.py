@@ -250,8 +250,8 @@ def mergeCommand( maf1, maf2, out, treelessRootStr, name, drop=None):
     mergeStr  = MAF_MERGE_BIN
     mergeStr += treelessRootStr 
     mergeStr += " '" + name + "'"
-    mergeStr += ' -maxBlkWidth=1000' #' -maxBlkWidth=10000'
-    mergeStr += ' -maxInputBlkWidth=1000'
+    mergeStr += ' -maxBlkWidth=250' #' -maxBlkWidth=500' # avg120 mammal mouse-rat mouse-rat-human-tmp merge # ' -maxBlkWidth=1000' avg120 mammal cow-dog merge.  #' -maxBlkWidth=10000' default
+    mergeStr += ' -maxBlkWidth=250' #' -maxInputBlkWidth=500' # avg120 mammal mouse-rat mouse-rat-human-tmp merge # ' -maxInputBlkWidth=1000'
     if drop:
         mergeStr += ' -multiParentDropped=' + drop
     mergeStr += ' ' + maf1
@@ -311,16 +311,16 @@ def performMAFmerge( options, nodesList, leaves, nodeParentDict, nodesDict ):
 
             treelessRootStr = ''
             if n.children[0] in leaves :
-                treelessRootStr += ' -treelessRoot1='+ str(n.name)
+                treelessRootStr += ' -treelessRoot1='+ str( n.name )
             if n.children[1] in leaves :
-                treelessRootStr += ' -treelessRoot2='+ str(n.name)
+                treelessRootStr += ' -treelessRoot2='+ str( n.name )
             ##############################
             # the 'lookdown' aspect of the merge is performed for every node, including the root.
             maf1 = os.path.join(options.simDir, n.children[0], n.name+'.maf')
             maf2 = os.path.join(options.simDir, n.children[1], n.name+'.maf')
             mergeOut  = os.path.join(options.simDir, n.name, n.name+'.maf')
             drop = os.path.join(options.simDir, n.name, n.name+'.dropped.tab')
-            mergeStr = mergeCommand( maf1, maf2, mergeOut, treelessRootStr, str( n.name ), drop)
+            mergeStr = mergeCommand( maf1, maf2, mergeOut, treelessRootStr, str( n.name ), drop )
             mergeCMD += LSC.commandPacker( mergeStr )
 
             ##############################

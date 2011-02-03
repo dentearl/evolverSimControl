@@ -35,29 +35,6 @@ def usage():
     print __doc__
     sys.exit(2)
 
-# def transCMDBuilder(options):
-#     transCMD = CMD_EVAL_BIN+\
-#                ' --statXML '+os.path.join(options.childDir, 'logs','trans.info.xml')+\
-#                ' JOB_FILE "'+\
-#                LSC.commandPacker(TRANS_BIN +\
-#                                  ' -in1 '+os.path.join(options.childDir, 'inter','inter.aln.rev')+ \
-#                                  ' -in2 '+os.path.join(options.childDir, 'intra', 'intra.aln.rev')+ \
-#                                  ' -out '+os.path.join(options.childDir, 'inter-intra.aln.rev')+ \
-#                                  ' -log '+os.path.join(options.childDir, 'logs', 'transalign1.log'))
-#     if( os.path.isfile(os.path.join(options.parentDir, 'root.aln.rev'))):
-#         transCMD += LSC.commandPacker(TRANS_BIN +\
-#                                      ' -in1 '+os.path.join(options.parentDir,'root.aln.rev')+ \
-#                                      ' -in2 '+os.path.join(options.childDir, 'inter-intra.aln.rev')+ \
-#                                      ' -out '+os.path.join(options.childDir, 'root.aln.rev')+ \
-#                                      ' -log '+os.path.join(options.childDir, 'logs', 'transalign2.log'))
-#     else:
-#         # base case, the parent *is* the root.
-#         transCMD += LSC.commandPacker(LINK_BIN +\
-#                                       ' -s '+os.path.join(options.childDir,'inter-intra.aln.rev')+\
-#                                       ' '+os.path.join(options.childDir,'root.aln.rev'))
-#     transCMD +='"'
-#     return transCMD
-
 def main(argv):
     parser=OptionParser()
     LSC.standardOptions(parser)
@@ -74,43 +51,37 @@ def main(argv):
     jobElm=xmlTree.getroot()
     childrenElm = xmlTree.find('children')
 
-    ########################################
-    # Transalign ONLY if this is a LEAF genome,
-    # i.e., it is the final genome in a simulation.
-    ########################################
-#     if options.isLeaf:
-#         transCMD = transCMDBuilder(options)
-#         newChild = ET.SubElement(childrenElm, 'child')
-#         newChild.attrib['command'] = transCMD
-
     ####################
     # gene decativation step
-    gDActCMD = CMD_EVAL_BIN+\
-               ' JOB_FILE "'+\
-               LSC.commandPacker(GDACT_BIN +\
-                                 ' ' + os.path.join(options.parentDir, 'annots.gff') +\
-                                 ' ' + os.path.join(options.childDir, 'intra', 'evannots.gff')+\
-                                 ' ' + os.path.join(options.childDir, 'annots.gff')+\
-                                 ' ' + EVO_BIN+\
-                                 ' >& ' + os.path.join(options.childDir, 'logs', 'gene_deactivate.log'))+'"'
+    gDActCMD  = CMD_EVAL_BIN
+    gDActCMD += ' JOB_FILE "'
+    CMD  = GDACT_BIN 
+    CMD += ' ' + os.path.join( options.parentDir, 'annots.gff' )
+    CMD += ' ' + os.path.join( options.childDir, 'intra', 'evannots.gff' )
+    CMD += ' ' + os.path.join( options.childDir, 'annots.gff' )
+    CMD += ' ' + EVO_BIN
+    CMD += ' >& ' + os.path.join( options.childDir, 'logs', 'gene_deactivate.log' )
+    gDActCMD += LSC.commandPacker( CMD ) + '"'
+    
     newChild = ET.SubElement(childrenElm, 'child')
     newChild.attrib['command'] = gDActCMD
 
     # Last step, add the cycle timestamp.
-    followUpCommand = CMD_EVAL_BIN+\
-                      ' JOB_FILE "'+\
-                      LSC.commandPacker(TIMESTAMP_BIN+\
-                                        ' --cycleDir '+options.childDir+\
-                                        ' --timeType=main '+\
-                      LSC.commandPacker(STATS_BIN+\
-                                        ' --childDir '+options.childDir+\
-                                        ' --parentDir '+options.parentDir+\
-                                        ' --jobFile JOB_XML'))+'"'
-
+    followUpCommand  = CMD_EVAL_BIN
+    followUpCommand += ' JOB_FILE "'
+    followUpCommand += LSC.commandPacker( TIMESTAMP_BIN + ' --cycleDir ' + options.childDir + ' --timeType=main ' )
+    CMD  = STATS_BIN
+    CMD += ' --childDir ' + options.childDir
+    CMD += ' --parentDir ' + options.parentDir
+    if options.noMEs:
+        CMD += ' --noMEs'
+    CMD += ' --jobFile JOB_XML'
+    followUpCommand += LSC.commandPacker( CMD )
+    followUpCommand += '"'
 
     jobElm=xmlTree.getroot()
     jobElm.attrib['command'] = followUpCommand
-    xmlTree.write(options.jobFile)
+    xmlTree.write( options.jobFile )
 
 if __name__ == "__main__":
     main(sys.argv)

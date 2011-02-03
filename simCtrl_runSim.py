@@ -121,9 +121,10 @@ def main():
         childCMD+= LSC.commandPacker(CP_BIN+\
                                      ' '+os.path.join(options.gParamsDir,'model.mes.txt')+\
                                      ' '+os.path.join(options.outDir, 'parameters'))
-        childCMD+= LSC.commandPacker(CP_BIN+\
-                                     ' '+os.path.join(options.gParamsDir,'mes.cfg')+\
-                                     ' '+os.path.join(options.outDir, 'parameters'))
+        if not options.noMEs:
+            childCMD+= LSC.commandPacker(CP_BIN+\
+                                         ' '+os.path.join(options.gParamsDir,'mes.cfg')+\
+                                         ' '+os.path.join(options.outDir, 'parameters'))
         childCMD+= '"'
         options.gParamsDir = os.path.join(options.outDir, 'parameters')
         newChild = ET.SubElement(childrenElm, 'child')
@@ -140,13 +141,15 @@ def main():
         if options.outDir != None:
             followUpCommand = followUpCommand + ' --out ' + options.outDir
         if options.removeParent:
-            followUpCommand = followUpCommand + ' --removeParent '
+            followUpCommand = followUpCommand + ' --removeParent'
         if options.isBranchChild:
-            followUpCommand = followUpCommand + ' --isBranchChild '
+            followUpCommand = followUpCommand + ' --isBranchChild'
+        if options.noMEs:
+            followUpCommand = followUpCommand + ' --noMEs'
         if options.testTree:
-            followUpCommand = followUpCommand + ' --testTree '
+            followUpCommand = followUpCommand + ' --testTree'
         if options.logBranch:
-            followUpCommand = followUpCommand + ' --logBranch '
+            followUpCommand = followUpCommand + ' --logBranch'
         jobElm=xmlTree.getroot()
         jobElm.attrib['command'] = followUpCommand
         if (options.logBranch):

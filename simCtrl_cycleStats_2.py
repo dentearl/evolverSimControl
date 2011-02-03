@@ -57,14 +57,16 @@ def main():
                                 ' > '+os.path.join(options.childDir,'stats','events.txt'))+'"'
     newChild = ET.SubElement(childrenElm, 'child')
     newChild.attrib['command'] = statCMD
-    statCMD = CMD_EVAL_BIN+\
-              ' JOB_FILE "'+\
-              LSC.commandPacker(MOBILE_REPORT_BIN+\
-                                ' '+os.path.join(options.childDir,'logs','intra.*.log')+\
-                                ' --mobilesLog '+os.path.join(options.childDir,'logs','mobiles.log')+\
-                                ' > '+os.path.join(options.childDir,'stats','stats.mobiles.txt'))+'"'
-    newChild = ET.SubElement(childrenElm, 'child')
-    newChild.attrib['command'] = statCMD
+    if not options.noMEs:
+        statCMD = CMD_EVAL_BIN+\
+                  ' JOB_FILE "'+\
+                  LSC.commandPacker(MOBILE_REPORT_BIN+\
+                                    ' '+os.path.join(options.childDir,'logs','intra.*.log')+\
+                                    ' --mobilesLog '+os.path.join(options.childDir,'logs','mobiles.log')+\
+                                    ' > '+os.path.join(options.childDir,'stats','stats.mobiles.txt'))+'"'
+        newChild = ET.SubElement(childrenElm, 'child')
+        newChild.attrib['command'] = statCMD
+        
     statCMD = CMD_EVAL_BIN+\
               ' JOB_FILE "'+\
               LSC.commandPacker(EVO_BIN+\
@@ -75,10 +77,12 @@ def main():
     newChild = ET.SubElement(childrenElm, 'child')
     newChild.attrib['command'] = statCMD
 
-    followUpCommand = STAT_3_BIN +\
-                      ' --childDir ' + options.childDir +\
-                      ' --parentDir '+ options.parentDir+\
-                      ' --jobFile JOB_FILE '
+    followUpCommand  = STAT_3_BIN
+    followUpCommand += ' --childDir ' + options.childDir
+    followUpCommand += ' --parentDir '+ options.parentDir
+    if options.noMEs:
+        followUpCommand += ' --noMEs'
+    followUpCommand += ' --jobFile JOB_FILE '
     jobElm.attrib['command'] = followUpCommand
     xmlTree.write(options.jobFile)
 

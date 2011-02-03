@@ -33,8 +33,8 @@ def usage():
 
 def main(argv):
     parser=OptionParser()
-    LSS.initOptions(parser)
-    (options, args) = parser.parse_args()
+    LSS.initOptions( parser )
+    ( options, args ) = parser.parse_args()
     LSS.checkOptions( options, usage )
     LSC.typeTimestamp(os.path.join(options.childDir,'cycleInfo.xml'),
                       'stats', 'Start')
@@ -88,10 +88,12 @@ def main(argv):
     newChild = ET.SubElement(childrenElm, 'child')
     newChild.attrib['command'] = statCMD
 
-    followUpCommand = STAT_2_BIN +\
-                      ' --childDir ' + options.childDir +\
-                      ' --parentDir '+ options.parentDir+\
-                      ' --jobFile JOB_FILE '
+    followUpCommand  = STAT_2_BIN
+    followUpCommand += ' --childDir ' + options.childDir
+    followUpCommand += ' --parentDir '+ options.parentDir
+    if options.noMEs:
+        followUpCommand += ' --noMEs'
+    followUpCommand += ' --jobFile JOB_FILE '
     jobElm.attrib['command'] = followUpCommand
     xmlTree.write(options.jobFile)
 

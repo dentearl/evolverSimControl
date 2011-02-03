@@ -27,8 +27,11 @@ def usage():
     sys.exit(2)
 
 def initOptions(parser):
-    parser.add_option('-p', '--simDir',dest='simDir',
+    parser.add_option('-d', '--simDir',dest='simDir',
                       help='Simulation directory.')
+    parser.add_option('-i', '--internalBranches',dest='internalBranches',
+                      action='store_true', default='false',
+                      help='Turns on output of the internal braches. Otherwise it is just root and leaves.')
 
 def checkOptions(options):
     if (options.simDir == None):
@@ -42,7 +45,8 @@ def checkOptions(options):
     treeObj = infoTree.find('tree')
     options.inputNewick=treeObj.text
     treeObj = infoTree.find('rootDir')
-    options.rootDir=treeObj.text
+    options.rootDir = treeObj.text
+    options.rootName = os.path.basename( options.rootDir )
 
 def extractLeaves(nt, leafDict):
     """Given a newick tree object, it returns a dict of
@@ -57,10 +61,28 @@ def extractLeaves(nt, leafDict):
         extractLeaves(nt.right, leafDict=leafDict)
         extractLeaves(nt.left , leafDict=leafDict)
 
+def extractLeavesAndIntBranches( nt, options, leafDict ):
+    """Given a newick tree object, it returns a dict of
+    leaf and internal branch objects. Operates recursively.
+    """
+    if nt == None:
+        return None
+    nt.distance = 0
+    if nt.right == None and nt.left == None:
+        # leaf
+        leafDict[ nt.iD ] = True
+    else:
+        if options.internalBranches:
+            if nt.right != None and nt.left != None and nt.iD != options.rootName:
+                # internal branch
+                leafDict[ nt.iD ] = True
+        extractLeavesAndIntBranches( nt.right, options, leafDict = leafDict )
+        extractLeavesAndIntBranches( nt.left , options, leafDict = leafDict )
+
 def parseStats(options, leaves):
     results={}
     for l in leaves:
-        results[l] = extractDist(options, l)
+        results[l] = extractDist( options, l )
 
     return results
 
@@ -136,11 +158,11 @@ def printScript(options, results):
     
     for o in order:
         print "barplot(%s.%s.value%s, names.arg='', border=NA, las=2, main='%s.%s', col=%s)" %(
-            'root', o, lengths[o], 'root', o, colors[o])
+            options.rootName, o, lengths[o], options.rootName, o, colors[o])
     i = 0
     for r in results:
         i += 1
-        if r != 'root':
+        if r != options.rootName:
             for o in order:
                 if i == len(results):
                     print "barplot(%s.%s.value%s, names.arg=%s.%s.range%s, border=NA, las=2, main='%s.%s', col=%s)" % (
@@ -151,16 +173,18 @@ def printScript(options, results):
     print 'dev.off()'
 
 def standardizeResults(options, results):
-    types = results['root'].keys()
+    """ standardize the counts so that the plots will look okay
+    """
+    types = results[ options.rootName ].keys()
     typesDict = {}
     for t in types:
         if t not in typesDict:
-            typesDict[t] = {'minName':'paul',
-                           'minRangeStart':100000000000,
-                           'minRangeEnd':100000000000,
-                           'maxName':'steven',
-                           'maxRangeStart':0,
-                           'maxRangeEnd':0}
+            typesDict[t] = { 'minName'       : 'paul',
+                             'minRangeStart' : 100000000000,
+                             'minRangeEnd'   : 100000000000,
+                             'maxName'       : 'steven',
+                             'maxRangeStart' : 0,
+                             'maxRangeEnd'   : 0 }
         for r in results:
             if results[r][t]['rangeStart'][0] < typesDict[t]['minRangeStart']:
                 typesDict[t]['minName'] = r
@@ -219,7 +243,7 @@ def printScriptGG(options, results):
     outRange = []
     outValue = []
     outType  = []
-    types = results['root'].keys()
+    types = results[ options.rootName ].keys()
     for r in results:
         for t in types:
             if t != 'NGE' and t != 'NXE':
@@ -259,12 +283,12 @@ def printScriptGG(options, results):
         else:
             s = ', '
         sys.stdout.write("%s%s" %(outType[i], s))
-    sys.stdout.write('outName = factor(outName, levels=c(\'root\', ')
+    sys.stdout.write('outName = factor(outName, levels=c(\'%s\', ' % options.rootName)
     alphabetized = results.keys()
     alphabetized.sort(key=lambda x: x.lower())
     for i in range(len(alphabetized)):
-        if alphabetized[i] != 'root':
-            if i == len(alphabetized) - 2:
+        if alphabetized[i] != options.rootName:
+            if i == len(alphabetized) - 1:
                 s = '))\n'
             else:
                 s = ', '
@@ -278,21 +302,21 @@ def printScriptGG(options, results):
 
 def main():
     parser=OptionParser()
-    initOptions(parser)
-    (options, args) = parser.parse_args()
-    checkOptions(options)
-    nt = newickTreeParser(options.inputNewick, 0.0)
+    initOptions( parser )
+    ( options, args ) = parser.parse_args()
+    checkOptions( options )
+    nt = newickTreeParser( options.inputNewick, 0.0)
     if nt.iD == None:
-        nt.iD= 'root'
+        nt.iD= options.rootName
         
     leaves={}
-    extractLeaves(nt, leaves)
-    leaves['root']=1
-    results = parseStats(options, leaves)
-    standardizeResults(options, results)
-    printStats(options, results)
-    printScript(options, results)
-    printScriptGG(options, results)
+    extractLeavesAndIntBranches( nt, options, leaves )
+    leaves[ options.rootName ] = True
+    results = parseStats( options, leaves )
+    standardizeResults( options, results )
+    printStats( options, results )
+    printScript( options, results )
+    printScriptGG( options, results )
 
 if __name__ == "__main__":
     main()

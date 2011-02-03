@@ -17,11 +17,11 @@ from datetime import datetime # for loggingo
 import simulation.lib.libSimControl as LSC
 import simulation.lib.libSimTree as LST
 
-programs = ['simCtrl_simTreeFollowUp.py', 'simCtrl_cycleMain_1.py',
-            'simCtrl_commandEval.py']
-LSC.verifyPrograms(programs)
-(SIMTREE_FOLLOW_PY, CYCLEBEGIN_PY,
- CMD_EVAL_BIN) = programs
+programs = [ 'simCtrl_simTreeFollowUp.py', 'simCtrl_cycleMain_1.py',
+             'simCtrl_commandEval.py' ]
+LSC.verifyPrograms( programs )
+( SIMTREE_FOLLOW_PY, CYCLEBEGIN_PY,
+  CMD_EVAL_BIN ) = programs
 
 def usage():
     print 'USAGE: '+sys.argv[0]+' --parent <dir> --out [optional dir] --tree <newick tree in quotes> --params <parameter dir> --jobFile JOB_FILE '
@@ -30,17 +30,17 @@ def usage():
 
 def main():
     parser=OptionParser()
-    LSC.standardOptions(parser)
-    LST.standardOptions(parser)
-    (options, args) = parser.parse_args()
-    LSC.standardOptionsCheck(options, usage)
-    LST.standardOptionsCheck(options, usage)
-    if(options.outDir != None):
+    LSC.standardOptions( parser )
+    LST.standardOptions( parser )
+    ( options, args ) = parser.parse_args()
+    LSC.standardOptionsCheck( options, usage )
+    LST.standardOptionsCheck( options, usage )
+    if options.outDir != None:
         workingDir = options.outDir
     else:
-        (workingDir,tail) = os.path.split(options.parentDir)
-    if(len(glob.glob(options.parentDir+'/*rev')) == 0): 
-        sys.stderr.write('%s: Error: no *.rev found in parent dir.\n' %(sys.argv[0]))
+        ( workingDir, tail ) = os.path.split( options.parentDir )
+    if len( glob.glob( options.parentDir+'/*rev' ) ) == 0: 
+        sys.stderr.write('%s: Error: no *.rev found in parent dir.\n' %( sys.argv[0] ))
         usage()
 
     ##############################
@@ -51,31 +51,34 @@ def main():
     childrenElm = xmlTree.find('children')
     nextTree = newickTreeParser( options.inputNewick, 0.0 )
     if newickTree.distance > 0:
-        newChild = ET.SubElement(childrenElm, 'child')
-        newChild.attrib['command'] = LST.cycleBranchCommandBuilder(newickTree, nextTree, 'stem', options.stepSize,
-                                                                   workingDir, options.parentDir, options.gParamsDir,
-                                                                   options.seed, options.logBranch, options.testTree)
+        newChild = ET.SubElement( childrenElm, 'child' )
+        newChild.attrib['command'] = LST.cycleBranchCommandBuilder( newickTree, nextTree, 'stem', options.stepSize,
+                                                                    workingDir, options.parentDir, options.gParamsDir,
+                                                                    options.seed, options.logBranch, options.testTree,
+                                                                    options.noMEs )
     ##########
     # Follow up command
-    followUpCommand = SIMTREE_FOLLOW_PY +\
-                      ' --parent '+options.parentDir+\
-                      ' --tree "'+options.inputNewick + '"'+\
-                      ' --params '+options.gParamsDir +\
-                      ' --step '+str(options.stepSize) +\
-                      ' --seed '+options.seed +\
-                      ' --jobFile JOB_FILE'
-    if (options.outDir != None):
+    followUpCommand  = SIMTREE_FOLLOW_PY
+    followUpCommand += ' --parent ' + options.parentDir
+    followUpCommand += ' --tree "' + options.inputNewick + '"'
+    followUpCommand += ' --params ' + options.gParamsDir
+    followUpCommand += ' --step ' + str( options.stepSize )
+    followUpCommand += ' --seed '+ options.seed 
+    followUpCommand += ' --jobFile JOB_FILE'
+    if options.outDir != None:
         followUpCommand = followUpCommand + ' --out ' + options.outDir
-    if( options.removeParent ):
-        followUpCommand = followUpCommand + ' --removeParent '
-    if( options.isContinue ):
-        followUpCommand = followUpCommand + ' --isContinue '
-    if( options.isBranchChild ):
-        followUpCommand = followUpCommand + ' --isBranchChild '
-    if( options.testTree ):
-        followUpCommand = followUpCommand + ' --testTree '
-    if( options.logBranch ):
-        followUpCommand = followUpCommand + ' --logBranch '
+    if options.removeParent:
+        followUpCommand = followUpCommand + ' --removeParent'
+    if options.isContinue:
+        followUpCommand = followUpCommand + ' --isContinue'
+    if options.isBranchChild:
+        followUpCommand = followUpCommand + ' --isBranchChild'
+    if options.testTree:
+        followUpCommand = followUpCommand + ' --testTree'
+    if options.noMEs:
+        followUpCommand = followUpCommand + ' --noMEs'
+    if options.logBranch:
+        followUpCommand = followUpCommand + ' --logBranch'
         LST.branchLog( '%25s: %s\n' % ('simTreeFollowUp.py', followUpCommand))
     jobElm=xmlTree.getroot()
     jobElm.attrib['command'] = followUpCommand

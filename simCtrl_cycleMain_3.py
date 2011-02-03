@@ -28,7 +28,7 @@ programs = ['evolver_evo', 'evolver_cvt', 'evolver_trf2gff.py',
             'simCtrl_cycleMain_4.py', 'cat', 'simCtrl_commandEval.py']
 LSC.verifyPrograms(programs)
 (EVO_BIN, CVT_BIN, TRF2GFF_BIN,
- CYCLE_END, CAT_BIN, CMD_EVAL_BIN) = programs
+ CYCLE_MAIN4, CAT_BIN, CMD_EVAL_BIN) = programs
 
 def usage():
     print "USAGE: %s --parent parentDir/ --child childDir --params globalParamsDir/ --jobFile JOB_FILE [optional: --step ]" %(sys.argv[0])
@@ -52,11 +52,13 @@ def main(argv):
     childrenElm = xmlTree.find('children')
 
     FILE = open(os.path.join(options.childDir, 'inter', 'inter.chrnames.txt'))
-    TRF_CMD      = CMD_EVAL_BIN+\
-                   ' JOB_FILE "'+\
-                   LSC.commandPacker(TRF2GFF_BIN +\
-                   ' ' + os.path.join(options.childDir,'intra','*.dat')+\
-                   ' > ' + os.path.join(options.childDir,'intra','trfannots.gff'))
+    TRF_CMD = CMD_EVAL_BIN
+    TRF_CMD += ' JOB_FILE "'
+    CMD  = TRF2GFF_BIN
+    CMD += ' ' + os.path.join(options.childDir,'intra','*.dat')
+    CMD += ' > ' + os.path.join(options.childDir,'intra','trfannots.gff')
+    TRF_CMD += LSC.commandPacker( CMD )
+                   
     CAT_GFF_CMD  = CAT_BIN + ' ' + os.path.join(options.childDir,'intra','trfannots.gff')
     EVO_CMD  = ' '
     CVT_CMD  = ' '
@@ -100,15 +102,17 @@ def main(argv):
     
     # follow up job will be the the final transalign step (cycleEnd.py)
     jobElm=xmlTree.getroot()
-    followUpCommand = CYCLE_END +\
-                      ' --parent ' + options.parentDir +\
-                      ' --child '  + options.childDir +\
-                      ' --params ' + options.gParamsDir +\
-                      ' --seed '   + options.seed+\
-                      ' --jobFile JOB_FILE'
-#     if options.isLeaf:
-#         followUpCommand += ' --isLeaf '
+    followUpCommand = CYCLE_MAIN4
+    followUpCommand += ' --parent ' + options.parentDir
+    followUpCommand += ' --child '  + options.childDir
+    followUpCommand += ' --params ' + options.gParamsDir
+    followUpCommand += ' --seed '   + options.seed
+    if options.noMEs:
+        followUpCommand += ' --noMEs'
+    followUpCommand += ' --jobFile JOB_FILE '
     jobElm.attrib['command'] = followUpCommand
+    ##############################
+    # finished
     xmlTree.write(options.jobFile)
 
 if __name__ == "__main__":
