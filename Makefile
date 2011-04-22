@@ -1,12 +1,12 @@
-include ../../../include.mk
-binPath = ../../../bin
-libPath = ../../../lib
+SHELL:=/bin/bash -e
+export SHELLOPTS=pipefail
 
-py_progs = $(notdir $(wildcard *.py))
+binPath = bin
+py_progs = $(notdir $(wildcard src/*.py))
 
 all: ${py_progs:%=${binPath}/%}
 
-${binPath}/%: %
+${binPath}/%: src/%
 	@mkdir -p $(dir $@)
 	cp -f $< $@
 	chmod 775 $@
