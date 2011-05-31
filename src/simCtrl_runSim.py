@@ -35,198 +35,173 @@ of performing the genome simulation.
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 # THE SOFTWARE.
 ##################################################
-from sonLib.bioio import newickTreeParser
-from sonLib.bioio import printBinaryTree
-from optparse import OptionParser
-import xml.etree.ElementTree as ET
-import os
-import sys
-import time
 from datetime import datetime
-import simulation.lib.libSimControl as LSC
-import simulation.lib.libSimTree as LST
+from evolverSimControl.lib.libSimControlClasses import SimTree
+import evolverSimControl.lib.libSimControl as lsc
+from jobTree.scriptTree.stack import Stack
+from optparse import OptionParser
+import os
+from sonLib.bioio import newickTreeParser
+import sys
+import subprocess
+import time
+import xml.etree.ElementTree as ET
 
 # this is the first script to run in a simulation, so it will check for the
 # existance of everything the entire simulation will end up calling, not
 # just the scripts or external files used by runSim.py.
-programs = ['simCtrl_simTree.py','simCtrl_rootCycleInfoCreator.py', 'cp',
-            'mkdir', 'simCtrl_commandEval.py',
+programs = ['cp',
+            'mkdir',
             'evolver_evo', 'evolver_cvt', 'evolver_transalign',
             'evolver_drawrev', 'evolver_gff_cdsutr2exons.py',
             'evolver_gff_exons2introns.py', 'evolver_gff_featurestats2.sh',
             'evolver_gff_featurestats2.py', 'evolver_codon_report.pl',
-            'evolver_merge_evostats.py','evolver_mobile_report.pl',
-            'touch', 'ln','egrep', 'cat',
-            'simCtrl_cycleMain_1.py', 'simCtrl_cycleMain_2.py',
-            'simCtrl_cycleMain_3.py', 'simCtrl_cycleMain_4.py',
-            'simCtrl_cycleStats_1.py', 'simCtrl_cycleStats_2.py',
-            'simCtrl_cycleStats_3.py', 'simCtrl_cycleStats_4.py',
-            'simCtrl_simTreeFollowUp.py', 'simCtrl_wrapperTRF.py',
-            'simCtrl_completeTimestamp.py']
-LSC.verifyPrograms( programs )
-( SIMTREE_PY, ROOT_CYCLEXML_MAKER,
-  CP_BIN, MKDIR_BIN, CMD_EVAL_BIN ) = programs[ 0:5 ]
+            'evolver_merge_evostats.py', 'evolver_mobile_report.pl',
+            'touch', 'ln', 'egrep', 'cat', 'simCtrl_completeTimestamp.py']
+lsc.verifyPrograms( programs )
+( CP_BIN, MKDIR_BIN ) = programs[ 0:2 ]
 
-def usage():
-    print 'USAGE: '+sys.argv[0]+' --root [dir] --out --tree [newick tree in quotes] --params [parameter dir] --stepSize [0.001] --jobFile JOB_FILE '
-    print __doc__
-    sys.exit(2)
+def initOptions(parser):
+    parser.add_option('--rootName',dest='rootName', 
+                      help='name of the root genome, to differentiate it from the input newick.')
+    # Sim Tree Options
+    parser.add_option('-o', '--outDir',dest='outDir',
+                      help='Out directory.')
+    parser.add_option('-t', '--inputNewick',dest='inputNewick',
+                      help='Newick tree.')
+    parser.add_option('--testTree', action='store_true', 
+                      default=False, dest='testTree',
+                      help='Instead of performing a simulation, does dry run with empty dirs.')
+    # Sim Control Options
+    parser.add_option('--rootDir',dest='rootInputDir',
+                      help='Input root directory.')
+    parser.add_option('-s', '--step',dest='stepSize', action="store",
+                      type ='float', default=0.001,
+                      help='stepSize for each cycle. default=%default')
+    parser.add_option('--params',dest='paramsDir',
+                      help='Parameter directory.')
+    parser.add_option('--seed',dest='seed',default='stochastic',
+                      type='string', help='Random seed, either an int or "stochastic". default%default')
+    parser.add_option('--noMEs', action='store_true', 
+                      dest='noMEs', default=False, 
+                      help=('Turns off all mobile element '
+                      'and RPG modules in the sim. default=%default'))
+    parser.add_option('--noGeneDeactivation', action='store_true', 
+                      dest='noGeneDeactivation', default=False, 
+                      help=('Turns off the gene deactivation step. '
+                      'default=%default'))
 
-def newickContainsReservedWord(nt):
-    """newickContainsReservedWord() checks the newick to make sure that
+def checkOptions( options, parser ):
+    if options.inputNewick is None:
+        parser.error('Specify --inputNewick.')
+    # check newickTree for reserved words
+    nt = newickTreeParser( options.inputNewick, 0.0 )
+    if options.rootName is None:
+        options.rootName = lsc.newickRootName( nt )
+    else:
+        options.rootName = options.rootName
+    if newickContainsReservedWord(nt, options):
+        parser.error('Newick tree contains reserved words.\n')
+    
+    # Sim Tree Options
+    if options.outDir is None:
+        parser.error('specify --outDir.\n')
+    if os.path.exists( options.outDir ) and not os.path.isdir( options.outDir ):
+        parser.error('--outDir %s exists but is not a directory!' % options.outDir )
+    options.outDir = os.path.abspath(options.outDir)
+    if not os.path.exists(options.outDir ):
+        os.mkdir( options.outDir )
+    # Sim Control options
+    if options.rootInputDir is None:
+        parser.error('Specify --rootDir.\n')
+    if not os.path.isdir( options.rootInputDir ):
+        parser.error('--rootDir "%s" not a directory!\n' % options.rootInputDir)
+    options.rootInputDir = os.path.abspath(options.rootInputDir)
+    
+    if options.paramsDir is None:
+        parser.error('Specify --params.\n')
+    if not os.path.isdir(options.paramsDir):
+        parser.error('Params dir "%s" not a directory!\n' % options.paramsDir)
+    options.paramsDir = os.path.abspath(options.paramsDir)
+    if options.stepSize <= 0:
+        parser.error('specify positive stepSize.\n')
+    if options.seed != 'stochastic':
+        options.seed = int( options.seed )
+        # otherwise we let the evolver tools choose their own seeds at random.
+
+def newickContainsReservedWord(nt, options ):
+    """
+    newickContainsReservedWord() checks the newick to make sure that
     there are no reserved names used as IDs. At present the only reserved
     name is 'parameters'.
     """
-    reservedWords = {'parameters':1}
-    if nt == None:
+    reservedWords = set([ 'parameters', options.rootName ])
+    if nt is None:
         return False
     if nt.iD in reservedWords:
         return True
-    left = newickContainsReservedWord(nt.right)
-    right= newickContainsReservedWord(nt.left)
+    right = newickContainsReservedWord(nt.right, options)
+    left  = newickContainsReservedWord(nt.left,  options)
     if left or right:
         return True
+    return False
 
-"""
-Okay, here's what we do: The first call to simTree.py will ALWAYS perform
-the task of copying over the parent genome into a directory called 'root'
-and will create the cycleInfo.xml file. Then, if the newick tree starts at a branch
-then we will recall simTree.py using the root as the parent. there must be a variable
-passed to branchcommandbuilder through the branches that represents this.
-If instead we are on a stem to begin with then the only change will be to make
-the new root directory the parent directory for the first real cycle.
-"""
-
-def initOptions(parser):
-    """initOptions() initializes the options that will go to the
-    parser object
+def checkForFiles( options ):
+    """ If files are missing, complains and dies.
     """
-    parser.add_option('--isFollowUp',dest='isFollowUp', action='store_true',
-                      default=False, help='file to write run-stats to.')
-    parser.add_option('--rootName',dest='rootName', 
-                      help='name of the root genome, to differentiate it from the input newick.')
+    if not os.path.exists( os.path.join( options.rootInputDir, 'seq.rev')):
+        sys.stderr.write('Error, unable to find seq.rev in --rootDir %s.\n' % options.rootInputDir)
+    for p in ['model.txt', 'model.mes.txt', 'mes.cfg']:
+        if not os.path.exists( os.path.join( options.paramsDir, p)):
+            sys.stderr.write('Error, unable to find %s in --params %s' % (p, options.paramsDir))
+            sys.exit(1)
+
+def populateRootDir( options ):
+    """ The first order of business in a simulation is to create the basic directory structure
+    for the root genome and the parameters.
+    """
+    # mkdir is used here for simplicity in timing the creation of the diretory and 
+    # subsequent two cp jobs for parameters.
+    jobs = []
+    jobs.append(['mkdir', '-p', os.path.join(options.outDir, 'parameters') ])
+    lsc.runCommands( jobs, options.outDir )
+    jobs = []
+    jobs.append(['cp', '-r', options.rootInputDir, os.path.join( options.outDir, options.rootName )])
+    #jobs.append([ROOT_CYCLEXML_MAKER, '--dir=%s' % os.path.join(options.outDir, options.rootName )])
+    jobs.append(['cp', os.path.join(options.paramsDir,'model.txt'), 
+                 os.path.join(options.outDir, 'parameters')])
+    jobs.append(['cp', os.path.join(options.paramsDir,'model.mes.txt'),
+                 os.path.join(options.outDir, 'parameters')])
+    if not options.noMEs:
+        jobs.append(['cp', os.path.join(options.paramsDir,'mes.cfg'),
+                     os.path.join(options.outDir, 'parameters')])
+    lsc.runCommands(jobs, options.outDir, mode='p')
+    options.paramsInputDir = options.paramsDir
+    options.paramsDir = os.path.abspath(os.path.join(options.outDir, 'parameters'))
+    options.parentDir  = os.path.abspath(os.path.join(options.outDir, options.rootName))
+    options.simDir, tail = os.path.split(options.parentDir)
+    options.rootDir      = os.path.abspath(os.path.join(options.simDir, 'root'))
+    lsc.createRootXmls( sys.argv, options )
+    
+def launchSimTree( options ):
+    jobResult = Stack( SimTree( options )).startJobTree( options )
+    if jobResult:
+        sys.stderr.write('Error, the jobTree contained %d failed jobs!\n' % jobResult )
+        sys.exit(1)
 
 def main():
-    parser=OptionParser()
-    LSC.standardOptions(parser)
-    LST.standardOptions(parser)
+    usage=('usage: %prog --rootName=name --parent=/path/to/dir --params=/path/to/dir '
+           '--tree=newickTree --step=stepSize --out=/path/to/dir --seed=seedNumber\n\n'
+           '%prog is used to initiate an evolver simulation using jobTree/scriptTree.')
+    parser=OptionParser(usage=usage)
     initOptions(parser)
-    (options, args) = parser.parse_args()
-    LSC.standardOptionsCheck(options, usage)
-    LST.standardOptionsCheck(options, usage)
-    # check newickTree for reserved words
-    nt = newickTreeParser( options.inputNewick, 0.0 )
-    if newickContainsReservedWord(nt):
-        sys.stderr.write('%s: Error: newick tree contains reserved words.\n' %(sys.argv[0]))
-        usage()
-    if not options.rootName:
-        rootName = LST.newickRootName( nt )
-    else:
-        rootName = options.rootName
-    if not os.path.exists( os.path.join( options.parentDir, 'seq.rev')):
-        sys.stderr.write('ERROR: Unable to find seq.rev in --parentDir [%s].\n' % options.parentDir)
-        sys.exit(1)
-    xmlTree = ET.parse(options.jobFile)
-    childrenElm = xmlTree.find('children')
-    if not options.isFollowUp:
-        # if the root/ dir does not exist inside the simulation directory
-        # then we need to create it and then re-call runSim
-        childCMD = CMD_EVAL_BIN+' JOB_FILE "'
-        childCMD+= LSC.commandPacker(CP_BIN+\
-                                     ' -r '+options.parentDir+\
-                                     ' '+os.path.join( options.outDir, rootName ))
-        childCMD+= LSC.commandPacker( ROOT_CYCLEXML_MAKER +\
-                                     ' --dir '+os.path.join(options.outDir, rootName ) )
-        childCMD+= LSC.commandPacker(MKDIR_BIN+\
-                                     ' '+os.path.join(options.outDir, 'parameters'))
-        childCMD+= LSC.commandPacker(CP_BIN+\
-                                     ' '+os.path.join(options.gParamsDir,'model.txt')+\
-                                     ' '+os.path.join(options.outDir, 'parameters'))
-        childCMD+= LSC.commandPacker(CP_BIN+\
-                                     ' '+os.path.join(options.gParamsDir,'model.mes.txt')+\
-                                     ' '+os.path.join(options.outDir, 'parameters'))
-        if not options.noMEs:
-            childCMD+= LSC.commandPacker(CP_BIN+\
-                                         ' '+os.path.join(options.gParamsDir,'mes.cfg')+\
-                                         ' '+os.path.join(options.outDir, 'parameters'))
-        childCMD+= '"'
-        options.gParamsDir = os.path.join(options.outDir, 'parameters')
-        newChild = ET.SubElement(childrenElm, 'child')
-        newChild.attrib['command']=childCMD
-        options.parentDir = os.path.join(options.outDir, rootName)
-        followUpCommand = sys.argv[0] +\
-                          ' --parent '+options.parentDir+\
-                          ' --tree "'+options.inputNewick + '"'+\
-                          ' --params '+options.gParamsDir +\
-                          ' --step '+str( options.stepSize ) +\
-                          ' --seed '+options.seed +\
-                          ' --jobFile JOB_FILE'+\
-                          ' --isFollowUp '
-        if options.outDir != None:
-            followUpCommand = followUpCommand + ' --out ' + options.outDir
-        if options.removeParent:
-            followUpCommand = followUpCommand + ' --removeParent'
-        if options.isBranchChild:
-            followUpCommand = followUpCommand + ' --isBranchChild'
-        if options.noMEs:
-            followUpCommand = followUpCommand + ' --noMEs'
-        if options.testTree:
-            followUpCommand = followUpCommand + ' --testTree'
-        if options.logBranch:
-            followUpCommand = followUpCommand + ' --logBranch'
-        jobElm=xmlTree.getroot()
-        jobElm.attrib['command'] = followUpCommand
-        if (options.logBranch):
-            dt=datetime.utcnow()
-            nowStr = dt.strftime("%a, %d %b %Y %H:%M:%S +0000")
-            separator= '####################\n'
-            LST.branchLog('%s%s : Starting new run with tree %s\n%s' %( separator, nowStr, options.inputNewick, separator ))
+    Stack.addJobTreeOptions( parser )
+    options, args = parser.parse_args()
+    checkOptions( options, parser )
 
-        if(os.path.exists(os.path.join(options.outDir, 'simulationInfo.xml'))):
-            os.remove(os.path.join(options.outDir, 'simulationInfo.xml'))
-        root=ET.Element( 'info' )
-        tObj=ET.SubElement( root, 'rootDir' )
-        tObj.text=str( options.parentDir )
-        tObj=ET.SubElement( root, 'gParamsDir' )
-        tObj.text=str( options.gParamsDir )
-        tObj=ET.SubElement( root, 'tree')
-        tObj.text=str( options.inputNewick )
-        tObj=ET.SubElement( root, 'stepSize' )
-        tObj.text=str( options.stepSize )
-        tObj=ET.SubElement( root, 'removeParent' )
-        tObj.text=str( options.removeParent )
-        tObj=ET.SubElement( root, 'timestamps')
-        timeStart      = ET.SubElement(tObj,'start')
-        timeLocal      = ET.SubElement( timeStart, 'humanLocal' )
-        timeLocal.text = str( time.strftime("%a, %d %b %Y %H:%M:%S (%Z) ", time.localtime()) )
-        timeHuman      = ET.SubElement( timeStart, 'humanUTC' )
-        timeHuman.text = str( time.strftime("%a, %d %b %Y %H:%M:%S (UTC) ", time.gmtime()) )
-        timeEpoch      = ET.SubElement( timeStart, 'epochUTC' )
-        timeEpoch.text = str(time.time())
-        cmd = ET.SubElement( root, 'command')
-        cmd.text = ' '.join(sys.argv)
-        info=ET.ElementTree( root )
-        info.write( os.path.join( options.outDir,'simulationInfo.xml' ) )
-    else:
-        # since the root/ dir exists, we can make the first call to simTree.py
-        # WRITE INFO.XML IF this is the first run of the simulation.
-        if nt.distance == 0:
-            # branch point, create two child processes
-            newChild = ET.SubElement(childrenElm, 'child')
-            newChild.attrib['command'] = LST.treeBranchCommandBuilder(nt.left, 'Left Branch', options,
-                                                              options.parentDir, options.gParamsDir)
-            newChild = ET.SubElement(childrenElm, 'child')
-            newChild.attrib['command'] = LST.treeBranchCommandBuilder(nt.right, 'Right Branch', options,
-                                                              options.parentDir, options.gParamsDir)
-            
-        else:
-            # stem, create one child process
-            newChild = ET.SubElement(childrenElm, 'child')
-            newChild.attrib['command'] = LST.treeBranchCommandBuilder(nt, 'Stem', options, options.parentDir,
-                                                              options.gParamsDir)
-
-    xmlTree.write(options.jobFile)
-
+    checkForFiles( options )
+    populateRootDir( options )
+    launchSimTree( options )
 
 if __name__ == "__main__":
     main()
