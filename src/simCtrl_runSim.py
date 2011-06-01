@@ -104,7 +104,7 @@ def checkOptions(options, parser):
         parser.error('specify --outDir.\n')
     if os.path.exists(options.outDir):
        parser.error('%s already exists! If your simulation crashed, '
-                    'relaunch it with "jobTreeRun --jobTree %s" \n' % 
+                    'relaunch it with "jobTreeRun --jobTree %s/" \n' % 
                     (os.path.join(options.outDir), options.jobTree))
     options.outDir = os.path.abspath(options.outDir)
     if not os.path.exists(options.outDir):

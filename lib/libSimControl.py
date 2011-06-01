@@ -512,38 +512,37 @@ def createNewCycleXmls(directory, parentDir, stepSize, newickStr, options):
         raise RuntimeError('cycleNewCycleInfoXml: directory: %s does not exist!\n' % directory)
     if not os.path.isdir(directory):
         raise RuntimeError('cycleNewCycleInfoXml: directory: %s is not a directory!\n' % directory)
-    for f in ['summary', 'cycle', 'stats', 'transalign']:
-        if os.path.exists(os.path.join(directory, 'xml', f + '.xml')):
-            raise RuntimeError('cycleNewCycleXmls: %s.xml already exists in %s\n' % (f, directory))
-    root=ET.Element('info')
-    e=ET.SubElement(root, 'parentDir')  
-    e.text=parentDir
-    e=ET.SubElement(root, 'thisDir')
-    e.text=directory
-    e=ET.SubElement(root, 'stepSize')
-    e.text=str(stepSize).rstrip('0')
-    nt = newickTreeParser(newickStr, 0.0)
-    children = {}
-    if nt.distance == 0:
-        if nt.internal:
-            branches = { 'left' : tree2str(nt.left),
-                         'right': tree2str(nt.right) }
-            for b in branches:
-                children[b] = nameTree(newickTreeParser(takeNewickStep(branches[b], options)[0], 0.0))
-    else:
-        children['stem'] = nameTree(newickTreeParser(takeNewickStep(tree2str(nt), options)[0], 0.0))
-    e=ET.SubElement(root, 'numberChildren')
-    e.text=str(len(children))
-    for c in children:
-        e=ET.SubElement(root, 'child')
-        e.text=children[c]
-        e.attrib['type'] = c # left, right, stem
+    if not os.path.exists(os.path.join(directory, 'xml', 'summary.xml')):
+        root=ET.Element('info')
+        e=ET.SubElement(root, 'parentDir')  
+        e.text=parentDir
+        e=ET.SubElement(root, 'thisDir')
+        e.text=directory
+        e=ET.SubElement(root, 'stepSize')
+        e.text=str(stepSize).rstrip('0')
+        nt = newickTreeParser(newickStr, 0.0)
+        children = {}
+        if nt.distance == 0:
+            if nt.internal:
+                branches = { 'left' : tree2str(nt.left),
+                             'right': tree2str(nt.right) }
+                for b in branches:
+                    children[b] = nameTree(newickTreeParser(takeNewickStep(branches[b], options)[0], 0.0))
+        else:
+            children['stem'] = nameTree(newickTreeParser(takeNewickStep(tree2str(nt), options)[0], 0.0))
+        e=ET.SubElement(root, 'numberChildren')
+        e.text=str(len(children))
+        for c in children:
+            e=ET.SubElement(root, 'child')
+            e.text=children[c]
+            e.attrib['type'] = c # left, right, stem
 
-    info=ET.ElementTree(root)
-    info.write(os.path.join(directory, 'xml', 'summary.xml'))
-
-    newInfoXml(os.path.join(directory, 'xml', 'cycle.xml'))
-    typeTimestamp(directory, 'cycle', 'start')
+        info=ET.ElementTree(root)
+        info.write(os.path.join(directory, 'xml', 'summary.xml'))
+        addTimestampsTag(os.path.join(directory, 'xml', 'summary.xml'))
+    if not os.path.exists(os.path.join(directory, 'xml', 'cycle.xml')):
+        newInfoXml(os.path.join(directory, 'xml', 'cycle.xml'))
+        typeTimestamp(directory, 'cycle', 'start')
 
 def newInfoXml(filename):
     """
@@ -589,8 +588,9 @@ def createSimulationInfoXml(command, options):
     tObj.text=str(options.inputNewick)
     tObj=ET.SubElement(root, 'stepSize')
     tObj.text=str(options.stepSize)
-    tObj=ET.SubElement(root, 'timestamps')
-    timeStart      = ET.SubElement(tObj,'start')
+    timeTag=ET.SubElement(root, 'timestamps')
+    timeTag.attrib['startEpochUTC'] = str(time.time())
+    timeStart      = ET.SubElement(timeTag,'start')
     timeLocal      = ET.SubElement(timeStart, 'humanLocal')
     timeLocal.text = str(time.strftime("%a, %d %b %Y %H:%M:%S (%Z) ", time.localtime()))
     timeHuman      = ET.SubElement(timeStart, 'humanUTC')
@@ -631,34 +631,38 @@ def evolverInterStepCmd(thisDir, thisParentDir, theChild, thisStepSize, seed, pa
               os.path.join(paramsDir, 'model.txt')]:
         verifyFileExists(f)
 
-    cmd = []
-    cmd.append(which('evolver_evo'))
-    cmd.append('-interchr')
-    cmd.append('%s' % os.path.join(thisParentDir, 'seq.rev'))
-    cmd.append('-inannots')
-    cmd.append('%s' % os.path.join(thisParentDir, 'annots.gff'))
-    cmd.append('-aln')
-    cmd.append('%s' % os.path.join(thisDir, 'inter','inter.aln.rev'))
-    cmd.append('-outchrnames')
-    cmd.append('%s' % os.path.join(thisDir, 'inter','inter.chrnames.txt'))
-    cmd.append('-outannots')
-    cmd.append('%s' % os.path.join(thisDir, 'inter','inter.outannots.gff'))
-    cmd.append('-outseq')
-    cmd.append('%s' % os.path.join(thisDir, 'inter','inter.outseq.rev'))
-    cmd.append('-outgenome')
-    cmd.append('%s' % (theChild + '.inter'))
-    cmd.append('-branchlength')
-    cmd.append('%s' % str(thisStepSize))
-    cmd.append('-statsfile')
-    cmd.append('%s' % os.path.join(thisDir, 'stats', 'inter.stats.txt'))
-    cmd.append('-model')
-    cmd.append('%s' % os.path.join(paramsDir, 'model.txt'))
-    cmd.append('-seed')
-    cmd.append('%s' % str(seed))
-    cmd.append('-logevents')
-    cmd.append('-log')
-    cmd.append('%s' % os.path.join(thisDir, 'logs', 'inter.log'))
-    return cmd
+    outname = os.path.join(thisDir, 'inter','inter.outseq.rev')
+    if not os.path.exists(outname):
+        cmd = [which('evolver_evo')]
+        cmd.append('-interchr')
+        cmd.append(os.path.join(thisParentDir, 'seq.rev'))
+        cmd.append('-inannots')
+        cmd.append(os.path.join(thisParentDir, 'annots.gff'))
+        cmd.append('-aln')
+        cmd.append(os.path.join(thisDir, 'inter','inter.aln.rev'))
+        cmd.append('-outchrnames')
+        cmd.append(os.path.join(thisDir, 'inter','inter.chrnames.txt'))
+        cmd.append('-outannots')
+        cmd.append(os.path.join(thisDir, 'inter','inter.outannots.gff'))
+        cmd.append('-outseq')
+        cmd.append(outname + '.tmp')
+        cmd.append('-outgenome')
+        cmd.append(theChild + '.inter')
+        cmd.append('-branchlength')
+        cmd.append(str(thisStepSize))
+        cmd.append('-statsfile')
+        cmd.append(os.path.join(thisDir, 'stats', 'inter.stats.txt'))
+        cmd.append('-model')
+        cmd.append(os.path.join(paramsDir, 'model.txt'))
+        cmd.append('-seed')
+        cmd.append(str(seed))
+        cmd.append('-logevents')
+        cmd.append('-log')
+        cmd.append(os.path.join(thisDir, 'logs', 'inter.log'))
+        followCmd = [which('mv')]
+        followCmd.append(outname + '.tmp')
+        followCmd.append(outname)
+    return cmd, followCmd
 
 def evolverInterStepMobilesCmd(thisDir, thisParentDir, theParent, thisStepSize, paramsDir):
     """ produces the command argument list needed to run an evolver inter step mobiles command.
@@ -679,27 +683,27 @@ def evolverInterStepMobilesCmd(thisDir, thisParentDir, theParent, thisStepSize, 
     cmd = []
     cmd.append(which('evolver_handle_mobiles.pl'))
     cmd.append('--evo')
-    cmd.append('%s' % which('evolver_evo'))
+    cmd.append(which('evolver_evo'))
     cmd.append('--cvt')
-    cmd.append('%s' % which('evolver_cvt'))
+    cmd.append(which('evolver_cvt'))
     cmd.append('--py')
-    cmd.append('%s' % os.path.dirname(which('evolver_evo')))
+    cmd.append(os.path.dirname(which('evolver_evo')))
     cmd.append('--parentDir')
-    cmd.append('%s' % thisParentDir)
+    cmd.append(thisParentDir)
     cmd.append('--genome')
-    cmd.append('%s' % theParent)
+    cmd.append(theParent)
     cmd.append('--stepSize')
-    cmd.append('%s' % str(thisStepSize))
+    cmd.append(str(thisStepSize))
     cmd.append('--mefa')
-    cmd.append('%s' % os.path.join(thisParentDir, 'mobiles', 'ME.fa'))
+    cmd.append(os.path.join(thisParentDir, 'mobiles', 'ME.fa'))
     cmd.append('--megff')
-    cmd.append('%s' % os.path.join(thisParentDir, 'mobiles', 'ME.gff'))
+    cmd.append(os.path.join(thisParentDir, 'mobiles', 'ME.gff'))
     cmd.append('--ltr')
-    cmd.append('%s' % os.path.join(thisParentDir, 'mobiles', 'LTR.fa'))
+    cmd.append(os.path.join(thisParentDir, 'mobiles', 'LTR.fa'))
     cmd.append('--mescfg')
-    cmd.append('%s' % os.path.join(paramsDir, 'mes.cfg'))
+    cmd.append(os.path.join(paramsDir, 'mes.cfg'))
     cmd.append('--model')
-    cmd.append('%s' % os.path.join(paramsDir, 'model.mes.txt'))
+    cmd.append(os.path.join(paramsDir, 'model.mes.txt'))
     return cmd
 
 def evolverInterStepMobilesMoveCmd(thisLocalTempDir, thisDir):
@@ -742,37 +746,45 @@ def evolverIntraStepCmd(thisDir, theChild, thisStepSize, thisChr,
         verifyFileExists(f)
 
     cmd = []
-    cmd.append(which('evolver_evo'))
-    cmd.append('-inseq')
-    cmd.append('%s' % os.path.join(thisDir, 'inter','inter.outseq.rev'))
-    cmd.append('-chrname')
-    cmd.append('%s' % thisChr)
-    cmd.append('-branchlength')
-    cmd.append('%s' % str(thisStepSize))
-    cmd.append('-seed')
-    cmd.append('%s' % str(seed))
-    if not options.noMEs:
-        cmd.append('-mes')
-        cmd.append('%s' % os.path.join(thisDir, 'mobiles', 'mes.fa'))
-    cmd.append('-inannots')
-    cmd.append('%s' % os.path.join(thisDir, 'inter', 'inter.outannots.gff'))
-    cmd.append('-statsfile')
-    cmd.append('%s' % os.path.join(thisDir, 'stats', thisChr+'.stats.txt'))
-    cmd.append('-codonsubs')
-    cmd.append('%s' % os.path.join(thisDir, 'intra', thisChr+'.codonsubs.txt'))
-    cmd.append('-outannots')
-    cmd.append('%s' % os.path.join(thisDir, 'intra', thisChr+'.outannots.gff'))
-    cmd.append('-outgenome')
-    cmd.append('%s' % theChild)
-    cmd.append('-model')
-    cmd.append('%s' % os.path.join(paramsDir, 'model.txt'))
-    cmd.append('-aln')
-    cmd.append('%s' % os.path.join(localTempDir, thisChr+'.aln.rev'))
-    cmd.append('-outseq')
-    cmd.append('%s' % os.path.join(localTempDir, thisChr+'.outseq.rev'))
-    cmd.append('-log')
-    cmd.append('%s' % os.path.join(thisDir, 'logs', 'intra.'+thisChr+'.log'))
-    return cmd
+    cmds = []
+    outname = os.path.join(localTempDir, thisChr+'.outseq.rev')
+    if not os.path.exists(outname):
+        cmd.append(which('evolver_evo'))
+        cmd.append('-inseq')
+        cmd.append(os.path.join(thisDir, 'inter','inter.outseq.rev'))
+        cmd.append('-chrname')
+        cmd.append(thisChr)
+        cmd.append('-branchlength')
+        cmd.append(str(thisStepSize))
+        cmd.append('-seed')
+        cmd.append(str(seed))
+        if not options.noMEs:
+            cmd.append('-mes')
+            cmd.append(os.path.join(thisDir, 'mobiles', 'mes.fa'))
+        cmd.append('-inannots')
+        cmd.append(os.path.join(thisDir, 'inter', 'inter.outannots.gff'))
+        cmd.append('-statsfile')
+        cmd.append(os.path.join(thisDir, 'stats', thisChr+'.stats.txt'))
+        cmd.append('-codonsubs')
+        cmd.append(os.path.join(thisDir, 'intra', thisChr+'.codonsubs.txt'))
+        cmd.append('-outannots')
+        cmd.append(os.path.join(thisDir, 'intra', thisChr+'.outannots.gff'))
+        cmd.append('-outgenome')
+        cmd.append(theChild)
+        cmd.append('-model')
+        cmd.append(os.path.join(paramsDir, 'model.txt'))
+        cmd.append('-aln')
+        cmd.append(os.path.join(localTempDir, thisChr+'.aln.rev'))
+        cmd.append('-outseq')
+        cmd.append(outname + '.tmp')
+        cmd.append('-log')
+        cmd.append(os.path.join(thisDir, 'logs', 'intra.'+thisChr+'.log'))
+        cmds.append(cmd)
+        cmd = [which('mv')]
+        cmd.append(outname + '.tmp')
+        cmd.append(outname)
+        cmds.append(cmd)
+    return cmds
 
 def evolverIntraStepToFastaCmd(thisDir, thisStepSize, thisChr, paramsDir, localTempDir):
     """ produces the command argument list needed to convert the .rev files into .fa files
@@ -786,14 +798,21 @@ def evolverIntraStepToFastaCmd(thisDir, thisStepSize, thisChr, paramsDir, localT
     for f in [os.path.join(localTempDir, thisChr+'.outseq.rev')]:
         verifyFileExists(f)
     cmd = []
-    cmd.append(which('evolver_cvt'))
-    cmd.append('-fromrev')
-    cmd.append(os.path.join(localTempDir, thisChr+'.outseq.rev'))
-    cmd.append('-tofasta')
-    cmd.append(os.path.join(localTempDir, thisChr+'.outseq.fa'))
-    cmd.append('-log')
-    cmd.append(os.path.join(thisDir, 'intra', 'intra.'+thisChr+'.tofasta.log'))
-    return cmd
+    outname = os.path.join(localTempDir, thisChr+'.outseq.fa')
+    if not os.path.exists(outname):
+        cmd.append(which('evolver_cvt'))
+        cmd.append('-fromrev')
+        cmd.append(os.path.join(localTempDir, thisChr+'.outseq.rev'))
+        cmd.append('-tofasta')
+        cmd.append(outname + '.tmp')
+        cmd.append('-log')
+        cmd.append(os.path.join(thisDir, 'intra', 'intra.'+thisChr+'.tofasta.log'))
+        cmds = [cmd]
+        cmd = [which('mv')]
+        cmd.append(outname + '.tmp')
+        cmd.append(outname)
+        cmds.append(cmd)
+    return cmds
 
 def callEvolverIntraStepTRFCmd(thisDir, thisChr, localTempDir):
     """ calls tandem repeats finder (trf) on the per chromosome .fa files.
@@ -807,14 +826,23 @@ def callEvolverIntraStepTRFCmd(thisDir, thisChr, localTempDir):
     for f in [os.path.join(localTempDir, thisChr+'.outseq.fa')]:
         verifyFileExists(f)
     MAX_PERIOD_SIZE = 2000
+    
     cmd = []
-    cmd.append(which('trfBig'))
-    cmd.append('-bedAt=%s' % os.path.join(localTempDir, thisChr+'.trf.bed'))
-    cmd.append('-tempDir=%s' % localTempDir)
-    cmd.append('-maxPeriod=%d' % MAX_PERIOD_SIZE)
-    cmd.append(os.path.join(localTempDir, thisChr+'.outseq.fa'))
-    cmd.append(os.path.join(localTempDir, thisChr+'.outseq.trf.fa'))
-    runCommands([cmd], localTempDir)
+    outname = os.path.join(localTempDir, thisChr+'.trf.bed')
+    if not os.path.exists(outname):
+        cmd.append(which('trfBig'))
+        cmd.append('-bedAt=%s' % (outname + '.tmp'))
+        cmd.append('-tempDir=%s' % localTempDir)
+        cmd.append('-maxPeriod=%d' % MAX_PERIOD_SIZE)
+        cmd.append(os.path.join(localTempDir, thisChr+'.outseq.fa'))
+        cmd.append(os.path.join(localTempDir, thisChr+'.outseq.trf.fa'))
+        cmds = [cmd]
+        cmd = [which('mv')]
+        cmd.append(outname + '.tmp')
+        cmd.append(outname)
+        cmds.append(cmd)
+    
+    runCommands(cmds, localTempDir)
     
     # cmd.append(which('trf'))
     # cmd.append(os.path.join(localTempDir, thisChr+'.outseq.fa'))
@@ -876,30 +904,70 @@ def runMergeTrfBedsToGff(thisDir):
         verifyDirExists(d)
     
     # merge
-    files = glob.glob(os.path.join(thisDir, 'intra', '*.trf.bed'))
-    out = open(os.path.join(thisDir, 'intra', 'trfannots.bed'), 'w')
-    for aFile in files:
-        f = open(aFile, 'r')
-        for line in f:
-            out.write(line)
-        f.close()
-    out.close()
+    outname = os.path.join(thisDir, 'intra', 'trfannots.bed')
+    if not os.path.exists(outname):
+        files = glob.glob(os.path.join(thisDir, 'intra', '*.trf.bed'))
+        out = open(outname + '.tmp', 'w')
+        for aFile in files:
+            f = open(aFile, 'r')
+            for line in f:
+                out.write(line)
+            f.close()
+        out.close()
+        os.rename(outname + '.tmp', outname)
     
     # convert bed to evolver gff
-    b = open(os.path.join(thisDir, 'intra', 'trfannots.bed'), 'r')
-    g = open(os.path.join(thisDir, 'intra', 'trfannots.gff'), 'w')
-    for line in b:
-        line = line.strip()
-        (chrom, start, end, trf, periodSize, nCopies, 
-         consensusSize, percentMatch, percentIndel, alignScore, 
-         percentA, percentC, percentG, percentT, entropy, motif) = line.split('\t')
-        if len(motif) > MAX_MOTIF_ATTR:
-            motif = motif[0:MAX_MOTIF_ATTR] + '...'
-        g.write('%s\ttrf\ttandem\t%d\t%s\t%s\t'
-                '+\t.\treplen %s; copies %s; cons"%s";\n' % (chrom, int(start)+ 1, end, alignScore,
-                                                             periodSize, nCopies, motif))
-    b.close()
-    g.close()
+    outname = os.path.join(thisDir, 'intra', 'trfannots.gff')
+    if not os.path.exists(outname):
+        b = open(os.path.join(thisDir, 'intra', 'trfannots.bed'), 'r')
+        g = open(outname + '.tmp', 'w')
+        for line in b:
+            line = line.strip()
+            (chrom, start, end, trf, periodSize, nCopies, 
+             consensusSize, percentMatch, percentIndel, alignScore, 
+             percentA, percentC, percentG, percentT, entropy, motif) = line.split('\t')
+            if len(motif) > MAX_MOTIF_ATTR:
+                motif = motif[0:MAX_MOTIF_ATTR] + '...'
+            g.write('%s\ttrf\ttandem\t%d\t%s\t%s\t'
+                    '+\t.\treplen %s; copies %s; cons"%s";\n' % (chrom, int(start)+ 1, end, alignScore,
+                                                                 periodSize, nCopies, motif))
+        b.close()
+        g.close()
+        os.rename(outname + '.tmp', outname)
+
+def runEvolverInterCmds(thisDir, thisParentDir, theChild, theParent, thisStepSize, 
+                        seed, paramsDir, localTempDir, options):
+    from libSimControl import (which, evolverInterStepMobilesCmd, evolverInterStepMobilesMoveCmd, 
+                               runCommands, handleReturnCode)
+    import os
+    import subprocess
+    
+    outname = os.path.join(thisDir, 'inter', 'inter.outseq.rev')
+    if not os.path.exists(outname):
+        # we split this up to run it in parallel with the mobiles command
+        cmd1, followCmd1 = evolverInterStepCmd(thisDir, thisParentDir, theChild, 
+                                               thisStepSize, seed, paramsDir)
+        p1 = subprocess.Popen(cmd1, cwd=localTempDir) 
+    else:
+        p1 = None
+        followCmd1 = None
+        
+    if not options.noMEs:
+        outname = os.path.join(thisDir, 'logs', 'mobiles.log')
+        if not os.path.exists(outname):
+            cmd2 = evolverInterStepMobilesCmd(thisDir, thisParentDir, theParent, thisStepSize, paramsDir)
+            p2 = subprocess.Popen(cmd2, cwd=localTempDir, stdout=subprocess.PIPE)
+            f = open(outname + '.tmp', 'w')
+            f.write(p2.communicate()[0])
+            f.close()
+            handleReturnCode(p2.returncode, [cmd2])
+            os.rename(outname + '.tmp', outname)
+        mvCmds= evolverInterStepMobilesMoveCmd(localTempDir, thisDir)
+        runCommands(mvCmds, localTempDir, mode='p')
+    if p1 is not None:
+        p1.wait()
+        handleReturnCode(p1.returncode, cmd1)
+        runCommands([followCmd1], localTempDir)
 
 def evolverIntraMergeCmds(thisDir, theChild):
     """ Produces three lists of commands to be run in parallel
@@ -914,6 +982,7 @@ def evolverIntraMergeCmds(thisDir, theChild):
     catCmd = [which('cat')]
     evoCmd = [which('evolver_evo')]
     cvtCmd = [which('evolver_cvt')]
+    followCmds = [] # make things atomic
     firstLine = True
     f = open(os.path.join(thisDir, 'inter', 'inter.chrnames.txt'), 'r')
     evoChrStr = ''
@@ -936,19 +1005,28 @@ def evolverIntraMergeCmds(thisDir, theChild):
             firstLine = False
     f.close()
     
+    # this filename comes from a pipe in the CycleStep3() code
+    followCmds.append([which('mv'), 
+                       os.path.join(thisDir, 'intra', 'evannots.gff.tmp'), 
+                       os.path.join(thisDir, 'intra', 'evannots.gff')])
+    
+    outname = os.path.join(thisDir, 'intra', 'intra.aln.rev')
     evoCmd.append('-mergechrs')
     evoCmd.append(evoChrStr)
     evoCmd.append('-outgenome')
     evoCmd.append(theChild)
     evoCmd.append('-out')
-    evoCmd.append(os.path.join(thisDir, 'intra', 'intra.aln.rev'))
+    evoCmd.append(outname + '.tmp')
+    followCmds.append([which('mv'), outname + '.tmp', outname])
     
+    outname = os.path.join(thisDir, 'seq.rev')
     cvtCmd.append('-mergerevseqs')
     cvtCmd.append(cvtChrStr)
     cvtCmd.append('-out')
-    cvtCmd.append(os.path.join(thisDir, 'seq.rev'))
+    cvtCmd.append(outname + '.tmp')
+    followCmds.append([which('mv'), outname + '.tmp', outname])
     
-    return (catCmd, evoCmd, cvtCmd)
+    return (catCmd, evoCmd, cvtCmd, followCmds)
 
 def evolverGeneDeactivationStep(thisDir, thisParentDir):
     """ Produces a list of commands to run the final CycleStep.
@@ -982,26 +1060,39 @@ def statsStep1CmdsP(thisDir, thisParentDir):
     
     pipes = []
     cmds  = []
+    followCmds = [] # used for atomicity
 
-    cmd = [which('evolver_evo')]
-    cmd.append('-annotstats')
-    cmd.append(os.path.join(thisDir, 'annots.gff'))
-    cmd.append('-seq')
-    cmd.append(os.path.join(thisDir, 'seq.rev'))
-    cmd.append('-log')
-    cmd.append(os.path.join(thisDir, 'stats', 'annotstats.txt'))
-    cmds.append(cmd)
-    pipes.append(None)
-    
-    cmd = [which('evolver_evo')]
-    cmd.append('-probstats')
-    cmd.append(os.path.join(thisDir, 'annots.gff'))
-    cmd.append('-log')
-    cmd.append(os.path.join(thisDir, 'stats', 'probstats.txt'))
-    cmds.append(cmd)
-    pipes.append(None)
+    outname = os.path.join(thisDir, 'stats', 'annotstats.txt')
+    if not os.path.exists(outname):
+        cmd = [which('evolver_evo')]
+        cmd.append('-annotstats')
+        cmd.append(os.path.join(thisDir, 'annots.gff'))
+        cmd.append('-seq')
+        cmd.append(os.path.join(thisDir, 'seq.rev'))
+        cmd.append('-log')
+        cmd.append(outname + '.tmp')
+        cmds.append(cmd)
+        pipes.append(None)
+        cmd = [which('mv')]
+        cmd.append(outname + '.tmp')
+        cmd.append(outname)
+        followCmds.append(cmd)
 
-    return cmds, pipes
+    outname = os.path.join(thisDir, 'stats', 'probstats.txt')
+    if not os.path.exists(outname):
+        cmd = [which('evolver_evo')]
+        cmd.append('-probstats')
+        cmd.append(os.path.join(thisDir, 'annots.gff'))
+        cmd.append('-log')
+        cmd.append(outname + '.tmp')
+        cmds.append(cmd)
+        pipes.append(None)
+        cmd = [which('mv')]
+        cmd.append(outname + '.tmp')
+        cmd.append(outname)
+        followCmds.append(cmd)
+
+    return cmds, followCmds, pipes
 
 def statsStep1CmdsS(thisDir, thisParentDir):
     """ Produces a list of commands to run the first stats step.
@@ -1019,40 +1110,75 @@ def statsStep1CmdsS(thisDir, thisParentDir):
     pipes = []
     cmds  = []
 
-    cmd = [which('egrep')]
-    cmd.append('CDS|UTR')
-    cmd.append(os.path.join(thisDir, 'annots.gff'))
-    cmds.append(cmd)
-    pipes.append(os.path.join(thisDir, 'stats', 'cds_annots.gff'))
+    outname = os.path.join(thisDir, 'stats', 'cds_annots.gff')
+    if not os.path.exists(outname):
+        cmd = [which('egrep')]
+        cmd.append('CDS|UTR')
+        cmd.append(os.path.join(thisDir, 'annots.gff'))
+        cmds.append(cmd)
+        pipes.append(outname + '.tmp')
+        cmd = [which('mv')]
+        cmd.append(outname + '.tmp')
+        cmd.append(outname)
+        pipes.append(None)
+        cmds.append(cmd)
     
-    cmd = [which('evolver_gff_cdsutr2exons.py')]
-    cmd.append(os.path.join(thisDir, 'stats', 'cds_annots.gff'))
-    cmds.append(cmd)
-    pipes.append(os.path.join(thisDir, 'stats', 'exons.gff'))
+    outname = os.path.join(thisDir, 'stats', 'exons.gff')
+    if not os.path.exists(outname):
+        cmd = [which('evolver_gff_cdsutr2exons.py')]
+        cmd.append(os.path.join(thisDir, 'stats', 'cds_annots.gff'))
+        cmds.append(cmd)
+        pipes.append(outname + '.tmp')
+        cmd = [which('mv')]
+        cmd.append(outname + '.tmp')
+        cmd.append(outname)
+        pipes.append(None)
+        cmds.append(cmd)
     
-    cmd = [which('evolver_gff_exons2introns.py')]
-    cmd.append(os.path.join(thisDir, 'stats', 'exons.gff'))
-    cmds.append(cmd)
-    pipes.append(os.path.join(thisDir, 'stats', 'introns.gff'))
+    outname = os.path.join(thisDir, 'stats', 'introns.gff')
+    if not os.path.exists(outname):
+        cmd = [which('evolver_gff_exons2introns.py')]
+        cmd.append(os.path.join(thisDir, 'stats', 'exons.gff'))
+        cmds.append(cmd)
+        pipes.append(outname + '.tmp')
+        cmd = [which('mv')]
+        cmd.append(outname + '.tmp')
+        cmd.append(outname)
+        pipes.append(None)
+        cmds.append(cmd)
     
-    cmd = [which('cat')]
-    cmd.append(os.path.join(thisDir, 'annots.gff'))
-    cmd.append(os.path.join(thisDir, 'stats', 'exons.gff'))
-    cmd.append(os.path.join(thisDir, 'stats', 'introns.gff'))
-    cmds.append(cmd)
-    pipes.append(os.path.join(thisDir, 'stats', 'expanded_annots.gff'))
+    outname = os.path.join(thisDir, 'stats', 'expanded_annots.gff')
+    if not os.path.exists(outname):
+        cmd = [which('cat')]
+        cmd.append(os.path.join(thisDir, 'annots.gff'))
+        cmd.append(os.path.join(thisDir, 'stats', 'exons.gff'))
+        cmd.append(os.path.join(thisDir, 'stats', 'introns.gff'))
+        cmds.append(cmd)
+        pipes.append(outname + '.tmp')
+        cmd = [which('mv')]
+        cmd.append(outname + '.tmp')
+        cmd.append(outname)
+        pipes.append(None)
+        cmds.append(cmd)
     
-    cmd = [which('evolver_gff_featurestats2.sh')]
-    cmd.append(which('evolver_gff_featurestats2.py'))
-    cmd.append(os.path.join(thisParentDir, 'stats', 'expanded_annots.gff'))
-    cmd.append(os.path.join(thisDir, 'stats', 'expanded_annots.gff'))
-    cmd.append(os.path.basename(thisParentDir))
-    cmd.append(os.path.basename(thisDir))
-    cmd.append(os.path.join(thisParentDir, 'seq.rev'))
-    cmd.append(os.path.join(thisDir, 'seq.rev'))
-    cmd.append(which('evolver_cvt'))
-    cmds.append(cmd)
-    pipes.append(os.path.join(thisDir, 'stats', 'tmpstats.cycle.diffannots.tmp'))
+    outname = os.path.join(thisDir, 'stats', 'tmpstats.cycle.diffannots.txt')
+    if not os.path.exists(outname):
+        cmd = [which('evolver_gff_featurestats2.sh')]
+        cmd.append(which('evolver_gff_featurestats2.py'))
+        cmd.append(os.path.join(thisParentDir, 'stats', 'expanded_annots.gff'))
+        cmd.append(os.path.join(thisDir, 'stats', 'expanded_annots.gff'))
+        cmd.append(os.path.basename(thisParentDir))
+        cmd.append(os.path.basename(thisDir))
+        cmd.append(os.path.join(thisParentDir, 'seq.rev'))
+        cmd.append(os.path.join(thisDir, 'seq.rev'))
+        cmd.append(which('evolver_cvt'))
+        cmds.append(cmd)
+        pipes.append(outname + '.tmp')
+        cmd = [which('mv')]
+        cmd.append(outname + '.tmp')
+        cmd.append(outname)
+        pipes.append(None)
+        cmds.append(cmd)
     
     return cmds, pipes
 
@@ -1082,6 +1208,16 @@ def getParentDir(thisDir):
        parentDir = t.text
        return parentDir
     return None
+
+def getBranchDir(thisDir):
+    """ Returns the first ancestor that is either the root or a branch point
+    """
+    from libSimControl import verifyDirExists, isBranchOrRoot, getParentDir
+    verifyDirExists(thisDir)
+    p = getParentDir(thisDir)
+    while not isBranchOrRoot(p):
+        p = getParentDir(p)
+    return p
 
 def dirIsRoot(thisDir):
     """ dirIsRoot checks to see if the supplied directory is the root directory
@@ -1118,37 +1254,64 @@ def statsStep2Cmds(thisDir, thisParentDir, options):
     pipes = []
     cmds  = []
 
-    cmd = [which('evolver_merge_evostats.py')]
-    for f in glob.glob(os.path.join(thisDir, 'stats', '*.stats.txt')):
-        cmd.append(f)
-    cmds.append(cmd)
-    pipes.append(os.path.join(thisDir, 'stats', 'merged_cycle.stats.txt'))
+    outname = os.path.join(thisDir, 'stats', 'merged_cycle.stats.txt')
+    if not os.path.exists(outname):
+        cmd = [which('evolver_merge_evostats.py')]
+        for f in glob.glob(os.path.join(thisDir, 'stats', '*.stats.txt')):
+            cmd.append(f)
+        cmds.append(cmd)
+        pipes.append(outname + '.tmp')
+        cmd = [which('mv')]
+        cmd.append(outname + '.tmp')
+        cmd.append(outname)
+        pipes.append(None)
+        cmds.append(cmd)
     
-    
-    cmd = [which('evolver_evostats_report.py')]
-    cmd.append(os.path.join(thisDir, 'stats', 'merged_cycle.stats.txt'))
-    cmds.append(cmd)
-    pipes.append(os.path.join(thisDir, 'stats', 'events_cycle.txt'))
+    outname = os.path.join(thisDir, 'stats', 'events_cycle.txt')
+    if not os.path.exists(outname):
+        cmd = [which('evolver_evostats_report.py')]
+        cmd.append(os.path.join(thisDir, 'stats', 'merged_cycle.stats.txt'))
+        cmds.append(cmd)
+        pipes.append(outname + '.tmp')
+        cmd = [which('mv')]
+        cmd.append(outname + '.tmp')
+        cmd.append(outname)
+        pipes.append(None)
+        cmds.append(cmd)
     
     if not options.noMEs:
-        cmd = [which('evolver_mobile_report.pl')]
-        for f in glob.glob(os.path.join(thisDir, 'logs', 'intra.*.log')):
-            cmd.append(f)
-        cmd.append('--mobilesLog')
-        cmd.append(os.path.join(thisDir, 'logs', 'mobiles.log'))
+        outname = os.path.join(thisDir, 'stats', 'stats.mobiles.txt')
+        if not os.path.exists(outname):
+            cmd = [which('evolver_mobile_report.pl')]
+            for f in glob.glob(os.path.join(thisDir, 'logs', 'intra.*.log')):
+                cmd.append(f)
+            cmd.append('--mobilesLog')
+            cmd.append(os.path.join(thisDir, 'logs', 'mobiles.log'))
+            cmds.append(cmd)
+            pipes.append(outname + '.tmp')
+            cmd = [which('mv')]
+            cmd.append(outname + '.tmp')
+            cmd.append(outname)
+            pipes.append(None)
+            cmds.append(cmd)
+
+    outname = os.path.join(thisDir, 'stats', 'tmpstats.cycle.diffcompost.txt')
+    if not os.path.exists(outname):
+        cmd = [which('evolver_evo')]
+        cmd.append('-nologcmdlineandtime')
+        cmd.append('-compost1')
+        cmd.append(os.path.join(thisParentDir, 'seq.rev'))
+        cmd.append('-compost2')
+        cmd.append(os.path.join(thisDir, 'seq.rev'))
+        cmd.append('-log')
+        cmd.append(outname + '.tmp')
         cmds.append(cmd)
-        pipes.append(os.path.join(thisDir, 'stats', 'stats.mobiles.txt'))
-    
-    cmd = [which('evolver_evo')]
-    cmd.append('-nologcmdlineandtime')
-    cmd.append('-compost1')
-    cmd.append(os.path.join(thisParentDir, 'seq.rev'))
-    cmd.append('-compost2')
-    cmd.append(os.path.join(thisDir, 'seq.rev'))
-    cmd.append('-log')
-    cmd.append(os.path.join(thisDir, 'stats', 'tmpstats.cycle.diffcompost.tmp'))
-    cmds.append(cmd)
-    pipes.append(None)
+        pipes.append(None)
+        cmd = [which('mv')]
+        cmd.append(outname + '.tmp')
+        cmd.append(outname)
+        pipes.append(None)
+        cmds.append(cmd)
     
     return cmds, pipes
 
@@ -1166,28 +1329,42 @@ def statsStep3Cmds(thisDir, thisParentDir, options):
     pipes = []
     cmds  = []
 
-    cmd = [which('evolver_evo')]
-    cmd.append('-nologcmdlineandtime')
-    cmd.append('-compost1')
-    cmd.append(os.path.join(getBranchDir(thisDir), 'seq.rev'))
-    cmd.append('-compost2')
-    cmd.append(os.path.join(thisDir, 'seq.rev'))
-    cmd.append('-log')
-    cmd.append(os.path.join(thisDir, 'stats', 'tmpstats.branch.diffcompost.tmp'))
-    cmds.append(cmd)
-    pipes.append(None)
+    outname = os.path.join(thisDir, 'stats', 'tmpstats.branch.diffcompost.txt')
+    if not os.path.exists(outname):
+        cmd = [which('evolver_evo')]
+        cmd.append('-nologcmdlineandtime')
+        cmd.append('-compost1')
+        cmd.append(os.path.join(getBranchDir(thisDir), 'seq.rev'))
+        cmd.append('-compost2')
+        cmd.append(os.path.join(thisDir, 'seq.rev'))
+        cmd.append('-log')
+        cmd.append(outname + '.tmp')
+        cmds.append(cmd)
+        pipes.append(None)
+        cmd = [which('mv')]
+        cmd.append(outname + '.tmp')
+        cmd.append(outname)
+        pipes.append(None)
+        cmds.append(cmd)
 
-    cmd = [which('evolver_gff_featurestats2.sh')]
-    cmd.append(which('evolver_gff_featurestats2.py'))
-    cmd.append(os.path.join(getBranchDir(thisDir), 'stats', 'expanded_annots.gff'))
-    cmd.append(os.path.join(thisDir, 'stats', 'expanded_annots.gff'))
-    cmd.append(os.path.basename(options.rootDir))
-    cmd.append(os.path.basename(thisDir))
-    cmd.append(os.path.join(options.rootDir, 'seq.rev'))
-    cmd.append(os.path.join(thisDir, 'seq.rev'))
-    cmd.append(which('evolver_cvt'))
-    cmds.append(cmd)
-    pipes.append(os.path.join(thisDir, 'stats', 'tmpstats.branch.diffannots.tmp'))
+    outname = os.path.join(thisDir, 'stats', 'tmpstats.branch.diffannots.txt')
+    if not os.path.exists(outname):
+        cmd = [which('evolver_gff_featurestats2.sh')]
+        cmd.append(which('evolver_gff_featurestats2.py'))
+        cmd.append(os.path.join(getBranchDir(thisDir), 'stats', 'expanded_annots.gff'))
+        cmd.append(os.path.join(thisDir, 'stats', 'expanded_annots.gff'))
+        cmd.append(os.path.basename(options.rootDir))
+        cmd.append(os.path.basename(thisDir))
+        cmd.append(os.path.join(options.rootDir, 'seq.rev'))
+        cmd.append(os.path.join(thisDir, 'seq.rev'))
+        cmd.append(which('evolver_cvt'))
+        cmds.append(cmd)
+        pipes.append(outname + '.tmp')
+        cmd = [which('mv')]
+        cmd.append(outname + '.tmp')
+        cmd.append(outname)
+        pipes.append(None)
+        cmds.append(cmd)
 
     return cmds, pipes
 
@@ -1205,16 +1382,30 @@ def statsStep4Cmds(thisDir, thisParentDir, options):
     pipes = []
     cmds  = []
     
-    cmd = [which('evolver_merge_evostats.py')]
-    cmd.append(os.path.join(thisDir, 'stats', 'merged_cycle.stats.txt'))
-    cmd.append(os.path.join(thisParentDir, 'stats', 'merged_root.stats.txt'))
-    pipes.append(os.path.join(thisDir, 'stats', 'merged_root.stats.txt'))
-    cmds = [cmd]
+    outname = os.path.join(thisDir, 'stats', 'merged_root.stats.txt')
+    if not os.path.exists(outname):
+        cmd = [which('evolver_merge_evostats.py')]
+        cmd.append(os.path.join(thisDir, 'stats', 'merged_cycle.stats.txt'))
+        cmd.append(os.path.join(thisParentDir, 'stats', 'merged_root.stats.txt'))
+        cmds = [cmd]
+        pipes.append(outname + '.tmp')
+        cmd = [which('mv')]
+        cmd.append(outname + '.tmp')
+        cmd.append(outname)
+        pipes.append(None)
+        cmds.append(cmd)
     
-    cmd = [which('evolver_evostats_report.py')]
-    cmd.append(os.path.join(thisDir, 'stats', 'merged_root.stats.txt'))
-    cmds.append(cmd)
-    pipes.append(os.path.join(thisDir, 'stats', 'events_root.txt'))
+    outname = os.path.join(thisDir, 'stats', 'events_root.txt')
+    if not os.path.exists(outname):
+        cmd = [which('evolver_evostats_report.py')]
+        cmd.append(os.path.join(thisDir, 'stats', 'merged_root.stats.txt'))
+        cmds.append(cmd)
+        pipes.append(outname + '.tmp')
+        cmd = [which('mv')]
+        cmd.append(outname + '.tmp')
+        cmd.append(outname)
+        pipes.append(None)
+        cmds.append(cmd)
     
     return cmds, pipes
 
@@ -1296,11 +1487,26 @@ def lastOneOutTurnOffTheLightsCycle(thisDir):
     This is called by both StatsStep4 and TransalignStep2
     """
     import os
-    if cycleIsComplete(thisDir):
+    if statsAndTransAreComplete(thisDir):
         # this is the end of the cycle
-        addEndTimeAttribute(os.path.join(thisDir, 'xml', 'cycle.xml'))
+        addEndTimeAttribute(os.path.join(thisDir, 'xml', 'summary.xml'))
 
 def cycleIsComplete(thisDir):
+    from libSimControl import lockfile, unlockfile, dirIsRoot
+    import os
+    import xml.etree.ElementTree as ET
+
+    if not os.path.exists(thisDir):
+        return False
+    lockname = lockfile(os.path.join(thisDir, 'xml', 'summary.xml'))
+    infoTree = ET.parse(lockname)
+    unlockfile(lockname)
+    root = infoTree.getroot()
+    stamps = root.find('timestamps')
+    if stamps is not None:
+        return 'endEpochUTC' in stamps.attrib
+
+def statsAndTransAreComplete(thisDir):
     """ Is the cycle done with both Stats and Transalign?
     """
     from libSimControl import lockfile, unlockfile, dirIsRoot
@@ -1366,6 +1572,7 @@ def lastOneOutTurnOffTheLightsSimulation(thisDir, options):
         if timeTag is None:
             raise RuntimeError('%s does not contain "timestamps" tag' % 
                                os.path.join(thisDir, 'simulationInfo.xml'))
+        timeTag.attrib['endEpochUTC'] = str(time.time())
         endTag = timeTag.find('end')
         if endTag is not None:
             return
@@ -1422,146 +1629,232 @@ def transalignStep1Cmds_1(thisDir, thisParentDir, options):
     pipes = []
     cmds  = []
     
-    cmd = [which('evolver_transalign')]
-    cmd.append('-in1')
-    cmd.append(os.path.join(thisDir, 'inter', 'inter.aln.rev'))
-    cmd.append('-in2')
-    cmd.append(os.path.join(thisDir, 'intra', 'intra.aln.rev'))
-    cmd.append('-out')
-    cmd.append(os.path.join(thisDir, 'inter-intra.aln.rev'))
-    cmd.append('-log')
-    cmd.append(os.path.join(thisDir, 'logs', 'transalign1.log'))
-    pipes.append(None)
-    cmds.append(cmd)
-    
-    if isBranchOrRoot(thisParentDir):
-        # In these cases the alignment above the branch point should not be carried
-        # into the the descendant genomes. Alignments should only go back to the most
-        # recent branch point.
-        cmd = [which('ln')]
-        cmd.append('-s')
-        cmd.append(os.path.join(thisDir, 'inter-intra.aln.rev'))
-        cmd.append(os.path.join(thisDir, 'aln.rev'))
-        pipes.append(None)
-        cmds.append(cmd)
-    else:
+    outname = os.path.join(thisDir, 'inter-intra.aln.rev')
+    if not os.path.exists(outname):
         cmd = [which('evolver_transalign')]
         cmd.append('-in1')
-        cmd.append(os.path.join(thisParentDir, 'aln.rev'))
+        cmd.append(os.path.join(thisDir, 'inter', 'inter.aln.rev'))
         cmd.append('-in2')
-        cmd.append(os.path.join(thisDir, 'inter-intra.aln.rev'))
+        cmd.append(os.path.join(thisDir, 'intra', 'intra.aln.rev'))
         cmd.append('-out')
-        cmd.append(os.path.join(thisDir, 'aln.rev'))
+        cmd.append(outname + '.tmp')
         cmd.append('-log')
-        cmd.append(os.path.join(thisDir, 'logs', 'transalign2.log'))
+        cmd.append(os.path.join(thisDir, 'logs', 'transalign1.log'))
+        pipes.append(None)
+        cmds.append(cmd)
+        cmd = [which('mv')]
+        cmd.append(outname + '.tmp')
+        cmd.append(outname)
         pipes.append(None)
         cmds.append(cmd)
     
-    cmd = [which('evolver_evo')]
-    cmd.append('-cdsalns')
-    cmd.append(os.path.join(thisDir, 'inter', 'inter.aln.rev'))
-    cmd.append('-alns')
-    cmd.append(os.path.join(thisDir, 'stats', 'cds_aln.cycle.rev'))
-    cmd.append('-annots1')
-    cmd.append(os.path.join(thisDir, 'inter', 'inter.outannots.gff'))
-    cmd.append('-annots2')
-    cmd.append(os.path.join(thisDir, 'annots.gff'))
-    cmd.append('-log')
-    cmd.append(os.path.join(thisDir, 'logs', 'cds_alns.cycle.log'))
-    pipes.append(None)
-    cmds.append(cmd)
+    outname = os.path.join(thisDir, 'aln.rev')
+    if not os.path.exists(outname):
+        # we have this check because if this is a restarted job
+        # then we needn't recalculate these
+        if isBranchOrRoot(thisParentDir):
+            # In these cases the alignment above the branch point should not be carried
+            # into the the descendant genomes. Alignments should only go back to the most
+            # recent branch point.
+            cmd = [which('ln')]
+            cmd.append('-s')
+            cmd.append(os.path.join(thisDir, 'inter-intra.aln.rev'))
+            cmd.append(outname)
+            pipes.append(None)
+            cmds.append(cmd)
+        else:
+            cmd = [which('evolver_transalign')]
+            cmd.append('-in1')
+            cmd.append(os.path.join(thisParentDir, 'aln.rev'))
+            cmd.append('-in2')
+            cmd.append(os.path.join(thisDir, 'inter-intra.aln.rev'))
+            cmd.append('-out')
+            cmd.append(outname + '.tmp')
+            cmd.append('-log')
+            cmd.append(os.path.join(thisDir, 'logs', 'transalign2.log'))
+            pipes.append(None)
+            cmds.append(cmd)
+            cmd = [which('mv')]
+            cmd.append(outname + '.tmp')
+            cmd.append(outname)
+            pipes.append(None)
+            cmds.append(cmd)
+
+    outname = os.path.join(thisDir, 'stats', 'cds_aln.cycle.rev')
+    if not os.path.exists(outname):
+        cmd = [which('evolver_evo')]
+        cmd.append('-cdsalns')
+        cmd.append(os.path.join(thisDir, 'inter', 'inter.aln.rev'))
+        cmd.append('-alns')
+        cmd.append(outname + '.tmp')
+        cmd.append('-annots1')
+        cmd.append(os.path.join(thisDir, 'inter', 'inter.outannots.gff'))
+        cmd.append('-annots2')
+        cmd.append(os.path.join(thisDir, 'annots.gff'))
+        cmd.append('-log')
+        cmd.append(os.path.join(thisDir, 'logs', 'cds_alns.cycle.log'))
+        pipes.append(None)
+        cmds.append(cmd)
+        cmd = [which('mv')]
+        cmd.append(outname + '.tmp')
+        cmd.append(outname)
+        pipes.append(None)
+        cmds.append(cmd)
+
+    outname = os.path.join(thisDir, 'stats', 'img.cycle.cmap.pdf')
+    if not os.path.exists(outname):
+        cmd = [which('evolver_drawrev')]
+        cmd.append('-fromrev')
+        cmd.append(os.path.join(thisDir, 'inter', 'inter.aln.rev'))
+        cmd.append('-tocmap')
+        cmd.append(outname + '.tmp')
+        cmd.append('-blocksize')
+        cmd.append(str(DRAW_REV_BLOCK_SIZE))
+        pipes.append(None)
+        cmds.append(cmd)
+        cmd = [which('mv')]
+        cmd.append(outname + '.tmp')
+        cmd.append(outname)
+        pipes.append(None)
+        cmds.append(cmd)
+
+    outname = os.path.join(thisDir, 'stats', 'img.cycle.lmap.pdf')
+    if not os.path.exists(outname):
+        cmd = [which('evolver_drawrev')]
+        cmd.append('-fromrev')
+        cmd.append(os.path.join(thisDir, 'inter', 'inter.aln.rev'))
+        cmd.append('-tolmap')
+        cmd.append(outname + '.tmp')
+        cmd.append('-npp')
+        cmd.append(str(DRAW_REV_NT_PER_PIX))
+        pipes.append(None)
+        cmds.append(cmd)
+        cmd = [which('mv')]
+        cmd.append(outname + '.tmp')
+        cmd.append(outname)
+        pipes.append(None)
+        cmds.append(cmd)
+
+    outname = os.path.join(thisDir, 'stats', 'tmpstats.branch.difflength.txt')
+    if not os.path.exists(outname):
+        cmd = [which('evolver_evo')]
+        cmd.append('-nologcmdlineandtime')
+        cmd.append('-ancstats')
+        cmd.append(os.path.join(thisDir, 'aln.rev'))
+        cmd.append('-log')
+        cmd.append(outname + '.tmp')
+        pipes.append(None)
+        cmds.append(cmd)
+        cmd = [which('mv')]
+        cmd.append(outname + '.tmp')
+        cmd.append(outname)
+        pipes.append(None)
+        cmds.append(cmd)
     
-    cmd = [which('evolver_drawrev')]
-    cmd.append('-fromrev')
-    cmd.append(os.path.join(thisDir, 'inter', 'inter.aln.rev'))
-    cmd.append('-tocmap')
-    cmd.append(os.path.join(thisDir, 'stats', 'img.cycle.cmap.pdf'))
-    cmd.append('-blocksize')
-    cmd.append(str(DRAW_REV_BLOCK_SIZE))
-    pipes.append(None)
-    cmds.append(cmd)
+    outname = os.path.join(thisDir, 'stats', 'tmpstats.cycle.difflength.txt')
+    if not os.path.exists(outname):
+        cmd = [which('evolver_evo')]
+        cmd.append('-nologcmdlineandtime')
+        cmd.append('-ancstats')
+        cmd.append(os.path.join(thisDir, 'intra', 'intra.aln.rev'))
+        cmd.append('-log')
+        cmd.append(outname + '.tmp')
+        pipes.append(None)
+        cmds.append(cmd)
+        cmd = [which('mv')]
+        cmd.append(outname + '.tmp')
+        cmd.append(outname)
+        pipes.append(None)
+        cmds.append(cmd)
     
-    cmd = [which('evolver_drawrev')]
-    cmd.append('-fromrev')
-    cmd.append(os.path.join(thisDir, 'inter', 'inter.aln.rev'))
-    cmd.append('-tolmap')
-    cmd.append(os.path.join(thisDir, 'stats', 'img.cycle.lmap.png'))
-    cmd.append('-npp')
-    cmd.append(str(DRAW_REV_NT_PER_PIX))
-    pipes.append(None)
-    cmds.append(cmd)
+    outname = os.path.join(thisDir, 'stats', 'img.branch.cmap.pdf')
+    if not os.path.exists(outname):
+        cmd = [which('evolver_drawrev')]
+        cmd.append('-fromrev')
+        cmd.append(os.path.join(thisDir, 'aln.rev'))
+        cmd.append('-tocmap')
+        cmd.append(outname + '.tmp')
+        cmd.append('-blocksize')
+        cmd.append(str(DRAW_REV_BLOCK_SIZE))
+        pipes.append(None)
+        cmds.append(cmd)
+        cmd = [which('mv')]
+        cmd.append(outname + '.tmp')
+        cmd.append(outname)
+        pipes.append(None)
+        cmds.append(cmd)
     
-    cmd = [which('evolver_evo')]
-    cmd.append('-nologcmdlineandtime')
-    cmd.append('-ancstats')
-    cmd.append(os.path.join(thisDir, 'aln.rev'))
-    cmd.append('-log')
-    cmd.append(os.path.join(thisDir, 'stats', 'tmpstats.branch.difflength.tmp'))
-    pipes.append(None)
-    cmds.append(cmd)
+    outname = os.path.join(thisDir, 'stats', 'img.branch.lmap.png')
+    if not os.path.exists(outname):
+        cmd = [which('evolver_drawrev')]
+        cmd.append('-fromrev')
+        cmd.append(os.path.join(thisDir, 'aln.rev'))
+        cmd.append('-tolmap')
+        cmd.append(outname + '.tmp')
+        cmd.append('-npp')
+        cmd.append(str(DRAW_REV_NT_PER_PIX))
+        pipes.append(None)
+        cmds.append(cmd)
+        cmd = [which('mv')]
+        cmd.append(outname + '.tmp')
+        cmd.append(outname)
+        pipes.append(None)
+        cmds.append(cmd)
     
-    cmd = [which('evolver_evo')]
-    cmd.append('-nologcmdlineandtime')
-    cmd.append('-ancstats')
-    cmd.append(os.path.join(thisDir, 'intra', 'intra.aln.rev'))
-    cmd.append('-log')
-    cmd.append(os.path.join(thisDir, 'stats', 'tmpstats.cycle.difflength.tmp'))
-    pipes.append(None)
-    cmds.append(cmd)
+    outname = os.path.join(thisDir, 'stats', 'cds_aln.root.rev')
+    if not os.path.exists(outname):
+        cmd = [which('evolver_evo')]
+        cmd.append('-cdsalns')
+        cmd.append(os.path.join(thisDir, 'aln.rev'))
+        cmd.append('-alns')
+        cmd.append(outname + '.tmp')
+        cmd.append('-annots1')
+        cmd.append(os.path.join(options.rootDir, 'stats', 'cds_annots.gff'))
+        cmd.append('-annots2')
+        cmd.append(os.path.join(thisDir, 'annots.gff'))
+        cmd.append('-log')
+        cmd.append(os.path.join(thisDir, 'logs', 'cds_alns.root.log'))
+        pipes.append(None)
+        cmds.append(cmd)
+        cmd = [which('mv')]
+        cmd.append(outname + '.tmp')
+        cmd.append(outname)
+        pipes.append(None)
+        cmds.append(cmd)
     
-    cmd = [which('evolver_drawrev')]
-    cmd.append('-fromrev')
-    cmd.append(os.path.join(thisDir, 'aln.rev'))
-    cmd.append('-tocmap')
-    cmd.append(os.path.join(thisDir, 'stats', 'img.branch.cmap.pdf'))
-    cmd.append('-blocksize')
-    cmd.append(str(DRAW_REV_BLOCK_SIZE))
-    pipes.append(None)
-    cmds.append(cmd)
-    
-    cmd = [which('evolver_drawrev')]
-    cmd.append('-fromrev')
-    cmd.append(os.path.join(thisDir, 'aln.rev'))
-    cmd.append('-tolmap')
-    cmd.append(os.path.join(thisDir, 'stats', 'img.branch.lmap.png'))
-    cmd.append('-npp')
-    cmd.append(str(DRAW_REV_NT_PER_PIX))
-    pipes.append(None)
-    cmds.append(cmd)
-    
-    cmd = [which('evolver_evo')]
-    cmd.append('-cdsalns')
-    cmd.append(os.path.join(thisDir, 'aln.rev'))
-    cmd.append('-alns')
-    cmd.append(os.path.join(thisDir, 'stats', 'cds_aln.root.rev'))
-    cmd.append('-annots1')
-    cmd.append(os.path.join(options.rootDir, 'stats', 'cds_annots.gff'))
-    cmd.append('-annots2')
-    cmd.append(os.path.join(thisDir, 'annots.gff'))
-    cmd.append('-log')
-    cmd.append(os.path.join(thisDir, 'logs', 'cds_alns.root.log'))
-    pipes.append(None)
-    cmds.append(cmd)
-    
-    cmd = [which('evolver_evo')]
-    cmd.append('-getcodonsubs')
-    cmd.append(os.path.join(thisDir, 'stats', 'cds_aln.cycle.rev'))
-    cmd.append('-out')
-    cmd.append(os.path.join(thisDir, 'stats', 'codonSubs.cycle.txt'))
-    cmd.append('-log')
-    cmd.append(os.path.join(thisDir, 'logs', 'getCodonSubs.cycle.log'))
-    pipes.append(None)
-    cmds.append(cmd)
-    
-    cmd = [which('evolver_evo')]
-    cmd.append('-getcodonsubs')
-    cmd.append(os.path.join(thisDir, 'stats', 'cds_aln.root.rev'))
-    cmd.append('-out')
-    cmd.append(os.path.join(thisDir, 'stats', 'codonSubs.root.txt'))
-    cmd.append('-log')
-    cmd.append(os.path.join(thisDir, 'logs', 'getCodonSubs.root.log'))
-    pipes.append(None)
-    cmds.append(cmd)
+    outname = os.path.join(thisDir, 'stats', 'codonSubs.cycle.txt')
+    if not os.path.exists(outname):
+        cmd = [which('evolver_evo')]
+        cmd.append('-getcodonsubs')
+        cmd.append(os.path.join(thisDir, 'stats', 'cds_aln.cycle.rev'))
+        cmd.append('-out')
+        cmd.append(outname + '.tmp')
+        cmd.append('-log')
+        cmd.append(os.path.join(thisDir, 'logs', 'getCodonSubs.cycle.log'))
+        pipes.append(None)
+        cmds.append(cmd)
+        cmd = [which('mv')]
+        cmd.append(outname + '.tmp')
+        cmd.append(outname)
+        pipes.append(None)
+        cmds.append(cmd)
+        
+    outname = os.path.join(thisDir, 'stats', 'codonSubs.root.txt')
+    if not os.path.exists(outname):
+        cmd = [which('evolver_evo')]
+        cmd.append('-getcodonsubs')
+        cmd.append(os.path.join(thisDir, 'stats', 'cds_aln.root.rev'))
+        cmd.append('-out')
+        cmd.append(outname + '.tmp')
+        cmd.append('-log')
+        cmd.append(os.path.join(thisDir, 'logs', 'getCodonSubs.root.log'))
+        pipes.append(None)
+        cmds.append(cmd)
+        cmd = [which('mv')]
+        cmd.append(outname + '.tmp')
+        cmd.append(outname)
+        pipes.append(None)
+        cmds.append(cmd)
     
     return cmds, pipes
 
@@ -1580,36 +1873,49 @@ def runTransalignStep1Cmds_2(thisDir, thisParentDir, localTempDir, options):
     inPipes  = []
     outPipes = []
     cmds     = []
+    outnames = []
 
-    cmd = [which('evolver_codon_report.pl')]
-    cmd.append(os.path.basename(thisDir))
-    cmd.append(os.path.basename(thisParentDir))
-    cmds.append(cmd)
-    inPipes.append(os.path.join(thisDir, 'stats', 'codonSubs.cycle.txt'))
-    outPipes.append(os.path.join(thisDir, 'stats', 'protStats.cycle.txt'))
+    outname = os.path.join(thisDir, 'stats', 'protStats.cycle.txt')
+    if not os.path.exists(outname):
+        cmd = [which('evolver_codon_report.pl')]
+        cmd.append(os.path.basename(thisDir))
+        cmd.append(os.path.basename(thisParentDir))
+        cmds.append(cmd)
+        inPipes.append(os.path.join(thisDir, 'stats', 'codonSubs.cycle.txt'))
+        outPipes.append(outname + '.tmp')
+        outnames.append(outname)
     
-    cmd = [which('evolver_codon_report.pl')]
-    cmd.append(os.path.basename(options.rootDir))
-    cmd.append(os.path.basename(thisParentDir))
-    cmds.append(cmd)
-    inPipes.append(os.path.join(thisDir, 'stats', 'codonSubs.root.txt'))
-    outPipes.append(os.path.join(thisDir, 'stats', 'protStats.root.txt'))
+    outname = os.path.join(thisDir, 'stats', 'protStats.root.txt')
+    if not os.path.exists(outname):
+        cmd = [which('evolver_codon_report.pl')]
+        cmd.append(os.path.basename(options.rootDir))
+        cmd.append(os.path.basename(thisParentDir))
+        cmds.append(cmd)
+        inPipes.append(os.path.join(thisDir, 'stats', 'codonSubs.root.txt'))
+        outPipes.append(outname + '.tmp')
+        outnames.append(outname)
     
-    cmd = [which('cat')]
-    cmd.append(os.path.join(thisDir, 'stats', 'tmpstats.cycle.difflength.tmp'))
-    cmd.append(os.path.join(thisDir, 'stats', 'tmpstats.cycle.diffcompost.tmp'))
-    cmd.append(os.path.join(thisDir, 'stats', 'tmpstats.cycle.diffannots.tmp'))
-    cmds.append(cmd)
-    inPipes.append(None)
-    outPipes.append(os.path.join(thisDir, 'stats', 'diffs.cycle.txt'))
+    outname = os.path.join(thisDir, 'stats', 'diffs.cycle.txt')
+    if not os.path.exists(outname):
+        cmd = [which('cat')]
+        cmd.append(os.path.join(thisDir, 'stats', 'tmpstats.cycle.difflength.txt'))
+        cmd.append(os.path.join(thisDir, 'stats', 'tmpstats.cycle.diffcompost.txt'))
+        cmd.append(os.path.join(thisDir, 'stats', 'tmpstats.cycle.diffannots.txt'))
+        cmds.append(cmd)
+        inPipes.append(None)
+        outPipes.append(outname + '.tmp')
+        outnames.append(outname)
     
-    cmd = [which('cat')]
-    cmd.append(os.path.join(thisDir, 'stats', 'tmpstats.branch.difflength.tmp'))
-    cmd.append(os.path.join(thisDir, 'stats', 'tmpstats.branch.diffcompost.tmp'))
-    cmd.append(os.path.join(thisDir, 'stats', 'tmpstats.branch.diffannots.tmp'))
-    cmds.append(cmd)
-    inPipes.append(None)
-    outPipes.append(os.path.join(thisDir, 'stats', 'diffs.branch.txt'))
+    outname = os.path.join(thisDir, 'stats', 'diffs.branch.txt')
+    if not os.path.exists(outname):
+        cmd = [which('cat')]
+        cmd.append(os.path.join(thisDir, 'stats', 'tmpstats.branch.difflength.txt'))
+        cmd.append(os.path.join(thisDir, 'stats', 'tmpstats.branch.diffcompost.txt'))
+        cmd.append(os.path.join(thisDir, 'stats', 'tmpstats.branch.diffannots.txt'))
+        cmds.append(cmd)
+        inPipes.append(None)
+        outPipes.append(outname + '.tmp')
+        outnames.append(outname)
     
     i = -1
     for c in cmds:
@@ -1626,13 +1932,11 @@ def runTransalignStep1Cmds_2(thisDir, thisParentDir, localTempDir, options):
             f.write(p.communicate(open(inPipes[i]).read())[0])
             f.close()
             handleReturnCode(p.returncode, c)
+    i = -1
+    for out in outnames:
+        i += 1
+        c = [which('mv'), outnames[i] + '.tmp', outnames[i]]
+        p = subprocess.Popen(c)
+        p.wait()
+        handleReturnCode(p.returncode, c)
     
-def getBranchDir(thisDir):
-    """ Returns the first ancestor that is either the root or a branch point
-    """
-    from libSimControl import verifyDirExists, isBranchOrRoot, getParentDir
-    verifyDirExists(thisDir)
-    p = getParentDir(thisDir)
-    while not isBranchOrRoot(p):
-        p = getParentDir(p)
-    return p

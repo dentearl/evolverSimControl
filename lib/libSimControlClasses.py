@@ -150,7 +150,8 @@ class Cycle(Target):
     def run(self):
         os.mkdir(self.thisDir)
         for d in ['inter', 'intra', 'logs', 'mobiles', 'stats', 'xml']:
-            os.mkdir(os.path.join(self.thisDir, d))
+            if not os.path.exists(os.path.join(self.thisDir, d)):
+                os.mkdir(os.path.join(self.thisDir, d))
         lsc.createNewCycleXmls(self.thisDir, self.thisParentDir, self.thisStepSize, 
                                 self.thisNewickStr, self.options)
         self.addChildTarget(CycleStep1(self.thisNewickStr, self.thisParentDir, 
@@ -164,24 +165,11 @@ class CycleStep1(Cycle):
     def run(self):
         lsc.subTypeTimestamp(self.thisDir, 'cycle', 'CycleStep1_start')
         lsc.verifyDirExists(self.thisDir)
-        cmds = []
-        cmd = lsc.evolverInterStepCmd(self.thisDir, self.thisParentDir, self.theChild, 
-                                       self.thisStepSize, self.options.seed, self.options.paramsDir)
-        cmds.append(cmd)
-        p1 = subprocess.Popen(cmd, cwd=self.getLocalTempDir())
-        if not self.options.noMEs:
-            cmd = lsc.evolverInterStepMobilesCmd(self.thisDir, self.thisParentDir, self.theParent, 
-                                                  self.thisStepSize, self.options.paramsDir)
-            cmds.append(cmd)
-            p2 = subprocess.Popen(cmd, cwd=self.getLocalTempDir(), stdout=subprocess.PIPE)
-            f = open(os.path.join(self.thisDir, 'logs', 'mobiles.log'), 'w')
-            f.write(p2.communicate()[0])
-            f.close()
-            lsc.handleReturnCode(p2.returncode, cmds[1])
-            mvCmds= lsc.evolverInterStepMobilesMoveCmd(self.getLocalTempDir(), self.thisDir)
-            lsc.runCommands(mvCmds, self.getLocalTempDir(), mode='p')
-        p1.wait()
-        lsc.handleReturnCode(p1.returncode, cmds[0])
+        
+        lsc.runEvolverInterCmds(self.thisDir, self.thisParentDir, self.theChild, self.theParent,
+                                self.thisStepSize, self.options.seed, self.options.paramsDir,
+                                self.getLocalTempDir(), self.options)
+
         lsc.subTypeTimestamp(self.thisDir, 'cycle', 'CycleStep1_end')
         self.setFollowOnTarget(CycleStep2(self.thisNewickStr, self.thisParentDir, 
                                             self.thisStepSize, self.options))
@@ -203,8 +191,6 @@ class CycleStep2(Cycle):
             self.addChildTarget(CycleStep2Chromosome(self.thisNewickStr, self.thisParentDir,
                                                        self.thisStepSize, chrom, self.options))
         f.close()
-        lsc.subTypeTimestamp(self.thisDir, 'cycle', 'CycleStep2_end')
-        
         self.setFollowOnTarget(CycleStep3(self.thisNewickStr, self.thisParentDir, 
                                             self.thisStepSize, self.options))
 
@@ -216,22 +202,21 @@ class CycleStep2Chromosome(Cycle):
         Cycle.__init__(self, thisNewickStr, thisParentDir, thisStepSize, options)
         self.thisChr = thisChr
     def run(self):
-        lsc.newInfoXml(os.path.join(self.thisDir, 'xml', 'cycle.%s.xml' % self.thisChr))
-        lsc.addTimestampsTag(os.path.join(self.thisDir, 'xml', 'cycle.%s.xml' % self.thisChr))
-        lsc.subTypeTimestamp(self.thisDir, 'cycleChr', 'CycleStep2Chr_%s_start' % self.thisChr, self.thisChr)
+        if not os.path.exists(os.path.join(self.thisDir, 'xml', 'cycle.%s.xml' % self.thisChr)):
+            lsc.newInfoXml(os.path.join(self.thisDir, 'xml', 'cycle.%s.xml' % self.thisChr))
+            lsc.addTimestampsTag(os.path.join(self.thisDir, 'xml', 'cycle.%s.xml' % self.thisChr))
+            lsc.subTypeTimestamp(self.thisDir, 'cycleChr', 'CycleStep2Chr_%s_start' % self.thisChr, self.thisChr)
         lsc.verifyDirExists(self.thisDir)
-        cmds = []
+
         # evolver intra on one chromosome
-        cmd = lsc.evolverIntraStepCmd(self.thisDir, self.theChild, self.thisStepSize, 
+        cmds = lsc.evolverIntraStepCmd(self.thisDir, self.theChild, self.thisStepSize, 
                                        self.thisChr, self.options.seed, 
                                        self.options.paramsDir, self.getLocalTempDir(), self.options)
-        cmds.append(cmd)
         lsc.runCommands(cmds, self.getLocalTempDir())
-        cmds = []
+
         # evolver conversion from .rev to fasta in localTempDir
-        cmd = lsc.evolverIntraStepToFastaCmd(self.thisDir, self.thisStepSize, self.thisChr, 
+        cmds = lsc.evolverIntraStepToFastaCmd(self.thisDir, self.thisStepSize, self.thisChr, 
                                               self.options.paramsDir, self.getLocalTempDir())
-        cmds.append(cmd)
         lsc.runCommands(cmds, self.getLocalTempDir())
             
         # trf wrapper
@@ -242,6 +227,7 @@ class CycleStep2Chromosome(Cycle):
         lsc.runCommands(cmds, self.getLocalTempDir(), mode='p')
         
         lsc.subTypeTimestamp(self.thisDir, 'cycleChr', 'CycleStep2Chr_%s_end' % self.thisChr, self.thisChr)
+        lsc.addEndTimeAttribute(os.path.join(self.thisDir, 'xml', 'cycle.%s.xml' % self.thisChr))
 
 class CycleStep3(Cycle):
     """ CycleStep3 
@@ -249,6 +235,7 @@ class CycleStep3(Cycle):
     def __init__(self, thisNewickStr, thisParentDir, thisStepSize, options):
         Cycle.__init__(self, thisNewickStr, thisParentDir, thisStepSize, options)
     def run(self):
+        lsc.subTypeTimestamp(self.thisDir, 'cycle', 'CycleStep2_end')
         lsc.subTypeTimestamp(self.thisDir, 'cycle', 'CycleStep3_start')
         lsc.verifyDirExists(self.thisDir)
         
@@ -259,11 +246,12 @@ class CycleStep3(Cycle):
         # lsc.runCommands([cmd], self.getLocalTempDir(), [os.path.join(self.thisDir, 'intra', 'trfannots.gff')])
         lsc.runMergeTrfBedsToGff(self.thisDir)
         
-        catCmd, evoCmd, cvtCmd = lsc.evolverIntraMergeCmds(self.thisDir, self.theChild)
+        catCmd, evoCmd, cvtCmd, followCmds = lsc.evolverIntraMergeCmds(self.thisDir, self.theChild)
         
         lsc.runCommands([catCmd, evoCmd, cvtCmd], self.getLocalTempDir(),
-                         [os.path.join(self.thisDir, 'intra', 'evannots.gff'), None, None], 
+                         [os.path.join(self.thisDir, 'intra', 'evannots.gff.tmp'), None, None], 
                          mode='p')
+        lsc.runCommands(followCmds, self.getLocalTempDir())
                 
         lsc.subTypeTimestamp(self.thisDir, 'cycle', 'CycleStep3_end')
         self.setFollowOnTarget(CycleStep4(self.thisNewickStr, self.thisParentDir,
@@ -277,24 +265,29 @@ class CycleStep4(Cycle):
     def run(self):
         lsc.subTypeTimestamp(self.thisDir, 'cycle', 'CycleStep4_start')
         lsc.verifyDirExists(self.thisDir)
-        if not self.options.noGeneDeactivation:
-            # by default gene deactivation is turned on.
-            cmd = lsc.evolverGeneDeactivationStep(self.thisDir, self.thisParentDir)
-            p = subprocess.Popen(cmd, cwd=self.getLocalTempDir(), 
-                                  stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
-            out = p.communicate()[0]
-            f=open(os.path.join(self.thisDir, 'logs', 'gene_deactivation.log'), 'w')
-            f.write(out)
-            f.close()
-        else:
-            # this could cause a proliferation of gene creation.
-            cmd = [lsc.which('cp')]
-            cmd.append(os.path.join(thisDir, 'intra', 'evannots.gff'))
-            cmd.append(os.path.join(thisDir, 'annots.gff'))
-            p = subprocess.Popen(cmd, cwd=self.getLocalTempDir())
-            lsc.handleReturnCode(p.returncode, cmd)
+        outname = os.path.join(self.thisDir, 'logs', 'gene_deactivation.log')
+        if not os.path.exists(outname):
+            if not self.options.noGeneDeactivation:
+                # by default gene deactivation is turned on.
+                cmd = lsc.evolverGeneDeactivationStep(self.thisDir, self.thisParentDir)
+                p = subprocess.Popen(cmd, cwd=self.getLocalTempDir(), 
+                                     stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+                out = p.communicate()[0]
+                f=open(outname + '.tmp', 'w')
+                f.write(out)
+                f.close()
+                os.rename(outname + '.tmp', outname)
+            else:
+                # this could cause a proliferation of gene creation.
+                cmd = [lsc.which('cp')]
+                cmd.append(os.path.join(thisDir, 'intra', 'evannots.gff'))
+                cmd.append(os.path.join(thisDir, 'annots.gff'))
+                cmds = [cmd]
+                cmds.append([lsc.which('touch'), outname])
+                lsc.runCommands(cmds, self.getLocalTempDir())
         lsc.subTypeTimestamp(self.thisDir, 'cycle', 'CycleStep4_end')
         lsc.typeTimestamp(os.path.join(self.thisDir), 'cycle', 'end')
+        lsc.addEndTimeAttribute(os.path.join(self.thisDir, 'xml', 'cycle.xml'))
 
 class Stats(Target):
     """ The Stats object is a convenience class that launches
@@ -324,8 +317,9 @@ class StatsStep1(Stats):
         lsc.subTypeTimestamp(self.thisDir, 'stats', 'StatsStep1_start')
         lsc.verifyDirExists(self.thisDir)
         
-        cmds, pipes = lsc.statsStep1CmdsP(self.thisDir, self.thisParentDir)
+        cmds, followCmds, pipes = lsc.statsStep1CmdsP(self.thisDir, self.thisParentDir)
         lsc.runCommands(cmds, self.getLocalTempDir(), pipes, mode='p')
+        lsc.runCommands(followCmds, self.getLocalTempDir())
         cmds, pipes = lsc.statsStep1CmdsS(self.thisDir, self.thisParentDir)
         lsc.runCommands(cmds, self.getLocalTempDir(), pipes)
         
