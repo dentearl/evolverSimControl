@@ -35,7 +35,6 @@ of performing the genome simulation.
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 # THE SOFTWARE.
 ##################################################
-from datetime import datetime
 from evolverSimControl.lib.libSimControlClasses import SimTree
 import evolverSimControl.lib.libSimControl as lsc
 from jobTree.scriptTree.stack import Stack
@@ -43,9 +42,6 @@ from optparse import OptionParser
 import os
 from sonLib.bioio import newickTreeParser
 import sys
-import subprocess
-import time
-import xml.etree.ElementTree as ET
 
 # this is the first script to run in a simulation, so it will check for the
 # existance of everything the entire simulation will end up calling, not
@@ -58,8 +54,8 @@ programs = ['cp',
             'evolver_gff_featurestats2.py', 'evolver_codon_report.pl',
             'evolver_merge_evostats.py', 'evolver_mobile_report.pl',
             'touch', 'ln', 'egrep', 'cat', 'simCtrl_completeTimestamp.py']
-lsc.verifyPrograms( programs )
-( CP_BIN, MKDIR_BIN ) = programs[ 0:2 ]
+lsc.verifyPrograms(programs)
+(CP_BIN, MKDIR_BIN) = programs[ 0:2 ]
 
 def initOptions(parser):
     parser.add_option('--rootName',dest='rootName', 
@@ -85,19 +81,19 @@ def initOptions(parser):
     parser.add_option('--noMEs', action='store_true', 
                       dest='noMEs', default=False, 
                       help=('Turns off all mobile element '
-                      'and RPG modules in the sim. default=%default'))
+                            'and RPG modules in the sim. default=%default'))
     parser.add_option('--noGeneDeactivation', action='store_true', 
                       dest='noGeneDeactivation', default=False, 
                       help=('Turns off the gene deactivation step. '
-                      'default=%default'))
+                            'default=%default'))
 
-def checkOptions( options, parser ):
+def checkOptions(options, parser):
     if options.inputNewick is None:
         parser.error('Specify --inputNewick.')
     # check newickTree for reserved words
-    nt = newickTreeParser( options.inputNewick, 0.0 )
+    nt = newickTreeParser(options.inputNewick, 0.0)
     if options.rootName is None:
-        options.rootName = lsc.newickRootName( nt )
+        options.rootName = lsc.newickRootName(nt)
     else:
         options.rootName = options.rootName
     if newickContainsReservedWord(nt, options):
@@ -106,15 +102,17 @@ def checkOptions( options, parser ):
     # Sim Tree Options
     if options.outDir is None:
         parser.error('specify --outDir.\n')
-    if os.path.exists( options.outDir ) and not os.path.isdir( options.outDir ):
-        parser.error('--outDir %s exists but is not a directory!' % options.outDir )
+    if os.path.exists(options.outDir):
+       parser.error('%s already exists! If your simulation crashed, '
+                    'relaunch it with "jobTreeRun --jobTree %s" \n' % 
+                    (os.path.join(options.outDir), options.jobTree))
     options.outDir = os.path.abspath(options.outDir)
-    if not os.path.exists(options.outDir ):
-        os.mkdir( options.outDir )
+    if not os.path.exists(options.outDir):
+        os.mkdir(options.outDir)
     # Sim Control options
     if options.rootInputDir is None:
         parser.error('Specify --rootDir.\n')
-    if not os.path.isdir( options.rootInputDir ):
+    if not os.path.isdir(options.rootInputDir):
         parser.error('--rootDir "%s" not a directory!\n' % options.rootInputDir)
     options.rootInputDir = os.path.abspath(options.rootInputDir)
     
@@ -126,10 +124,10 @@ def checkOptions( options, parser ):
     if options.stepSize <= 0:
         parser.error('specify positive stepSize.\n')
     if options.seed != 'stochastic':
-        options.seed = int( options.seed )
+        options.seed = int(options.seed)
         # otherwise we let the evolver tools choose their own seeds at random.
 
-def newickContainsReservedWord(nt, options ):
+def newickContainsReservedWord(nt, options):
     """
     newickContainsReservedWord() checks the newick to make sure that
     there are no reserved names used as IDs. At present the only reserved
@@ -146,17 +144,17 @@ def newickContainsReservedWord(nt, options ):
         return True
     return False
 
-def checkForFiles( options ):
+def checkForFiles(options):
     """ If files are missing, complains and dies.
     """
-    if not os.path.exists( os.path.join( options.rootInputDir, 'seq.rev')):
+    if not os.path.exists(os.path.join(options.rootInputDir, 'seq.rev')):
         sys.stderr.write('Error, unable to find seq.rev in --rootDir %s.\n' % options.rootInputDir)
     for p in ['model.txt', 'model.mes.txt', 'mes.cfg']:
-        if not os.path.exists( os.path.join( options.paramsDir, p)):
+        if not os.path.exists(os.path.join(options.paramsDir, p)):
             sys.stderr.write('Error, unable to find %s in --params %s' % (p, options.paramsDir))
             sys.exit(1)
 
-def populateRootDir( options ):
+def populateRootDir(options):
     """ The first order of business in a simulation is to create the basic directory structure
     for the root genome and the parameters.
     """
@@ -164,10 +162,9 @@ def populateRootDir( options ):
     # subsequent two cp jobs for parameters.
     jobs = []
     jobs.append(['mkdir', '-p', os.path.join(options.outDir, 'parameters') ])
-    lsc.runCommands( jobs, options.outDir )
+    lsc.runCommands(jobs, options.outDir)
     jobs = []
-    jobs.append(['cp', '-r', options.rootInputDir, os.path.join( options.outDir, options.rootName )])
-    #jobs.append([ROOT_CYCLEXML_MAKER, '--dir=%s' % os.path.join(options.outDir, options.rootName )])
+    jobs.append(['cp', '-r', options.rootInputDir, os.path.join(options.outDir, options.rootName)])
     jobs.append(['cp', os.path.join(options.paramsDir,'model.txt'), 
                  os.path.join(options.outDir, 'parameters')])
     jobs.append(['cp', os.path.join(options.paramsDir,'model.mes.txt'),
@@ -177,16 +174,16 @@ def populateRootDir( options ):
                      os.path.join(options.outDir, 'parameters')])
     lsc.runCommands(jobs, options.outDir, mode='p')
     options.paramsInputDir = options.paramsDir
-    options.paramsDir = os.path.abspath(os.path.join(options.outDir, 'parameters'))
-    options.parentDir  = os.path.abspath(os.path.join(options.outDir, options.rootName))
+    options.paramsDir    = os.path.abspath(os.path.join(options.outDir, 'parameters'))
+    options.parentDir    = os.path.abspath(os.path.join(options.outDir, options.rootName))
     options.simDir, tail = os.path.split(options.parentDir)
     options.rootDir      = os.path.abspath(os.path.join(options.simDir, 'root'))
-    lsc.createRootXmls( sys.argv, options )
+    lsc.createRootXmls(sys.argv, options)
     
-def launchSimTree( options ):
-    jobResult = Stack( SimTree( options )).startJobTree( options )
+def launchSimTree(options):
+    jobResult = Stack(SimTree(options)).startJobTree(options)
     if jobResult:
-        sys.stderr.write('Error, the jobTree contained %d failed jobs!\n' % jobResult )
+        sys.stderr.write('Error, the jobTree contained %d failed jobs!\n' % jobResult)
         sys.exit(1)
 
 def main():
@@ -195,13 +192,13 @@ def main():
            '%prog is used to initiate an evolver simulation using jobTree/scriptTree.')
     parser=OptionParser(usage=usage)
     initOptions(parser)
-    Stack.addJobTreeOptions( parser )
+    Stack.addJobTreeOptions(parser)
     options, args = parser.parse_args()
-    checkOptions( options, parser )
+    checkOptions(options, parser)
 
-    checkForFiles( options )
-    populateRootDir( options )
-    launchSimTree( options )
+    checkForFiles(options)
+    populateRootDir(options)
+    launchSimTree(options)
 
 if __name__ == "__main__":
     main()
