@@ -7,7 +7,7 @@ a script to be run following the completion of a
 simulation. The script will check the simulationInfo.xml
 file and then open the leaves' and roots'
 stats/annotstats.txt file and extract the distributions of
-annotations, printing them out in an R readible format for
+annotations, printing them out in an R readable format for
 plotting and analysis.
 """
 ##################################################
@@ -42,13 +42,8 @@ from sonLib.bioio import newickTreeParser
 from sonLib.bioio import printBinaryTree
 from optparse import OptionParser
 import xml.etree.ElementTree as ET
-import simulation.lib.libSimControl as LSC
-import simulation.lib.libSimTree as LST
-
-def usage():
-    print 'USAGE: '+sys.argv[0]+' --simDir <dir>'
-    print __doc__
-    sys.exit(2)
+import evolverSimControl.lib.libSimControl as LSC
+import evolverSimControl.lib.libSimTree as LST
 
 def initOptions(parser):
     parser.add_option('-d', '--simDir',dest='simDir',
@@ -57,14 +52,12 @@ def initOptions(parser):
                       action='store_true', default='false',
                       help='Turns on output of the internal braches. Otherwise it is just root and leaves.')
 
-def checkOptions(options):
-    if (options.simDir == None):
-        sys.stderr.write('%s: Error, specify simulation dir.\n' % sys.argv[0])
-        usage()
+def checkOptions(options, parser):
+    if (options.simDir is None):
+        parser.error('specify --simDir .\n')
     options.simDir  = os.path.abspath(options.simDir)
     if not os.path.exists(os.path.join(options.simDir, 'simulationInfo.xml')):
-        sys.stderr.write('%s: Error, unable to find simulationInfo.xml.\n' % sys.argv[0])
-        usage()
+        parser.error('unable to find simulationInfo.xml in --simDir %s.\n' % options.simDir)
     infoTree = ET.parse(os.path.join(options.simDir, 'simulationInfo.xml'))
     treeObj = infoTree.find('tree')
     options.inputNewick=treeObj.text
@@ -76,11 +69,11 @@ def extractLeaves(nt, leafDict):
     """Given a newick tree object, it returns a dict of
     leaf objects. Operates recursively.
     """
-    if nt == None:
+    if nt is None:
         return None
     nt.distance=0
-    if (nt.right == None) and (nt.left == None):
-        leafDict[nt.iD] = 1
+    if nt.right is None and nt.left is None:
+        leafDict[nt.iD] = True
     else:
         extractLeaves(nt.right, leafDict=leafDict)
         extractLeaves(nt.left , leafDict=leafDict)
@@ -89,15 +82,15 @@ def extractLeavesAndIntBranches( nt, options, leafDict ):
     """Given a newick tree object, it returns a dict of
     leaf and internal branch objects. Operates recursively.
     """
-    if nt == None:
+    if nt is None:
         return None
     nt.distance = 0
-    if nt.right == None and nt.left == None:
+    if nt.right is None and nt.left is None:
         # leaf
         leafDict[ nt.iD ] = True
     else:
         if options.internalBranches:
-            if nt.right != None and nt.left != None and nt.iD != options.rootName:
+            if nt.right is not None and nt.left is not None and nt.iD != options.rootName:
                 # internal branch
                 leafDict[ nt.iD ] = True
         extractLeavesAndIntBranches( nt.right, options, leafDict = leafDict )
@@ -107,7 +100,6 @@ def parseStats(options, leaves):
     results={}
     for l in leaves:
         results[l] = extractDist( options, l )
-
     return results
 
 def extractDist(options, leaf):
@@ -325,22 +317,23 @@ def printScriptGG(options, results):
     print '# mt + opts(axis.text.x = theme_text(size = 4, angle=45, hjust=1)) + facet_wrap(Name ~ Type, scales="free", ncol=4) + aes(fill=Type)'
 
 def main():
-    parser=OptionParser()
-    initOptions( parser )
-    ( options, args ) = parser.parse_args()
-    checkOptions( options )
-    nt = newickTreeParser( options.inputNewick, 0.0)
-    if nt.iD == None:
-        nt.iD= options.rootName
+    usage = ('usage: %prog --simDir path/to/dir [options]')
+    parser=OptionParser(usage = usage)
+    initOptions(parser)
+    options, args = parser.parse_args()
+    checkOptions(options, parser)
+    nt = newickTreeParser(options.inputNewick, 0.0)
+    if nt.iD is None:
+        nt.iD = options.rootName
         
     leaves={}
-    extractLeavesAndIntBranches( nt, options, leaves )
-    leaves[ options.rootName ] = True
-    results = parseStats( options, leaves )
-    standardizeResults( options, results )
-    printStats( options, results )
-    printScript( options, results )
-    printScriptGG( options, results )
+    extractLeavesAndIntBranches(nt, options, leaves)
+    leaves[options.rootName] = True
+    results = parseStats(options, leaves)
+    standardizeResults(options, results)
+    printStats(options, results)
+    printScript(options, results)
+    printScriptGG(options, results)
 
 if __name__ == "__main__":
     main()
