@@ -23,8 +23,9 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 # THE SOFTWARE.
 ##################################################
-from jobTree.scriptTree.target import Target
 import evolverSimControl.lib.libSimControl as lsc
+import glob
+from jobTree.scriptTree.target import Target
 import os
 from sonLib.bioio import newickTreeParser
 import subprocess
@@ -238,13 +239,20 @@ class CycleStep3(Cycle):
         lsc.subTypeTimestamp(self.thisDir, 'cycle', 'CycleStep2_end')
         lsc.subTypeTimestamp(self.thisDir, 'cycle', 'CycleStep3_start')
         lsc.verifyDirExists(self.thisDir)
+
+        # trfBig
+        # lsc.runMergeTrfBedsToGff(self.thisDir)
         
-        # cmd = [lsc.which('evolver_trf2gff.py')]
-        # files = glob.glob(os.path.join(self.thisDir, 'intra', '*.dat'))
-        # for f in files:
-        #     cmd.append(f)
-        # lsc.runCommands([cmd], self.getLocalTempDir(), [os.path.join(self.thisDir, 'intra', 'trfannots.gff')])
-        lsc.runMergeTrfBedsToGff(self.thisDir)
+        # trf
+        outname = os.path.join(self.thisDir, 'intra', 'trfannots.gff')
+        if not os.path.exists(outname):
+            cmd = [lsc.which('evolver_trf2gff.py')]
+            files = glob.glob(os.path.join(self.thisDir, 'intra', '*.dat'))
+            for f in files:
+                cmd.append(f)
+            cmds = [cmd]
+            cmds.append([lsc.which('mv'), outname + '.tmp', outname])
+            lsc.runCommands(cmds, self.getLocalTempDir(), [outname + '.tmp', None])
         
         catCmd, evoCmd, cvtCmd, followCmds = lsc.evolverIntraMergeCmds(self.thisDir, self.theChild)
         

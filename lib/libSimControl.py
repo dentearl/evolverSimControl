@@ -827,37 +827,42 @@ def callEvolverIntraStepTRFCmd(thisDir, thisChr, localTempDir):
         verifyFileExists(f)
     MAX_PERIOD_SIZE = 2000
     
-    cmd = []
-    outname = os.path.join(localTempDir, thisChr+'.trf.bed')
+    # trfBig
+    # cmd = []
+    # outname = os.path.join(localTempDir, thisChr+'.trf.bed')
+    # if not os.path.exists(outname):
+    #     cmd.append(which('trfBig'))
+    #     cmd.append('-bedAt=%s' % (outname + '.tmp'))
+    #     cmd.append('-tempDir=%s' % localTempDir)
+    #     cmd.append('-maxPeriod=%d' % MAX_PERIOD_SIZE)
+    #     cmd.append(os.path.join(localTempDir, thisChr+'.outseq.fa'))
+    #     cmd.append(os.path.join(localTempDir, thisChr+'.outseq.trf.fa'))
+    #     cmds = [cmd]
+    #     cmd = [which('mv')]
+    #     cmd.append(outname + '.tmp')
+    #     cmd.append(outname)
+    #     cmds.append(cmd)
+    # runCommands(cmds, localTempDir)
+    
+    # trf
+    outname = os.path.join(thisDir, 'logs', 'trf.' + thisChr + '.log')
     if not os.path.exists(outname):
-        cmd.append(which('trfBig'))
-        cmd.append('-bedAt=%s' % (outname + '.tmp'))
-        cmd.append('-tempDir=%s' % localTempDir)
-        cmd.append('-maxPeriod=%d' % MAX_PERIOD_SIZE)
+        cmd = [which('trf')]
         cmd.append(os.path.join(localTempDir, thisChr+'.outseq.fa'))
-        cmd.append(os.path.join(localTempDir, thisChr+'.outseq.trf.fa'))
-        cmds = [cmd]
-        cmd = [which('mv')]
-        cmd.append(outname + '.tmp')
-        cmd.append(outname)
-        cmds.append(cmd)
+        cmd += ['2', '7', '7', '80', '10', '50', str(MAX_PERIOD_SIZE), '-d', '-h']
+        returncode = subprocess.call(cmd, cwd=localTempDir)
+        # note that TRF's returncode is the number of successfully processed
+        # sequences special wrapper.
+        if returncode != 1:
+            if returncode < 0:
+                raise RuntimeError('callEvolverIntraStepTRFCmd: Experienced an error while trying to execute: '
+                                   '%s SIGNAL:%d\n' %(' '.join(cmd), -returncode))
+            else:
+                raise RuntimeError('callEvolverIntraStepTRFCmd: Experienced an error while trying to execute: '
+                                   '%s retcode:%d\n' %(' '.join(cmd), returncode))
+        f=open(outname, 'w')
+        f.close()
     
-    runCommands(cmds, localTempDir)
-    
-    # cmd.append(which('trf'))
-    # cmd.append(os.path.join(localTempDir, thisChr+'.outseq.fa'))
-    # cmd += ['2', '7', '7', '80', '10', '50', MAX_PERIOD_SIZE, '-d', '-h']
-    # p = subprocess.Popen(cmd, cwd=localTempDir)
-    # p.wait()
-    # # note that TRF's returncode is the number of successfully processed
-    # # sequences special wrapper.
-    # if p.returncode != 1:
-    #     if p.returncode < 0:
-    #         raise RuntimeError('callEvolverIntraStepTRFCmd: Experienced an error while trying to execute: '
-    #                            '%s SIGNAL:%d\n' %(' '.join(cmd), -p.returncode))
-    #     else:
-    #         raise RuntimeError('callEvolverIntraStepTRFCmd: Experienced an error while trying to execute: '
-    #                            '%s retcode:%d\n' %(' '.join(cmd), p.returncode))
 
 def evolverIntraStepMoveTRFCmd(thisDir, thisChr, localTempDir):
     """ calls tandem repeats finder (trf) on the per chromosome .fa files.
@@ -871,6 +876,7 @@ def evolverIntraStepMoveTRFCmd(thisDir, thisChr, localTempDir):
     for f in [os.path.join(localTempDir, thisChr+'.outseq.rev'),
                os.path.join(localTempDir, thisChr+'.aln.rev')]:
         verifyFileExists(f)
+    
     cmds = []
     cmd = [which('mv')]
     cmd.append(os.path.join(localTempDir, thisChr+'.outseq.rev'))
@@ -880,16 +886,19 @@ def evolverIntraStepMoveTRFCmd(thisDir, thisChr, localTempDir):
     cmd.append(os.path.join(localTempDir, thisChr+'.aln.rev'))
     cmd.append(os.path.join(thisDir, 'intra', thisChr+'.aln.rev'))
     cmds.append(cmd)
-    cmd = [which('mv')]
-    cmd.append(os.path.join(localTempDir, thisChr+'.trf.bed'))
-    cmd.append(os.path.join(thisDir, 'intra', thisChr+'.trf.bed'))
-    cmds.append(cmd)
-    # files = glob.glob(os.path.join(localTempDir, thisChr+'.*.dat'))
-    # for f in files:
-    #     cmd = [which('mv')]
-    #     cmd.append(f)
-    #     cmd.append(os.path.join(thisDir, 'intra', os.path.basename(f)))
-    #     cmds.append(cmd)
+    # trfBig
+    # cmd = [which('mv')]
+    # cmd.append(os.path.join(localTempDir, thisChr+'.trf.bed'))
+    # cmd.append(os.path.join(thisDir, 'intra', thisChr+'.trf.bed'))
+    # cmds.append(cmd)
+
+    # trf
+    files = glob.glob(os.path.join(localTempDir, thisChr+'.*.dat'))
+    for f in files:
+        cmd = [which('mv')]
+        cmd.append(f)
+        cmd.append(os.path.join(thisDir, 'intra', os.path.basename(f)))
+        cmds.append(cmd)
     return cmds
 
 def runMergeTrfBedsToGff(thisDir):
