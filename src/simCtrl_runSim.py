@@ -169,7 +169,7 @@ def populateRootDir(options):
     """
     # mkdir is used here for simplicity in timing the creation of the diretory and 
     # subsequent two cp jobs for parameters.
-    lsc.runCommands(['mkdir', '-p', os.path.join(options.outDir, 'parameters') ], options.outDir)
+    lsc.runCommands([['mkdir', '-p', os.path.join(options.outDir, 'parameters')]], options.outDir)
     jobs = []
     jobs.append(['cp', '-r', options.rootInputDir, os.path.join(options.outDir, options.rootName)])
     jobs.append(['cp', os.path.join(options.paramsDir,'model.txt'), 
