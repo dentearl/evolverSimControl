@@ -23,5 +23,4 @@ ${binPath}/%: src/%
 	mv $@.tmp $@
 
 clean:
-	rm -f ${py_progs:%=${binPath}/%} ${binPath}/simCtrl_* ${binPath}/simUtil_* ${libPath}/
-	rm -f *.o
+	rm -rf ${binPath} ${libPath}/
