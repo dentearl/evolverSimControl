@@ -398,7 +398,7 @@ def myLog(s):
         f.write(s)
     f.close()
 
-def runCommands(cmds, localTempDir, pipes=[], mode='s'):
+def runCommands(cmds, localTempDir, inPipes=[], outPipes=[], mode='s', debug = False):
     """ runCommands is a wrapper function for the parallel and serial
     versions of runCommands. mode may either be s or p.
     """
@@ -412,18 +412,24 @@ def runCommands(cmds, localTempDir, pipes=[], mode='s'):
     if mode not in ('s', 'p'):
         raise ValueError('runCommands "mode" argument must be either '
                          's or p, not %s.\n' % mode)
-    if pipes != []:
-        if len(cmds) != len(pipes):
-            raise ValueError('runCommands length of pipes list (%d) '
-                             'not equal to cmds list (%d)!.\n' % (len(pipes), len(cmds)))
+    if outPipes != []:
+        if len(cmds) != len(outPipes):
+            raise ValueError('runCommands length of outPipes list %d '
+                             'not equal to cmds list %d!.\n' % (len(outPipes), len(cmds)))
     else:
-        pipes = [None] * len(cmds)
+        outPipes = [None] * len(cmds)
+    if inPipes != []:
+        if len(cmds) != len(inPipes):
+            raise ValueError('runCommands length of inPipes list %d '
+                             'not equal to cmds list %d!.\n' % (len(inPipes), len(cmds)))
+    else:
+        inPipes = [None] * len(cmds)
     if mode == 's':
-        runCommandsS(cmds, localTempDir, pipes)
+        runCommandsS(cmds, localTempDir, inPipes = inPipes, outPipes = outPipes, debug = debug)
     else:
-        runCommandsP(cmds, localTempDir, pipes)
+        runCommandsP(cmds, localTempDir, inPipes = inPipes, outPipes = outPipes, debug = debug)
 
-def runCommandsP(cmds, localTempDir, pipes):
+def runCommandsP(cmds, localTempDir, inPipes=[], outPipes=[], debug = False):
     """ runCommandsP uses the subprocess module
     to issue parallel processes from the cmds list.
     """
@@ -432,23 +438,35 @@ def runCommandsP(cmds, localTempDir, pipes):
     i = -1
     for c in cmds:
         i += 1
-        if pipes[i] is None:
-            procs.append(subprocess.Popen(c, cwd=localTempDir))
+        if inPipes[i] is None:
+            sin = None
         else:
-            procs.append(subprocess.Popen(c, cwd=localTempDir, stdout=subprocess.PIPE))
+            sin = subprocess.PIPE
+        if outPipes[i] is None:
+            sout = None
+        else:
+            sout = subprocess.PIPE
+        if debug:
+            import sys
+            sys.stderr.write('Executing parallel %s\n' % ' '.join(c))
+        procs.append(subprocess.Popen(c, cwd=localTempDir, stdin = sin, stdout = sout))
     i = -1
     for p in procs:
         i += 1
-        if pipes[i] is None:
-            p.wait()
+        if inPipes[i] is None:
+            sin = None
+        else:
+            sin = open(inPipes[i], 'r').read()
+        if outPipes[i] is None:
+            pout, perr = p.communicate(sin)
             handleReturnCode(p.returncode, cmds[i])
         else:
-            f = open(pipes[i], 'w')
-            f.write(p.communicate()[0])
+            f = open(outPipes[i], 'w')
+            f.write(p.communicate(sin)[0])
             f.close()
             handleReturnCode(p.returncode, cmds[i])
 
-def runCommandsS(cmds, localTempDir, pipes):
+def runCommandsS(cmds, localTempDir, inPipes=[], outPipes=[], debug = False):
     """ runCommandsS uses the subprocess module
     to issue serial processes from the cmds list.
     """
@@ -457,15 +475,32 @@ def runCommandsS(cmds, localTempDir, pipes):
     i = -1
     for c in cmds:
         i += 1
-        if pipes[i] is None:
-            returncode = subprocess.call(c, cwd=localTempDir)
-            handleReturnCode(returncode, cmds[i])
+        if inPipes[i] is None:
+            sin = None
         else:
-            p = subprocess.Popen(c, cwd=localTempDir, stdout=subprocess.PIPE)
-            f = open(pipes[i], 'w')
-            f.write(p.communicate()[0])
+            sin = subprocess.PIPE
+        if outPipes[i] is None:
+            sout = None
+        else:
+            sout = subprocess.PIPE
+        if debug:
+            import sys
+            sys.stderr.write('Executing serial %s < %s > %s\n' % (' '.join(c), inPipes[i],
+                                                                  outPipes[i]))
+        p = subprocess.Popen(c, cwd=localTempDir, stdin = sin, stdout = sout)
+            
+        if inPipes[i] is None:
+            sin = None
+        else:
+            sin = open(inPipes[i], 'r').read()
+        if outPipes[i] is None:
+            pout, perr = p.communicate(sin)
+            handleReturnCode(p.returncode, cmds[i])
+        else:
+            f = open(outPipes[i], 'w')
+            f.write(p.communicate(sin)[0])
             f.close()
-            handleReturnCode(p.returncode, c)
+            handleReturnCode(p.returncode, cmds[i])
 
 def handleReturnCode(retcode, cmd):
     from libSimControlClasses import BadInputError

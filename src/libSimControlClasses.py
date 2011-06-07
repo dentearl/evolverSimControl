@@ -267,13 +267,13 @@ class CycleStep3(Cycle):
                 # atomic files
                 followCmds.append([lsc.which('mv'), outname + '.tmp', outname])
                 followPipes.append(None)
-        lsc.runCommands(cmds, self.getLocalTempDir(), outPipes, mode='p')
-        lsc.runCommands(followCmds, self.getLocalTempDir(), followPipes, mode='p')
+        lsc.runCommands(cmds, self.getLocalTempDir(), outPipes = outPipes, mode='p')
+        lsc.runCommands(followCmds, self.getLocalTempDir(), outPipes = followPipes, mode='p')
         
         catCmd, evoCmd, cvtCmd, followCmds = lsc.evolverIntraMergeCmds(self.thisDir, self.theChild)
         
         lsc.runCommands([catCmd, evoCmd, cvtCmd], self.getLocalTempDir(),
-                         [os.path.join(self.thisDir, 'intra', 'evannots.gff.tmp'), None, None], 
+                         outPipes = [os.path.join(self.thisDir, 'intra', 'evannots.gff.tmp'), None, None], 
                          mode='p')
         lsc.runCommands(followCmds, self.getLocalTempDir())
                 
@@ -342,7 +342,7 @@ class StatsStep1(Stats):
         lsc.verifyDirExists(self.thisDir)
         
         cmds, followCmds, pipes = lsc.statsStep1CmdsP(self.thisDir, self.thisParentDir)
-        lsc.runCommands(cmds, self.getLocalTempDir(), pipes, mode='p')
+        lsc.runCommands(cmds, self.getLocalTempDir(), outPipes = pipes, mode='p')
         lsc.runCommands(followCmds, self.getLocalTempDir())
         cmds, pipes = lsc.statsStep1CmdsS(self.thisDir, self.thisParentDir)
         lsc.runCommands(cmds, self.getLocalTempDir(), pipes)
@@ -360,7 +360,7 @@ class StatsStep2(Stats):
         lsc.verifyDirExists(self.thisDir)
 
         cmds, pipes = lsc.statsStep2Cmds(self.thisDir, self.thisParentDir, self.options)
-        lsc.runCommands(cmds, self.getLocalTempDir(), pipes)
+        lsc.runCommands(cmds, self.getLocalTempDir(), outPipes = pipes)
 
         lsc.subTypeTimestamp(self.thisDir, 'stats', 'StatsStep2_end')
         self.setFollowOnTarget(StatsStep3(self.thisDir, self.thisParentDir, self.options))
@@ -375,7 +375,7 @@ class StatsStep3(Stats):
         lsc.verifyDirExists(self.thisDir)
 
         cmds, pipes = lsc.statsStep3Cmds(self.thisDir, self.thisParentDir, self.options)
-        lsc.runCommands(cmds, self.getLocalTempDir(), pipes)
+        lsc.runCommands(cmds, self.getLocalTempDir(), outPipes = pipes)
 
         lsc.subTypeTimestamp(self.thisDir, 'stats', 'StatsStep3_end')
         self.setFollowOnTarget(StatsStep4(self.thisDir, self.thisParentDir, self.options))
@@ -390,7 +390,7 @@ class StatsStep4(Stats):
         lsc.verifyDirExists(self.thisDir)
         
         cmds, pipes = lsc.statsStep4Cmds(self.thisDir, self.thisParentDir, self.options)
-        lsc.runCommands(cmds, self.getLocalTempDir(), pipes)
+        lsc.runCommands(cmds, self.getLocalTempDir(), outPipes = pipes)
 
         lsc.subTypeTimestamp(self.thisDir, 'stats', 'StatsStep4_end')
         lsc.typeTimestamp(os.path.join(self.thisDir), 'stats', 'end')
@@ -428,7 +428,7 @@ class TransalignStep1(Transalign):
         lsc.verifyDirExists(self.thisDir)
         
         cmds, pipes = lsc.transalignStep1Cmds_1(self.thisDir, self.thisParentDir, self.options)
-        lsc.runCommands(cmds, self.getLocalTempDir(), pipes)
+        lsc.runCommands(cmds, self.getLocalTempDir(), outPipes = pipes)
         
         lsc.runTransalignStep1Cmds_2(self.thisDir, self.thisParentDir, self.getLocalTempDir(), self.options)
         

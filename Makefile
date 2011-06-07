@@ -5,7 +5,7 @@ export SHELLOPTS=pipefail
 
 binPath = bin
 libPath = lib
-py_progs = simCtrl_runSim.py simCtrl_postSimMafExtractor.py
+py_progs = simCtrl_runSim.py simCtrl_postSimMafExtractor.py simCtrl_postSimFastaExtractor.py 
 libraries = libSimControl.py libSimControlClasses.py
 
 all: ${py_progs:%=${binPath}/%} ${progs} $(foreach l,${libraries}, ${libPath}/$l)
