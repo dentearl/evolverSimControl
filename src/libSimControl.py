@@ -402,21 +402,20 @@ def runCommands(cmds, localTempDir, pipes=[], mode='s'):
     """ runCommands is a wrapper function for the parallel and serial
     versions of runCommands. mode may either be s or p.
     """
-    from libSimControlClasses import BadInputError
     from libSimControl import runCommandsP, runCommandsS
     import os
     if not os.path.exists(localTempDir):
-        raise BadInputError('localTempDir "%s" does not exist!\n' % localTempDir)
+        raise ValueError('localTempDir "%s" does not exist!\n' % localTempDir)
     if not isinstance(cmds, list):
-        raise BadInputError('runCommands takes a list for the "cmds" '
-                            'argument, not a %s.\n' % cmds.__class__)
+        raise TypeError('runCommands takes a list for the "cmds" '
+                        'argument, not a %s.\n' % cmds.__class__)
     if mode not in ('s', 'p'):
-        raise BadInputError('runCommands "mode" argument must be either '
-                            's or p, not %s.\n' % mode)
+        raise ValueError('runCommands "mode" argument must be either '
+                         's or p, not %s.\n' % mode)
     if pipes != []:
         if len(cmds) != len(pipes):
-            raise BadInputError('runCommands length of pipes list (%d) '
-                                'not equal to cmds list (%d)!.\n' % (len(pipes), len(cmds)))
+            raise ValueError('runCommands length of pipes list (%d) '
+                             'not equal to cmds list (%d)!.\n' % (len(pipes), len(cmds)))
     else:
         pipes = [None] * len(cmds)
     if mode == 's':
@@ -855,18 +854,18 @@ def evolverIntraStepMoveTRFCmd(thisDir, thisChr, localTempDir):
     import os
     for d in [thisDir, os.path.join(thisDir, 'intra'), localTempDir]:
         verifyDirExists(d)
-    for f in [os.path.join(localTempDir, thisChr+'.outseq.rev'),
-               os.path.join(localTempDir, thisChr+'.aln.rev')]:
+    for f in [os.path.join(localTempDir, thisChr + '.outseq.rev'),
+               os.path.join(localTempDir, thisChr + '.aln.rev')]:
         verifyFileExists(f)
     
     cmds = []
     cmd = [which('mv')]
-    cmd.append(os.path.join(localTempDir, thisChr+'.outseq.rev'))
-    cmd.append(os.path.join(thisDir, 'intra', thisChr+'.outseq.rev'))
+    cmd.append(os.path.join(localTempDir, thisChr + '.outseq.rev'))
+    cmd.append(os.path.join(thisDir, 'intra', thisChr + '.outseq.rev'))
     cmds.append(cmd)
     cmd = [which('mv')]
-    cmd.append(os.path.join(localTempDir, thisChr+'.aln.rev'))
-    cmd.append(os.path.join(thisDir, 'intra', thisChr+'.aln.rev'))
+    cmd.append(os.path.join(localTempDir, thisChr + '.aln.rev'))
+    cmd.append(os.path.join(thisDir, 'intra', thisChr + '.aln.rev'))
     cmds.append(cmd)
     # trfBig
     # cmd = [which('mv')]
@@ -875,7 +874,7 @@ def evolverIntraStepMoveTRFCmd(thisDir, thisChr, localTempDir):
     # cmds.append(cmd)
 
     # trf
-    files = glob.glob(os.path.join(localTempDir, thisChr+'.*.dat'))
+    files = glob.glob(os.path.join(localTempDir, thisChr + '.*.dat'))
     for f in files:
         cmd = [which('mv')]
         cmd.append(f)
@@ -980,19 +979,19 @@ def evolverIntraMergeCmds(thisDir, theChild):
     cvtChrStr = ''
     for chrom in f:
         chrom = chrom.strip()
-        verifyFileExists(os.path.join(thisDir, 'intra', 'trfannots.gff'))
-        verifyFileExists(os.path.join(thisDir, 'intra', chrom+'.outannots.gff'))
-        catCmd.append(os.path.join(thisDir, 'intra', 'trfannots.gff'))
-        catCmd.append(os.path.join(thisDir, 'intra', chrom+'.outannots.gff'))
-        verifyFileExists(os.path.join(thisDir, 'intra', chrom+'.aln.rev'))
-        verifyFileExists(os.path.join(thisDir, 'intra', chrom+'.outseq.rev'))
+        verifyFileExists(os.path.join(thisDir, 'intra', chrom + 'trfannots.gff'))
+        verifyFileExists(os.path.join(thisDir, 'intra', chrom + '.outannots.gff'))
+        catCmd.append(os.path.join(thisDir, 'intra', chrom + 'trfannots.gff'))
+        catCmd.append(os.path.join(thisDir, 'intra', chrom + '.outannots.gff'))
+        verifyFileExists(os.path.join(thisDir, 'intra', chrom + '.aln.rev'))
+        verifyFileExists(os.path.join(thisDir, 'intra', chrom + '.outseq.rev'))
         if not firstLine:
             # these commands require comma separated values
-            evoChrStr += ','+os.path.join(thisDir, 'intra', chrom+'.aln.rev')
-            cvtChrStr += ','+os.path.join(thisDir, 'intra', chrom+'.outseq.rev')
+            evoChrStr += ','+os.path.join(thisDir, 'intra', chrom + '.aln.rev')
+            cvtChrStr += ','+os.path.join(thisDir, 'intra', chrom + '.outseq.rev')
         else:
-            evoChrStr += os.path.join(thisDir, 'intra', chrom+'.aln.rev')
-            cvtChrStr += os.path.join(thisDir, 'intra', chrom+'.outseq.rev')
+            evoChrStr += os.path.join(thisDir, 'intra', chrom + '.aln.rev')
+            cvtChrStr += os.path.join(thisDir, 'intra', chrom + '.outseq.rev')
             firstLine = False
     f.close()
     
@@ -1889,6 +1888,9 @@ def runTransalignStep1Cmds_2(thisDir, thisParentDir, localTempDir, options):
     outname = os.path.join(thisDir, 'stats', 'diffs.cycle.txt')
     if not os.path.exists(outname):
         cmd = [which('cat')]
+        verifyFileExists(os.path.join(thisDir, 'stats', 'tmpstats.cycle.difflength.txt'))
+        verifyFileExists(os.path.join(thisDir, 'stats', 'tmpstats.cycle.diffcompost.txt'))
+        verifyFileExists(os.path.join(thisDir, 'stats', 'tmpstats.cycle.diffannots.txt'))
         cmd.append(os.path.join(thisDir, 'stats', 'tmpstats.cycle.difflength.txt'))
         cmd.append(os.path.join(thisDir, 'stats', 'tmpstats.cycle.diffcompost.txt'))
         cmd.append(os.path.join(thisDir, 'stats', 'tmpstats.cycle.diffannots.txt'))
@@ -1900,6 +1902,9 @@ def runTransalignStep1Cmds_2(thisDir, thisParentDir, localTempDir, options):
     outname = os.path.join(thisDir, 'stats', 'diffs.branch.txt')
     if not os.path.exists(outname):
         cmd = [which('cat')]
+        verifyFileExists(os.path.join(thisDir, 'stats', 'tmpstats.branch.difflength.txt'))
+        verifyFileExists(os.path.join(thisDir, 'stats', 'tmpstats.branch.diffcompost.txt'))
+        verifyFileExists(os.path.join(thisDir, 'stats', 'tmpstats.branch.diffannots.txt'))
         cmd.append(os.path.join(thisDir, 'stats', 'tmpstats.branch.difflength.txt'))
         cmd.append(os.path.join(thisDir, 'stats', 'tmpstats.branch.diffcompost.txt'))
         cmd.append(os.path.join(thisDir, 'stats', 'tmpstats.branch.diffannots.txt'))

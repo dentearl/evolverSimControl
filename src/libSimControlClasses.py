@@ -27,12 +27,14 @@ import evolverSimControl.lib.libSimControl as lsc
 import glob
 from jobTree.scriptTree.target import Target
 import os
+import re
 from sonLib.bioio import newickTreeParser
 import subprocess
 import sys
 
-class BadInputError(ValueError):
+class BadInputError(TypeError):
     pass
+
 class ProgramDoesNotExistError(ValueError):
     pass
 
@@ -242,17 +244,31 @@ class CycleStep3(Cycle):
 
         # trfBig
         # lsc.runMergeTrfBedsToGff(self.thisDir)
-        
+
         # trf
-        outname = os.path.join(self.thisDir, 'intra', 'trfannots.gff')
-        if not os.path.exists(outname):
-            cmd = [lsc.which('evolver_trf2gff.py')]
-            files = glob.glob(os.path.join(self.thisDir, 'intra', '*.dat'))
-            for f in files:
-                cmd.append(f)
-            cmds = [cmd]
-            cmds.append([lsc.which('mv'), outname + '.tmp', outname])
-            lsc.runCommands(cmds, self.getLocalTempDir(), [outname + '.tmp', None])
+        regex = r'^(chr\S+)\.outseq\.fa.*\.dat'
+        pat = re.compile(regex)
+        files = glob.glob(os.path.join(self.thisDir, 'intra', '*.dat'))
+        cmds = []
+        outPipes = []
+        followCmds = []
+        followPipes = []
+        for f in files:
+            # each file is the trf output for one chromosome
+            m = re.match(regex, os.path.basename(f))
+            if m is None:
+                raise RuntimeError('Regex "%s" failed on filename %s' % (regex, os.path.basename(f)))
+            outname = os.path.join(self.thisDir, 'intra', m.group(1) + 'trfannots.gff')
+            if not os.path.exists(outname):
+                # convert the .dat to .gff
+                cmd = [lsc.which('evolver_trf2gff.py'), f]
+                cmds.append(cmd)
+                outPipes.append(outname + '.tmp')
+                # atomic files
+                followCmds.append([lsc.which('mv'), outname + '.tmp', outname])
+                followPipes.append(None)
+        lsc.runCommands(cmds, self.getLocalTempDir(), outPipes, mode='p')
+        lsc.runCommands(followCmds, self.getLocalTempDir(), followPipes, mode='p')
         
         catCmd, evoCmd, cvtCmd, followCmds = lsc.evolverIntraMergeCmds(self.thisDir, self.theChild)
         
