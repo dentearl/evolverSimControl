@@ -63,7 +63,7 @@ class Tree(Target):
     """
     def __init__(self, thisNewickStr, parentDir, branchStr, options):
         Target.__init__(self)
-        (self.thisNewickStr, self.thisStepSize)  = lsc.takeNewickStep(thisNewickStr, options)
+        (self.thisNewickStr, self.thisStepLength)  = lsc.takeNewickStep(thisNewickStr, options)
         self.parentDir = parentDir
         self.thisBranchStr = branchStr # either 'left','right', 'stem'
         self.options = options
@@ -75,7 +75,7 @@ class Tree(Target):
             self.addChildTarget(Stats(self.parentDir, lsc.getParentDir(self.parentDir), 
                                       self.options))
         self.addChildTarget(Cycle(self.thisNewickStr, self.parentDir, 
-                                  self.thisStepSize, self.options))
+                                  self.thisStepLength, self.options))
         self.setFollowOnTarget(TreeFollow(self.thisNewickStr, self.parentDir, 
                                           self.thisBranchStr, self.options))
 
@@ -139,11 +139,11 @@ class Cycle(Target):
     """ The Cycle class creates the necessary directory structure for the
     given Cycle and then launches CycleStep1 as a child.
     """
-    def __init__(self, thisNewickStr, thisParentDir, thisStepSize, options):
+    def __init__(self, thisNewickStr, thisParentDir, thisStepLength, options):
         Target.__init__(self)
         self.thisNewickStr = thisNewickStr
         self.thisParentDir = thisParentDir
-        self.thisStepSize  = thisStepSize
+        self.thisStepLength  = thisStepLength
         self.options = options
         self.thisDir = lsc.treeStr2Dir(self.thisNewickStr, options.simDir)
         self.theChild  = os.path.basename(self.thisDir)
@@ -153,34 +153,34 @@ class Cycle(Target):
         for d in ['inter', 'intra', 'logs', 'mobiles', 'stats', 'xml']:
             if not os.path.exists(os.path.join(self.thisDir, d)):
                 os.mkdir(os.path.join(self.thisDir, d))
-        lsc.createNewCycleXmls(self.thisDir, self.thisParentDir, self.thisStepSize, 
+        lsc.createNewCycleXmls(self.thisDir, self.thisParentDir, self.thisStepLength, 
                                 self.thisNewickStr, self.options)
         self.addChildTarget(CycleStep1(self.thisNewickStr, self.thisParentDir, 
-                                       self.thisStepSize, self.options))
+                                       self.thisStepLength, self.options))
 
 class CycleStep1(Cycle):
     """ CycleStep1 consists of an evolver inter step and then the mobiles step.
     """
-    def __init__(self, thisNewickStr, thisParentDir, thisStepSize, options):
-        Cycle.__init__(self, thisNewickStr, thisParentDir, thisStepSize, options)
+    def __init__(self, thisNewickStr, thisParentDir, thisStepLength, options):
+        Cycle.__init__(self, thisNewickStr, thisParentDir, thisStepLength, options)
     def run(self):
         lsc.subTypeTimestamp(self.thisDir, 'cycle', 'CycleStep1_start')
         lsc.verifyDirExists(self.thisDir)
         
         lsc.runEvolverInterCmds(self.thisDir, self.thisParentDir, self.theChild, self.theParent,
-                                self.thisStepSize, self.options.seed, self.options.paramsDir,
+                                self.thisStepLength, self.options.seed, self.options.paramsDir,
                                 self.getLocalTempDir(), self.options)
 
         lsc.subTypeTimestamp(self.thisDir, 'cycle', 'CycleStep1_end')
         self.setFollowOnTarget(CycleStep2(self.thisNewickStr, self.thisParentDir, 
-                                            self.thisStepSize, self.options))
+                                            self.thisStepLength, self.options))
 
 class CycleStep2(Cycle):
     """ CycleStep2 sets up the individual evolver intra steps which are run in
     parallel, one per chromosome.
     """
-    def __init__(self, thisNewickStr, thisParentDir, thisStepSize, options):
-        Cycle.__init__(self, thisNewickStr, thisParentDir, thisStepSize, options)
+    def __init__(self, thisNewickStr, thisParentDir, thisStepLength, options):
+        Cycle.__init__(self, thisNewickStr, thisParentDir, thisStepLength, options)
     def run(self):
         lsc.subTypeTimestamp(self.thisDir, 'cycle', 'CycleStep2_start')
         lsc.verifyDirExists(self.thisDir)
@@ -190,17 +190,17 @@ class CycleStep2(Cycle):
         for chrom in f:
             chrom = chrom.strip()
             self.addChildTarget(CycleStep2Chromosome(self.thisNewickStr, self.thisParentDir,
-                                                       self.thisStepSize, chrom, self.options))
+                                                       self.thisStepLength, chrom, self.options))
         f.close()
         self.setFollowOnTarget(CycleStep3(self.thisNewickStr, self.thisParentDir, 
-                                            self.thisStepSize, self.options))
+                                            self.thisStepLength, self.options))
 
 class CycleStep2Chromosome(Cycle):
     """ CycleStep2Chromosome is called by CycleStep2. This corresponds to the 
     evolver intra (within chromosome) step.
     """
-    def __init__(self, thisNewickStr, thisParentDir, thisStepSize, thisChr, options):
-        Cycle.__init__(self, thisNewickStr, thisParentDir, thisStepSize, options)
+    def __init__(self, thisNewickStr, thisParentDir, thisStepLength, thisChr, options):
+        Cycle.__init__(self, thisNewickStr, thisParentDir, thisStepLength, options)
         self.thisChr = thisChr
     def run(self):
         if not os.path.exists(os.path.join(self.thisDir, 'xml', 'cycle.%s.xml' % self.thisChr)):
@@ -210,13 +210,13 @@ class CycleStep2Chromosome(Cycle):
         lsc.verifyDirExists(self.thisDir)
 
         # evolver intra on one chromosome
-        cmds = lsc.evolverIntraStepCmd(self.thisDir, self.theChild, self.thisStepSize, 
+        cmds = lsc.evolverIntraStepCmd(self.thisDir, self.theChild, self.thisStepLength, 
                                        self.thisChr, self.options.seed, 
                                        self.options.paramsDir, self.getLocalTempDir(), self.options)
         lsc.runCommands(cmds, self.getLocalTempDir())
 
         # evolver conversion from .rev to fasta in localTempDir
-        cmds = lsc.evolverIntraStepToFastaCmd(self.thisDir, self.thisStepSize, self.thisChr, 
+        cmds = lsc.evolverIntraStepToFastaCmd(self.thisDir, self.thisStepLength, self.thisChr, 
                                               self.options.paramsDir, self.getLocalTempDir())
         lsc.runCommands(cmds, self.getLocalTempDir())
             
@@ -233,8 +233,8 @@ class CycleStep2Chromosome(Cycle):
 class CycleStep3(Cycle):
     """ CycleStep3 
     """
-    def __init__(self, thisNewickStr, thisParentDir, thisStepSize, options):
-        Cycle.__init__(self, thisNewickStr, thisParentDir, thisStepSize, options)
+    def __init__(self, thisNewickStr, thisParentDir, thisStepLength, options):
+        Cycle.__init__(self, thisNewickStr, thisParentDir, thisStepLength, options)
     def run(self):
         lsc.subTypeTimestamp(self.thisDir, 'cycle', 'CycleStep2_end')
         lsc.subTypeTimestamp(self.thisDir, 'cycle', 'CycleStep3_start')
@@ -263,13 +263,13 @@ class CycleStep3(Cycle):
                 
         lsc.subTypeTimestamp(self.thisDir, 'cycle', 'CycleStep3_end')
         self.setFollowOnTarget(CycleStep4(self.thisNewickStr, self.thisParentDir,
-                                            self.thisStepSize, self.options))
+                                            self.thisStepLength, self.options))
 
 class CycleStep4(Cycle):
     """ CycleStep4 
     """
-    def __init__(self, thisNewickStr, thisParentDir, thisStepSize, options):
-        Cycle.__init__(self, thisNewickStr, thisParentDir, thisStepSize, options)
+    def __init__(self, thisNewickStr, thisParentDir, thisStepLength, options):
+        Cycle.__init__(self, thisNewickStr, thisParentDir, thisStepLength, options)
     def run(self):
         lsc.subTypeTimestamp(self.thisDir, 'cycle', 'CycleStep4_start')
         lsc.verifyDirExists(self.thisDir)
@@ -422,3 +422,257 @@ class TransalignStep1(Transalign):
         lsc.lastOneOutTurnOffTheLightsCycle(self.thisDir)
         if lsc.isLeaf(self.thisDir):
             lsc.lastOneOutTurnOffTheLightsSimulation(self.options.simDir, self.options)
+
+class Node:
+    """Nodes have one parent and two children,
+    unless they are children in which case their
+    children list is empty, or they are the root
+    node in which case their parent is None.
+    This class is used by simCtrl_postSimMafExtractor.py
+    """
+    def __init__(self):
+        self.parent   = None
+        self.name     = ''
+        self.children = []
+        self.isLeaf   = False
+
+class MasterMafGenerator(Target):
+    """
+    The MasterMafGenerator class runs the entire extraction and merge process. It begins
+    by calling the extractionManager which extracts all necessary pairwise mafs.
+    """
+    def __init__(self, options):
+        Target.__init__(self)
+        self.options = options
+
+    def run(self):
+        self.setFollowOnTarget(ExtractionManager(self.options))
+
+class ExtractionManager(Target):
+    """
+    The ExtractionManager class runs the extraction process. 
+    """
+    def __init__(self, options):
+        Target.__init__(self)
+        self.options = options
+
+    def run(self):
+        nt = newickTreeParser(self.options.inputNewick, 0.0)
+        nodesList = []
+        leafsDict = {}
+        lsc.extractLeafsFromNewick(nt, leafsDict)
+        nt.iD = os.path.basename(self.options.rootDir)
+        lsc.buildNodesListFromNewick(nt, nodesList, leafsDict)
+        if (os.path.exists(os.path.join(self.options.rootDir, 'aln.rev')) and not
+            os.path.exists(os.path.join(self.options.rootDir, 'burnin.tmp.maf'))):
+            self.addChildTarget(Extract(self.options.rootDir, 'burnin', False, self.options))
+        for n in nodesList:
+            # parent nodes
+            for c in n.children:
+                # the child alignment is named for the parent node
+                self.addChildTarget(Extract(os.path.join(self.options.simDir, c), n.name,
+                                            c in leafsDict, self.options))
+        self.setFollowOnTarget(MergeManager(nodesList, leafsDict, self.options))
+
+class Extract(Target):
+    """
+    The Extract class runs a single extraction. 
+    """
+    def __init__(self, thisDir, alignName, isLeaf, options):
+        Target.__init__(self)
+        self.thisDir = thisDir
+        self.alignName = alignName
+        self.isLeaf = isLeaf
+        self.options = options
+
+    def run(self):
+        if self.isLeaf:
+            ext = '.maf'
+        else:
+            ext = '.tmp.maf'
+        outname = os.path.join(self.thisDir, self.alignName + ext)
+        if not os.path.exists(outname):
+            cmd = [lsc.which('evolver_cvt')]
+            cmd.append('-fromrev')
+            cmd.append(os.path.join(self.thisDir, 'aln.rev'))
+            cmd.append('-tomaf')
+            cmd.append(outname + '.tmp')
+            cmds = [cmd]
+            cmds.append([lsc.which('mv'), outname + '.tmp', outname])
+            lsc.runCommands(cmds, self.getLocalTempDir())
+
+class MergeManager(Target):
+    """
+    The MergeManager class runs the merge process. 
+    
+    MergeManager takes the nodesList and goes through the
+    steps of progressively merging the MAFs, starting from the leaves
+    and working its way up the tree.
+    ((a, b)E,(c,d)F)root;
+    which was earlier decomposed into the:
+    aE.maf
+    bE.maf
+    cF.maf
+    dF.maf
+    Eroot.maf
+    Froot.maf
+    would now be combined in the following pattern:
+    aE.maf + bE.maf -> abE.maf
+    cF.maf + dF.maf -> cdF.maf
+    abE.maf + Eroot.maf -> abEroot.maf
+    cdF.maf + Froot.maf -> cdFroot.maf
+    abEroot.maf + cdFroot.maf -> abcdEFroot.maf
+    ... and then we drink root beers and have highfives.
+    OR, in the specific directory based data structure
+    that we actually use,
+    a/E.maf
+    b/E.maf
+    c/F.maf
+    d/F.maf
+    E/root.tmp.maf
+    F/root.tmp.maf
+    a/E.maf b/E.maf -> E/E.maf
+    E/E.maf E/root.tmp.maf -> E/root.maf
+    F/F.maf F/root.tmp.maf -> F/root.maf
+    E/root.maf F/root.maf -> root/all.maf
+    OR, most generally,
+    child0/parent.maf child1/parent.maf -> parent/parent.maf
+    parent/parent.maf parent/grandParent.tmp.maf -> parent/grandParent.maf
+    
+    """
+    def __init__(self, nodesList, leafsDict, options):
+        Target.__init__(self)
+        self.options = options
+        self.nodesList = nodesList
+        self.nodeParentDict = lsc.buildNodeParentDict(self.nodesList)
+        self.leafsDict = leafsDict
+        self.nodeDict = lsc.buildNodesDict(self.nodesList, self.leafsDict)
+
+    def run(self):
+        nt = newickTreeParser(self.options.inputNewick, 0.0)
+        nt.iD = os.path.basename(self.options.rootDir)
+        self.addChildTarget(MergeTree(nt, self.nodeDict, self.nodeParentDict, self.leafsDict, self.options))
+        if not options.noBurninMerge:
+            self.setFollowOnTarget(MergeTreeFollow(nt, self.nodeDict, self.nodeParentDict,
+                                                   self.leafsDict, self.options))
+
+class MergeTree(Target):
+    """
+    The MergeTrees class creates a tree structure of maf merges based on the phylogenetic 
+    tree of the simulation.
+    
+    """
+    def __init__(self, nt, nodeDict, nodeParentDict, leafsDict, options):
+        Target.__init__(self)
+        nt.distance = 0.0
+        self.nt = nt
+        self.name = lsc.nameTree(self.nt)
+        self.nodeDict = nodeDict
+        self.nodeParentDict = nodeParentDict
+        self.leafsDict = leafsDict
+        self.options = options
+        if self.name != self.options.rootName:
+            self.nodeParent = self.nodeParentDict[self.name]
+        else:
+            self.nodeParent = self.options.rootName
+
+    def run(self):
+        if self.nt is None:
+            return
+        for t in [self.nt.left, self.nt.right]:
+            if t is None:
+                continue
+            t.distance = 0.0
+            if not os.path.exists(os.path.join(self.options.simDir, lsc.nameTree(t), self.name + '.maf')):
+                sys.stderr.write('%s does not exist, recurse\n' % os.path.join(self.options.simDir,
+                                                                               lsc.nameTree(t),
+                                                                               self.name+ '.maf'))
+                self.addChildTarget(MergeTree(t, self.nodeDict, self.nodeParentDict, self.leafsDict, self.options))
+            else:
+                sys.stderr.write('%s does exist, don\'t recurse\n' % os.path.join(self.options.simDir, 
+                                                                                  lsc.nameTree(t),
+                                                                                  self.name + '.maf'))
+        self.setFollowOnTarget(MergeMafsDown(self.nt, self.nodeDict, self.nodeParentDict, 
+                                             self.leafsDict, self.nodeParent, self.options))
+
+class MergeTreeFollow(Target):
+    """
+    The MergeTreeFollow class checks the rootDir for evidence of a burnin and if such evidence exists,
+    it then performs a final merge using that burnin and the current full simulation maf.
+    """
+    def __init__(self, nt, nodeDict, nodeParentDict, leafsDict, options):
+        Target.__init__(self)
+        nt.distance = 0.0
+        self.nt = nt
+        self.name = lsc.nameTree(self.nt)
+        self.nodeDict = nodeDict
+        self.nodeParentDict = nodeParentDict
+        self.leafsDict = leafsDict
+        self.options = options
+        if self.name != self.options.rootName:
+            self.nodeParent = self.nodeParentDict[self.name]
+        else:
+            self.nodeParent = self.options.rootName
+    def run(self):
+        outname = os.path.join(self.options.rootDir, 'burnin.maf')
+        if os.path.exists(os.path.join(self.options.rootDir, 'burnin.tmp.maf')) and not os.path.exists(outname):
+            treelessRootCmd = ['-treelessRoot2=%s' % lsc.burninRootName(self.options)]
+            maf1 = os.path.join(self.options.rootDir, self.options.rootName + '.maf')
+            maf2 = os.path.join(self.options.rootDir, 'burnin.tmp.maf')
+            drop = os.path.join(self.options.rootDir, 'burnin.dropped.maf')
+            cmds = lsc.buildMergeCommand(maf1, maf2, outname, treelessRootCmd, self.name, self.options, drop)
+            lsc.runCommands(cmds, self.getLocalTempDir())
+
+class MergeMafsDown(MergeTree):
+    """
+    The MergeMafsDown class runs the merging of two children mafs plus the current maf.
+    """
+    def __init__(self, nt, nodeDict, nodeParentDict, leafsDict, nodeParent, options):
+        Target.__init__(self)
+        MergeTree.__init__(self, nt, nodeDict, nodeParentDict, leafsDict, options)
+        self.nodeParent = nodeParent
+
+    def run(self):
+        treelessRootCmd = []
+        for i in xrange(0,2):
+            if self.nodeDict[self.name].children[i] in self.leafsDict:
+                treelessRootCmd.append('-treelessRoot%d=%s' % (i + 1, self.name))
+        ##############################
+        # the 'lookdown' aspect of the merge is performed for every node, including the root.
+        outname = os.path.join(self.options.simDir, self.name, self.name + '.maf')
+        if not os.path.exists(outname):
+            maf1 = os.path.join(self.options.simDir, self.nodeDict[self.name].children[0], self.name + '.maf')
+            maf2 = os.path.join(self.options.simDir, self.nodeDict[self.name].children[1], self.name + '.maf')
+            drop = os.path.join(self.options.simDir, self.name, self.name + '.dropped.tab')
+            cmds = lsc.buildMergeCommand(maf1, maf2, outname, treelessRootCmd, self.name, self.options, drop)
+            lsc.runCommands(cmds, self.getLocalTempDir())
+        self.setFollowOnTarget(MergeMafsUp(self.nt, self.nodeDict, self.nodeParentDict, 
+                                           self.leafsDict, self.nodeParent, self.options))
+
+class MergeMafsUp(MergeTree):
+    """
+    The MergeMafsUp class runs the second part of a maf merge, merging a maf containing 
+    the entire tree including thisDir into the parent of thisDir.
+    """
+    def __init__(self, nt, nodeDict, nodeParentDict, leafsDict, nodeParent, options):
+        Target.__init__(self)
+        MergeTree.__init__(self, nt, nodeDict, nodeParentDict, leafsDict, options)
+        self.nodeParent = nodeParent
+
+    def run(self):
+        ##############################
+        # The 'lookup' aspect of the merge is only performed when we are not at the root
+        # This merge merges the results of the 'lookdown' merge, that is to say the maf that contains
+        # all descendant sequences including the node, with the node-parent maf, to produce a maf
+        # that the parent can use to merge its children.
+        if self.name == self.options.rootName:
+            return
+        outname = os.path.join(self.options.simDir, self.name, self.nodeParent + '.maf')
+        if not os.path.exists(outname):
+            treelessRootCmd = ['-treelessRoot2=%s' % self.nodeParent]
+            maf1 = os.path.join(self.options.simDir, self.name, self.name + '.maf')
+            maf2 = os.path.join(self.options.simDir, self.name, self.nodeParent + '.tmp.maf')
+            drop = os.path.join(self.options.simDir, self.name, self.nodeParent + '.dropped.tab')
+            cmds = lsc.buildMergeCommand(maf1, maf2, outname, treelessRootCmd, self.name, self.options, drop)
+            lsc.runCommands(cmds, self.getLocalTempDir())
+    

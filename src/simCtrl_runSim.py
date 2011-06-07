@@ -53,13 +53,13 @@ programs = ['cp',
             'evolver_gff_exons2introns.py', 'evolver_gff_featurestats2.sh',
             'evolver_gff_featurestats2.py', 'evolver_codon_report.pl',
             'evolver_merge_evostats.py', 'evolver_mobile_report.pl',
-            'touch', 'ln', 'egrep', 'cat', 'simCtrl_completeTimestamp.py']
+            'touch', 'ln', 'egrep', 'cat']
 lsc.verifyPrograms(programs)
-(CP_BIN, MKDIR_BIN) = programs[ 0:2 ]
 
 def initOptions(parser):
-    parser.add_option('--rootName',dest='rootName', 
-                      help='name of the root genome, to differentiate it from the input newick.')
+    parser.add_option('--rootName', dest='rootName', default='root',
+                      help=('name of the root genome, to differentiate it from '
+                            'the input newick. default=%default'))
     # Sim Tree Options
     parser.add_option('-o', '--outDir',dest='outDir',
                       help='Out directory.')
@@ -68,16 +68,21 @@ def initOptions(parser):
     parser.add_option('--testTree', action='store_true', 
                       default=False, dest='testTree',
                       help='Instead of performing a simulation, does dry run with empty dirs.')
+    parser.add_option('--noBurninMerge', action='store_true', 
+                      dest='noBurninMerge', default=False, 
+                      help=('Turns off checks for an aln.rev file in the root dir. '
+                            'default=%default'))
     # Sim Control Options
     parser.add_option('--rootDir',dest='rootInputDir',
                       help='Input root directory.')
-    parser.add_option('-s', '--step',dest='stepSize', action="store",
+    parser.add_option('--stepLength',dest='stepLength', action="store",
                       type ='float', default=0.001,
-                      help='stepSize for each cycle. default=%default')
+                      help='stepLength for each cycle. default=%default')
     parser.add_option('--params',dest='paramsDir',
                       help='Parameter directory.')
     parser.add_option('--seed',dest='seed',default='stochastic',
-                      type='string', help='Random seed, either an int or "stochastic". default%default')
+                      type='string', 
+                      help='Random seed, either an int or "stochastic". default%default')
     parser.add_option('--noMEs', action='store_true', 
                       dest='noMEs', default=False, 
                       help=('Turns off all mobile element '
@@ -90,14 +95,17 @@ def initOptions(parser):
 def checkOptions(options, parser):
     if options.inputNewick is None:
         parser.error('Specify --inputNewick.')
-    # check newickTree for reserved words
     nt = newickTreeParser(options.inputNewick, 0.0)
-    if options.rootName is None:
-        options.rootName = lsc.newickRootName(nt)
-    else:
-        options.rootName = options.rootName
+    if options.rootName is None and nt.iD is None:
+        parser.error('Specify --rootName')
+    elif options.rootName is None and nt.iD is not None:
+        options.rootName = nt.iD
+
+    # check newickTree for reserved words
     if newickContainsReservedWord(nt, options):
-        parser.error('Newick tree contains reserved words.\n')
+        parser.error('Newick tree contains reserved word: %s. '
+                     'Maybe try --rootName=NAME to resolve or rename nodes in the newick.\n' % 
+                     newickContainsReservedWord(nt, options))
     
     # Sim Tree Options
     if options.outDir is None:
@@ -121,8 +129,8 @@ def checkOptions(options, parser):
     if not os.path.isdir(options.paramsDir):
         parser.error('Params dir "%s" not a directory!\n' % options.paramsDir)
     options.paramsDir = os.path.abspath(options.paramsDir)
-    if options.stepSize <= 0:
-        parser.error('specify positive stepSize.\n')
+    if options.stepLength <= 0:
+        parser.error('specify positive stepLength.\n')
     if options.seed != 'stochastic':
         options.seed = int(options.seed)
         # otherwise we let the evolver tools choose their own seeds at random.
@@ -133,15 +141,16 @@ def newickContainsReservedWord(nt, options):
     there are no reserved names used as IDs. At present the only reserved
     name is 'parameters'.
     """
-    reservedWords = set([ 'parameters', options.rootName ])
+    reservedWords = set(['parameters', 'burnin', options.rootName])
     if nt is None:
         return False
     if nt.iD in reservedWords:
-        return True
+        return nt.iD
     right = newickContainsReservedWord(nt.right, options)
     left  = newickContainsReservedWord(nt.left,  options)
-    if left or right:
-        return True
+    for n in [right, left]:
+        if n != False:
+            return n
     return False
 
 def checkForFiles(options):
@@ -160,9 +169,7 @@ def populateRootDir(options):
     """
     # mkdir is used here for simplicity in timing the creation of the diretory and 
     # subsequent two cp jobs for parameters.
-    jobs = []
-    jobs.append(['mkdir', '-p', os.path.join(options.outDir, 'parameters') ])
-    lsc.runCommands(jobs, options.outDir)
+    lsc.runCommands(['mkdir', '-p', os.path.join(options.outDir, 'parameters') ], options.outDir)
     jobs = []
     jobs.append(['cp', '-r', options.rootInputDir, os.path.join(options.outDir, options.rootName)])
     jobs.append(['cp', os.path.join(options.paramsDir,'model.txt'), 
@@ -177,18 +184,18 @@ def populateRootDir(options):
     options.paramsDir    = os.path.abspath(os.path.join(options.outDir, 'parameters'))
     options.parentDir    = os.path.abspath(os.path.join(options.outDir, options.rootName))
     options.simDir, tail = os.path.split(options.parentDir)
-    options.rootDir      = os.path.abspath(os.path.join(options.simDir, 'root'))
+    options.rootDir      = os.path.abspath(os.path.join(options.simDir, options.rootName))
     lsc.createRootXmls(sys.argv, options)
     
 def launchSimTree(options):
     jobResult = Stack(SimTree(options)).startJobTree(options)
     if jobResult:
-        sys.stderr.write('Error, the jobTree contained %d failed jobs!\n' % jobResult)
-        sys.exit(1)
+        raise RuntimeError('The jobTree contained %d failed jobs!\n' % jobResult)
 
 def main():
-    usage=('usage: %prog --rootName=name --parent=/path/to/dir --params=/path/to/dir '
-           '--tree=newickTree --step=stepSize --out=/path/to/dir --seed=seedNumber\n\n'
+    usage=('usage: %prog --rootName=name --parent=/path/to/dir --params=/path/to/dir\n'
+           '--tree=newickTree --stepLength=stepLength --out=/path/to/dir'
+           '--jobTree=/path/to/dir\n\n'
            '%prog is used to initiate an evolver simulation using jobTree/scriptTree.')
     parser=OptionParser(usage=usage)
     initOptions(parser)

@@ -335,6 +335,7 @@ def nameTree(nt, reportDistance=True):
     to name the cycle-step that the tree represents. Distance included in
     the name by default.
     """
+    from libSimControl import sanitizeTreeName
     from sonLib.bioio import printBinaryTree
     if nt is None:
         return ''
@@ -348,43 +349,22 @@ def nameTree(nt, reportDistance=True):
     name = sanitizeTreeName(name)
     return name
 
-def newickRootName(nt):
-    if nt.iD is not None:
-        return nt.iD
-    else:
-        return 'root'
-
 def sanitizeTreeName(name):
     """sanitizeTreeName(name) takes all the nasty characters out of a newickTree and
     returns a str that is more amenable to being a file (or directory) name.
     """
-    name=name.replace(' ','')
-    name=name.replace(',','')
-    name=name.replace(':','-')
-    name=name.replace('.','_')
-    name=name.replace(';','')
-    name=name.replace('\'','')
-    name=name.replace('"','')
-    name=name.replace('(','_L_')
-    name=name.replace(')','_R_')
-    name=name.rstrip('0')
-    name=name.rstrip('-0_')
+    name = name.replace(' ','')
+    name = name.replace(',','')
+    name = name.replace(':','-')
+    name = name.replace('.','_')
+    name = name.replace(';','')
+    name = name.replace('\'','')
+    name = name.replace('"','')
+    name = name.replace('(','_L_')
+    name = name.replace(')','_R_')
+    name = name.rstrip('0')
+    name = name.rstrip('-0_')
     return name
-
-def branchLog(message):
-    """branchLog(message) sends a message to the branching log
-    """
-    import os
-    curr = os.curdir
-    logPath = os.path.join(curr, 'branch_log.log')
-    if not os.path.exists(logPath):
-        f = open(logPath, 'w')
-        f.write('%s' % (message))
-        f.close()
-    else:
-        f = open(logPath, 'a')
-        f.write('%s' % (message))
-        f.close()
 
 def tree2str(nt):
     """ tree2str takes a newick tree object and returns an 
@@ -401,9 +381,9 @@ def takeNewickStep(thisNewickStr, options):
     from libSimControl import tree2str
     from sonLib.bioio import newickTreeParser
     nt = newickTreeParser(thisNewickStr, 0.0)
-    if nt.distance > options.stepSize:
-        nt.distance -= options.stepSize
-        step = options.stepSize
+    if nt.distance > options.stepLength:
+        nt.distance -= options.stepLength
+        step = options.stepLength
     else:
         step = nt.distance
         nt.distance = 0.0
@@ -501,7 +481,7 @@ def handleReturnCode(retcode, cmd):
             raise RuntimeError('Experienced an error while trying to execute: '
                                '%s retcode:%d\n' %(' '.join(cmd), retcode))
 
-def createNewCycleXmls(directory, parentDir, stepSize, newickStr, options):
+def createNewCycleXmls(directory, parentDir, stepLength, newickStr, options):
     """
     """
     from libSimControl import typeTimestamp, subTypeTimestamp, newInfoXml, tree2str, takeNewickStep
@@ -518,8 +498,8 @@ def createNewCycleXmls(directory, parentDir, stepSize, newickStr, options):
         e.text=parentDir
         e=ET.SubElement(root, 'thisDir')
         e.text=directory
-        e=ET.SubElement(root, 'stepSize')
-        e.text=str(stepSize).rstrip('0')
+        e=ET.SubElement(root, 'stepLength')
+        e.text=str(stepLength).rstrip('0')
         nt = newickTreeParser(newickStr, 0.0)
         children = {}
         if nt.distance == 0:
@@ -581,13 +561,15 @@ def createSimulationInfoXml(command, options):
     tObj=ET.SubElement(root, 'sourceParamsDir')
     tObj.text=str(options.paramsInputDir)
     tObj=ET.SubElement(root, 'rootDir')
-    tObj.text=str(options.parentDir)
+    tObj.text=str(options.rootDir)
     tObj=ET.SubElement(root, 'paramsDir')
     tObj.text=str(options.paramsDir)
+    tObj=ET.SubElement(root, 'rootName')
+    tObj.text=str(options.rootName)
     tObj=ET.SubElement(root, 'tree')
     tObj.text=str(options.inputNewick)
-    tObj=ET.SubElement(root, 'stepSize')
-    tObj.text=str(options.stepSize)
+    tObj=ET.SubElement(root, 'stepLength')
+    tObj.text=str(options.stepLength)
     timeTag=ET.SubElement(root, 'timestamps')
     timeTag.attrib['startEpochUTC'] = str(time.time())
     timeStart      = ET.SubElement(timeTag,'start')
@@ -618,7 +600,7 @@ def verifyFileExists(filename):
     if not os.path.exists(filename):
         raise RuntimeError('Error, unable to locate file %s\n' % filename)
 
-def evolverInterStepCmd(thisDir, thisParentDir, theChild, thisStepSize, seed, paramsDir):
+def evolverInterStepCmd(thisDir, thisParentDir, theChild, thisStepLength, seed, paramsDir):
     """ produces the command argument list needed to run an evolver inter step.
     Called by CycleStep1.
     """
@@ -649,7 +631,7 @@ def evolverInterStepCmd(thisDir, thisParentDir, theChild, thisStepSize, seed, pa
         cmd.append('-outgenome')
         cmd.append(theChild + '.inter')
         cmd.append('-branchlength')
-        cmd.append(str(thisStepSize))
+        cmd.append(str(thisStepLength))
         cmd.append('-statsfile')
         cmd.append(os.path.join(thisDir, 'stats', 'inter.stats.txt'))
         cmd.append('-model')
@@ -664,7 +646,7 @@ def evolverInterStepCmd(thisDir, thisParentDir, theChild, thisStepSize, seed, pa
         followCmd.append(outname)
     return cmd, followCmd
 
-def evolverInterStepMobilesCmd(thisDir, thisParentDir, theParent, thisStepSize, paramsDir):
+def evolverInterStepMobilesCmd(thisDir, thisParentDir, theParent, thisStepLength, paramsDir):
     """ produces the command argument list needed to run an evolver inter step mobiles command.
     Called by CycleStep1.
     """
@@ -693,7 +675,7 @@ def evolverInterStepMobilesCmd(thisDir, thisParentDir, theParent, thisStepSize, 
     cmd.append('--genome')
     cmd.append(theParent)
     cmd.append('--stepSize')
-    cmd.append(str(thisStepSize))
+    cmd.append(str(thisStepLength))
     cmd.append('--mefa')
     cmd.append(os.path.join(thisParentDir, 'mobiles', 'ME.fa'))
     cmd.append('--megff')
@@ -731,7 +713,7 @@ def evolverInterStepMobilesMoveCmd(thisLocalTempDir, thisDir):
                   os.path.join(thisDir, 'mobiles', 'LTR.fa')])
     return cmds
 
-def evolverIntraStepCmd(thisDir, theChild, thisStepSize, thisChr, 
+def evolverIntraStepCmd(thisDir, theChild, thisStepLength, thisChr, 
                         seed, paramsDir, localTempDir, options):
     """ produces the command argument list needed to run an evolver intra step.
     Called by CycleStep2Chromosome.
@@ -755,7 +737,7 @@ def evolverIntraStepCmd(thisDir, theChild, thisStepSize, thisChr,
         cmd.append('-chrname')
         cmd.append(thisChr)
         cmd.append('-branchlength')
-        cmd.append(str(thisStepSize))
+        cmd.append(str(thisStepLength))
         cmd.append('-seed')
         cmd.append(str(seed))
         if not options.noMEs:
@@ -786,7 +768,7 @@ def evolverIntraStepCmd(thisDir, theChild, thisStepSize, thisChr,
         cmds.append(cmd)
     return cmds
 
-def evolverIntraStepToFastaCmd(thisDir, thisStepSize, thisChr, paramsDir, localTempDir):
+def evolverIntraStepToFastaCmd(thisDir, thisStepLength, thisChr, paramsDir, localTempDir):
     """ produces the command argument list needed to convert the .rev files into .fa files
     Called by CycleStep2Chromosome.
     """
@@ -944,7 +926,7 @@ def runMergeTrfBedsToGff(thisDir):
         g.close()
         os.rename(outname + '.tmp', outname)
 
-def runEvolverInterCmds(thisDir, thisParentDir, theChild, theParent, thisStepSize, 
+def runEvolverInterCmds(thisDir, thisParentDir, theChild, theParent, thisStepLength, 
                         seed, paramsDir, localTempDir, options):
     from libSimControl import (which, evolverInterStepMobilesCmd, evolverInterStepMobilesMoveCmd, 
                                runCommands, handleReturnCode)
@@ -955,7 +937,7 @@ def runEvolverInterCmds(thisDir, thisParentDir, theChild, theParent, thisStepSiz
     if not os.path.exists(outname):
         # we split this up to run it in parallel with the mobiles command
         cmd1, followCmd1 = evolverInterStepCmd(thisDir, thisParentDir, theChild, 
-                                               thisStepSize, seed, paramsDir)
+                                               thisStepLength, seed, paramsDir)
         p1 = subprocess.Popen(cmd1, cwd=localTempDir) 
     else:
         p1 = None
@@ -964,7 +946,7 @@ def runEvolverInterCmds(thisDir, thisParentDir, theChild, theParent, thisStepSiz
     if not options.noMEs:
         outname = os.path.join(thisDir, 'logs', 'mobiles.log')
         if not os.path.exists(outname):
-            cmd2 = evolverInterStepMobilesCmd(thisDir, thisParentDir, theParent, thisStepSize, paramsDir)
+            cmd2 = evolverInterStepMobilesCmd(thisDir, thisParentDir, theParent, thisStepLength, paramsDir)
             p2 = subprocess.Popen(cmd2, cwd=localTempDir, stdout=subprocess.PIPE)
             f = open(outname + '.tmp', 'w')
             f.write(p2.communicate()[0])
@@ -1470,7 +1452,7 @@ def nodeIsLeaf(nt):
     from sonLib.bioio import newickTreeParser
     if isinstance(nt, str):
         nt = newickTreeParser(nt, 0.0)
-    return not nt.internal and nt.distance == 0
+    return not nt.internal and nt.distance == 0.0
     
 def treeStr2Dir(treeStr, simDir):
     """ Takes a newick tree string and an options object and
@@ -1485,8 +1467,8 @@ def treeStr2Dir(treeStr, simDir):
     if not isinstance(simDir, str):
         raise BadInputError('simDir should be a string, is %s\n' % treeStr.__class__)
     return os.path.abspath(os.path.join(simDir, 
-                                          nameTree(newickTreeParser(treeStr, 0.0))
-                                         ))
+                                        nameTree(newickTreeParser(treeStr, 0.0))
+                                        ))
 
 def lastOneOutTurnOffTheLightsCycle(thisDir):
     """ lastOneOutTurnOffTheLightsCycle() checks the .xml files in thisDir
@@ -1949,3 +1931,123 @@ def runTransalignStep1Cmds_2(thisDir, thisParentDir, localTempDir, options):
         p.wait()
         handleReturnCode(p.returncode, c)
     
+def extractLeafsFromNewick(nt, leafDict):
+    """Given a newick tree object, it returns a dict of
+    leaf objects. Operates recursively.
+    """
+    if nt is None:
+        return None
+    nt.distance = 0.0
+    if nt.right is None and nt.left is None:
+        leafDict[nt.iD] = True
+    else:
+        extractLeafsFromNewick(nt.right, leafDict = leafDict)
+        extractLeafsFromNewick(nt.left , leafDict = leafDict)
+
+def buildNodesListFromNewick(nt, nodesList, leafs, parentNode=''):
+    """buildNodesListFromNewick() takes in a newick tree and the
+    final output list and it creates a new Node object
+    with appropriate information given the status of
+    the newick passed in. Recursively calls itself to
+    build the output list.
+    """
+    from libSimControl import nameTree
+    from libSimControlClasses import Node
+    if nt is None:
+        return None
+    nt.distance = 0
+    n = Node()
+    n.parent = parentNode
+    n.name = nameTree(nt)
+    leftName  = buildNodesListFromNewick(nt.right, nodesList = nodesList, 
+                                         leafs = leafs, parentNode = n.name)
+    rightName = buildNodesListFromNewick(nt.left,  nodesList = nodesList, 
+                                         leafs = leafs, parentNode = n.name)
+    if leftName is not None and rightName is not None:
+        n.children.append(leftName)
+        n.children.append(rightName)
+        nodesList.append(n)
+    if n.name in leafs:
+        n.isLeaf = True
+    if parentNode is not None:
+        return n.name
+
+def buildNodesDict(nl, leafsDict):
+    """ takes a list of nodes and a dict of leafs
+    and builds a dict containing the union of the two groups
+    """
+    from libSimControl import nameTree
+    from libSimControlClasses import Node
+    nd = {}
+    parent = {}
+    for n in nl:
+        nd[n.name] = n
+        for c in n.children:
+            parent[c] = n.name
+    for l in leafsDict:
+        n = Node()
+        n.name = l
+        n.parent = parent[l]
+        n.isLeaf = True
+        nd[n.name] = n
+    return nd
+
+def buildNodeParentDict(nl):
+    """ Takes a node list and builds a dict
+    of parents with child names as keys and parent
+    names as values
+    """
+    npd = {}
+    for n in nl:
+        for c in n.children:
+            npd[c] = n.name
+    return npd
+
+def buildMergeCommand(maf1, maf2, out, treelessRootCmd, name, options, drop=None):
+    """
+    """
+    from libSimControl import which, verifyDirExists, verifyFileExists
+    import os
+    for m in [maf1, maf2]:
+        verifyFileExists(m)
+    cmd = [which('mafJoin')]
+    if len(treelessRootCmd) > 0:
+        cmd += treelessRootCmd
+    cmd.append(name)
+    cmd.append('-maxBlkWidth=%d' % options.maxBlkWidth)
+    # ' -maxBlkWidth=500' # avg120 mammal mouse-rat mouse-rat-human-tmp merge 
+    # ' -maxBlkWidth=1000' avg120 mammal cow-dog merge.  
+    # ' -maxBlkWidth=10000' default
+    cmd.append('-maxInputBlkWidth=%d' % options.maxInputBlkWidth)
+    # ' -maxInputBlkWidth=500'  avg120 mammal mouse-rat mouse-rat-human-tmp merge 
+    # ' -maxInputBlkWidth=1000'
+    if drop:
+        cmd.append('-multiParentDropped=%s' % drop)
+    cmd.append(maf1)
+    cmd.append(maf2)
+    cmd.append(out + '.tmp')
+    cmds = [cmd]
+    cmds.append([which('mv'), out + '.tmp', out])
+    return cmds
+
+def burninRootName(options):
+    """returns a str that contains the name of the burnin's root genome
+    """
+    import os
+    import re
+    if not os.path.exists(os.path.join(options.rootDir, 'burnin.tmp.maf')):
+        return ''
+    pat = re.compile('^s (.*?)\.chr')
+    f = open(os.path.join(options.rootDir, 'burnin.tmp.maf'))
+    names = {}
+    for line in f:
+        line = line.strip()
+        r = re.match(pat, line)
+        if r:
+            if r.group(1) not in names:
+                names[r.group(1)] = True
+    if len(names) == 2:
+        for n in names:
+            if n != options.rootName:
+                return n
+    return ''

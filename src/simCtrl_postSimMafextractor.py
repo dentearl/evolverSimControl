@@ -34,32 +34,35 @@ the MAFs into larger alignments in the correct order.
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 # THE SOFTWARE.
 ##################################################
+import evolverSimControl.lib.libSimControl as lsc
+import evolverSimControl.lib.libSimControlClasses as lscc
+from jobTree.scriptTree.stack import Stack
+from optparse import OptionParser
 import os
 import re
-import sys
 from sonLib.bioio import newickTreeParser
 from sonLib.bioio import printBinaryTree
-from optparse import OptionParser
+import sys
 import xml.etree.ElementTree as ET
-import simulation.lib.libSimControl as LSC
-import simulation.lib.libSimTree as LST
 
 programs = ['evolver_cvt', 'evolver_transalign',
             'simCtrl_commandEval.py', 'mafJoin']
-LSC.verifyPrograms(programs)
+lsc.verifyPrograms(programs)
 (CVT_BIN, TRANS_BIN, CMD_EVAL_BIN,
- MAF_MERGE_BIN ) = programs
-
-def usage():
-    print 'USAGE: '+sys.argv[0]+' --simDir <dir> --jobFile JOB_FILE'
-    print __doc__
-    sys.exit(2)
+ MAF_MERGE_BIN) = programs
 
 def initOptions(parser):
-    parser.add_option('-p', '--simDir',dest='simDir',
+    parser.add_option('--simDir', dest='simDir',
                       help='Simulation directory.')
-    parser.add_option('-j', '--jobFile',dest='jobFile',
-                      help='jobFile, passed in by jobTree.')
+    parser.add_option('--maxBlkWidth',dest='maxBlkWidth',
+                      default=10000, type='int',
+                      help=('Maximum mafJoin maf block output size. May be reduced towards '
+                            '250 for complicated phylogenies. default=%default'))
+    parser.add_option('--maxInputBlkWidth',dest='maxInputBlkWidth',
+                      default=1000, type='int',
+                      help=('Maximum mafJoin maf block input size. mafJoin will cut inputs to size, may'
+                            ' result in long runs for very simple joins. May be reduced towards '
+                            '250 for complicated phylogenies. default=%default'))
     parser.add_option('-v', '--verbose',action='store_true', dest='isVerbose',
                       default=False,
                       help='if --debug is on, prints out more verbose debug statements.')
@@ -69,21 +72,10 @@ def initOptions(parser):
     parser.add_option('-d', '--debug', action='store_true', dest='isDebug',
                       default=False, help='Turns on debug output, does not issue jobs')
     parser.add_option('--noParalogy', action='store_true', dest='noParalogy',
-                      default=False, help='adds a flag -noparalogy to the transalign call, switches paralogous blocks off. ')
+                      default=False, help=('adds a flag -noparalogy to the transalign call, '
+                                           'switches paralogous blocks off. '))
 
-class Node:
-    """Nodes have one parent and two children,
-    unless they are children in which case their
-    children list is empty, or they are the root
-    node in which case their parent is None.
-    """
-    def __init__(self):
-        self.parent   = None
-        self.name     = ''
-        self.children = []
-        self.isLeaf   = False
-
-def findNode( nList, nName ):
+def findNode(nList, nName):
     ans = None
     for n in nList:
         if n.name == nName:
@@ -91,84 +83,86 @@ def findNode( nList, nName ):
             continue
     return ans
 
-def checkOptions(options):
-    if (options.simDir == None):
-        sys.stderr.write('%s: Error, specify simulation dir.\n' % sys.argv[0])
-        usage()
-    if (options.jobFile == None) and (options.isDebug == False):
-        sys.stderr.write('%s: Error, specify jobFile.\n' % sys.argv[0])
-        usage()
-    if (options.isDebug == False) and (not os.path.exists(options.jobFile)):
-        sys.stderr.write('%s: Error, jobFile does not exist.\n' % sys.argv[0])
-        usage()
+def checkOptions(options, parser):
+    if options.simDir is None:
+        parser.error('specify --simDir.\n')
+    if not os.path.exists(options.simDir):
+        parser.error('Directory does not exist: --simDir %s\n' % options.simDir)
+    if not os.path.isdir(options.simDir):
+        parser.error('Option --simDir %s is not a directory.\n' % options.simDir)
     options.simDir  = os.path.abspath(options.simDir)
+    if options.jobTree is None:
+        parser.error('specify --jobTree.\n')
+    if os.path.exists(options.jobTree):
+        parser.error('--jobTree %s already exists! If your simulation crashed, '
+                    'relaunch it with "jobTreeRun --jobTree %s/" \n' % 
+                    (options.jobTree, options.jobTree))
     if not os.path.exists(os.path.join(options.simDir, 'simulationInfo.xml')):
-        sys.stderr.write('%s: Error, unable to find simulationInfo.xml.\n' % sys.argv[0])
-        usage()
+        parser.error('unable to find simulationInfo.xml in --simDir %s\n' % options.simDir)
     infoTree = ET.parse(os.path.join(options.simDir, 'simulationInfo.xml'))
     treeObj = infoTree.find('tree')
     options.inputNewick=treeObj.text
     rootNameObj = infoTree.find('rootDir')
-    options.rootName = os.path.basename( rootNameObj.text )
-    options.rootDir    = os.path.abspath( rootNameObj.text )
+    options.rootName = os.path.basename(rootNameObj.text)
+    options.rootDir  = os.path.abspath(rootNameObj.text)
 
-def extractLeaves(nt, leafDict):
+def extractLeafsFromNewick(nt, leafDict):
     """Given a newick tree object, it returns a dict of
     leaf objects. Operates recursively.
     """
-    if nt == None:
+    if nt is None:
         return None
     nt.distance=0
-    if (nt.right == None) and (nt.left == None):
+    if nt.right is None and nt.left is None:
         leafDict[nt.iD] = 1
     else:
-        extractLeaves(nt.right, leafDict=leafDict)
-        extractLeaves(nt.left , leafDict=leafDict)
+        extractLeafsFromNewick(nt.right, leafDict=leafDict)
+        extractLeafsFromNewick(nt.left , leafDict=leafDict)
 
-def buildNodesList(nt, nodesList, leaves, parentNode=''):
-    """buildNodesList() takes in a newick tree and the
+def buildNodesListFromNewick(nt, nodesList, leaves, parentNode=''):
+    """buildNodesListFromNewick() takes in a newick tree and the
     final output list and it creates a new Node object
     with appropriate information given the status of
     the newick passed in. Recursively calls itself to
     build the output list.
     """
-    if nt == None:
+    if nt is None:
         return None
     nt.distance = 0
-    n=Node()
+    n=lscc.Node()
     n.parent=parentNode
-    n.name=LST.nameTree(nt)
-    leftName  = (buildNodesList(nt.right, nodesList=nodesList, leaves=leaves, parentNode=n.name))
-    rightName = (buildNodesList(nt.left,  nodesList=nodesList, leaves=leaves, parentNode=n.name))
-    if leftName and rightName:
-        n.children.append( leftName )
-        n.children.append( rightName )
-        nodesList.append( n )
+    n.name=lsc.nameTree(nt)
+    leftName  = buildNodesList(nt.right, nodesList=nodesList, leaves=leaves, parentNode=n.name)
+    rightName = buildNodesList(nt.left,  nodesList=nodesList, leaves=leaves, parentNode=n.name)
+    if leftName is not None and rightName is not None:
+        n.children.append(leftName)
+        n.children.append(rightName)
+        nodesList.append(n)
     if n.name in leaves:
         n.isLeaf = True
     if parentNode:
         return n.name
-    
+
 def printNodesList(nl, leaves):
-    if nl == None:
+    if nl is None:
         return
     for n in nl:
         print 'Name: %s' %(n.name)
         for c in n.children:
             if c in leaves:
-                print '  child %s (leaf)' %(c)
+                print '  child %s (leaf)' % c
             else:
-                print '  child %s' %(c)
+                print '  child %s' % c
 
-def printCyclesDict( nd ):
-    if nd == None:
+def printCyclesDict(nd):
+    if nd is None:
         return
     for n in nd:
-        print 'Name: %s (leaf:%s)' %( n, str( nd[ n ].isLeaf ) )
-        for c in nd[ n ].children:
-            print '  child %s (leaf:%s)' %(c, str( nd[ c ].isLeaf ))
+        print 'Name: %s (leaf:%s)' %(n, str(nd[n].isLeaf))
+        for c in nd[n].children:
+            print '  child %s (leaf:%s)' %(c, str(nd[c].isLeaf))
 
-def buildMAFpairs( options, nodesList, leaves ):
+def buildMafpairs(options, nodesList, leaves):
     """buldMAFpairs() takes the nodesList and creates all of the
     proper MAF pairs using the evolver scripts. eg
     ((a, b)E,(c,d)F)root;
@@ -184,12 +178,13 @@ def buildMAFpairs( options, nodesList, leaves ):
     if not options.isDebug:
         xmlTree = ET.parse(options.jobFile)
         jobElm=xmlTree.getroot()
-        childrenElm = xmlTree.find( 'children' )
+        childrenElm = xmlTree.find('children')
     runningJobs = 0
     # if the rootDir has an aln file, then it is considered to have
     # been a burnin genome. So the aln in the rootDir is back to the
     # root of the entire simulation. We will generate that maf.
-    if os.path.exists( os.path.join(options.rootDir, 'aln.rev')) and not os.path.exists( os.path.join(options.rootDir, 'burnin.tmp.maf') ):
+    if (os.path.exists(os.path.join(options.rootDir, 'aln.rev')) and not 
+        os.path.exists(os.path.join(options.rootDir, 'burnin.tmp.maf'))):
         transCMD = CMD_EVAL_BIN+ ' JOB_FILE "'
         transCMD += LSC.commandPacker(CVT_BIN+\
                                       ' -fromrev '+os.path.join(options.rootDir, 'aln.rev')+\
@@ -197,7 +192,7 @@ def buildMAFpairs( options, nodesList, leaves ):
         transCMD += '"'
         runningJobs = runningJobs + 1
         if not options.isDebug:
-            newChild = ET.SubElement( childrenElm, 'child' )
+            newChild = ET.SubElement(childrenElm, 'child')
             newChild.attrib['command'] = transCMD
         else:
             mCMD = transCMD.replace('/cluster/home/dearl/sonTrace/bin/simCtrl_commandEval.py JOB_FILE "', '')
@@ -205,7 +200,7 @@ def buildMAFpairs( options, nodesList, leaves ):
             mCMD = mCMD.replace('&myCMD;&myCMD;', '\n')
             mCMD = mCMD.replace('&myCMD;', '\n')
             mCMD = mCMD.replace('"','')
-            sys.stderr.write('\n%s' %( mCMD ))
+            sys.stderr.write('\n%s' %(mCMD))
     for n in nodesList:
         for c in n.children:
             if c in leaves:
@@ -223,7 +218,7 @@ def buildMAFpairs( options, nodesList, leaves ):
             if os.path.exists(os.path.join(options.simDir, c, 'aln.rev')) and \
                    not os.path.exists(os.path.join(options.simDir, c, n.name+ext)):
                 if options.isVerbose:
-                    print '\nwell, I can\'t seem to see %s\n' %( os.path.join(options.simDir, c, n.name+ext) )
+                    print '\nwell, I can\'t seem to see %s\n' %(os.path.join(options.simDir, c, n.name+ext))
                 runningJobs = runningJobs + 1
             transCMD += '"'
             if options.isDebug:
@@ -257,7 +252,7 @@ def buildMAFpairs( options, nodesList, leaves ):
     else:
         sys.stderr.write('\nI wish to followUpCommand %s\n' %(followUpCommand))
 
-def compareCommand( maf1, maf2, out, missing=None ):
+def compareCommand(maf1, maf2, out, missing=None):
     """ if isRoot, then childName is actually the nodeParent name.
     """
     compareStr  = MAF_COMPARE_BIN
@@ -270,7 +265,7 @@ def compareCommand( maf1, maf2, out, missing=None ):
         compareStr += ' > ' + missing
     return compareStr
 
-def mergeCommand( maf1, maf2, out, treelessRootStr, name, drop=None):
+def mergeCommand(maf1, maf2, out, treelessRootStr, name, drop=None):
     mergeStr  = MAF_MERGE_BIN
     mergeStr += treelessRootStr 
     mergeStr += " '" + name + "'"
@@ -283,7 +278,7 @@ def mergeCommand( maf1, maf2, out, treelessRootStr, name, drop=None):
     mergeStr += ' ' + out
     return mergeStr
 
-def performMAFmerge( options, nodesList, leaves, nodeParentDict, nodesDict ):
+def performMAFmerge(options, nodesList, leaves, nodeParentDict, nodesDict):
     """performMAFmerge() takes the nodesList and goes through the
     steps of progressively merging the MAFs, starting from the leaves
     and working its way up the tree.
@@ -328,24 +323,24 @@ def performMAFmerge( options, nodesList, leaves, nodeParentDict, nodesDict ):
             nodeParent = nodeParentDict[n.name]
         else:
             nodeParent = options.rootName
-        if (not os.path.exists(os.path.join(options.simDir,n.name, nodeParent+'.maf')) and 
+        if (not os.path.exists(os.path.join(options.simDir, n.name, nodeParent+'.maf')) and 
             os.path.exists(os.path.join(options.simDir, n.children[0], n.name+'.maf')) and 
             os.path.exists(os.path.join(options.simDir, n.children[1], n.name+'.maf'))):
             mergeCMD = CMD_EVAL_BIN + ' JOB_FILE "'
 
             treelessRootStr = ''
             if n.children[0] in leaves :
-                treelessRootStr += ' -treelessRoot1='+ str( n.name )
+                treelessRootStr += ' -treelessRoot1='+ str(n.name)
             if n.children[1] in leaves :
-                treelessRootStr += ' -treelessRoot2='+ str( n.name )
+                treelessRootStr += ' -treelessRoot2='+ str(n.name)
             ##############################
             # the 'lookdown' aspect of the merge is performed for every node, including the root.
             maf1 = os.path.join(options.simDir, n.children[0], n.name+'.maf')
             maf2 = os.path.join(options.simDir, n.children[1], n.name+'.maf')
             mergeOut  = os.path.join(options.simDir, n.name, n.name+'.maf')
             drop = os.path.join(options.simDir, n.name, n.name+'.dropped.tab')
-            mergeStr = mergeCommand( maf1, maf2, mergeOut, treelessRootStr, str( n.name ), drop )
-            mergeCMD += LSC.commandPacker( mergeStr )
+            mergeStr = mergeCommand(maf1, maf2, mergeOut, treelessRootStr, str(n.name), drop)
+            mergeCMD += LSC.commandPacker(mergeStr)
 
             ##############################
             # The 'lookup' aspect of the merge is only performed when we are not at the root
@@ -353,13 +348,13 @@ def performMAFmerge( options, nodesList, leaves, nodeParentDict, nodesDict ):
             # all descendant sequences including the node, with the node-parent maf, to produce a maf
             # that the parent can use to merge its children.
             if n.name != options.rootName:
-                treelessRootStr = ' -treelessRoot2='+ str( nodeParent )
+                treelessRootStr = ' -treelessRoot2='+ str(nodeParent)
                 maf1 = os.path.join(options.simDir, n.name, n.name+'.maf')
                 maf2 = os.path.join(options.simDir, n.name, nodeParent+'.tmp.maf')
                 mergeOut  = os.path.join(options.simDir, n.name, nodeParent+'.maf')
                 drop = os.path.join(options.simDir, n.name, nodeParent+'.dropped.tab')
-                mergeStr = mergeCommand( maf1, maf2, mergeOut, treelessRootStr, str( n.name ), drop)
-                mergeCMD += LSC.commandPacker( mergeStr )
+                mergeStr = mergeCommand(maf1, maf2, mergeOut, treelessRootStr, str(n.name), drop)
+                mergeCMD += LSC.commandPacker(mergeStr)
 
             mergeCMD += '"'
             runningJobs = runningJobs + 1
@@ -373,9 +368,9 @@ def performMAFmerge( options, nodesList, leaves, nodeParentDict, nodesDict ):
                 mCMD = mCMD.replace('&myCMD;', '\n')
                 mCMD = mCMD.replace('"','')
                 if options.isVerbose:
-                    sys.stderr.write('n: %s\n  I wish to perform:%s' %( n.name, mCMD ))
+                    sys.stderr.write('n: %s\n  I wish to perform:%s' %(n.name, mCMD))
                 else:
-                    sys.stderr.write('%s' % mCMD )
+                    sys.stderr.write('%s' % mCMD)
         else:
             if options.isDebug and options.isVerbose:
                 print 'n: %s\n  Not running cycle for the following reasons:' %(n.name)
@@ -390,15 +385,15 @@ def performMAFmerge( options, nodesList, leaves, nodeParentDict, nodesDict ):
         if options.noParalogy:
             followUpCommand += ' --noParalogy '
     else:
-        if os.path.exists( os.path.join( options.rootDir, 'burnin.tmp.maf') ) and os.path.exists( os.path.join( options.rootDir, options.rootName+'.maf') ) and not os.path.exists( os.path.join( options.rootDir, 'burnin.maf')):
+        if os.path.exists(os.path.join(options.rootDir, 'burnin.tmp.maf')) and os.path.exists(os.path.join(options.rootDir, options.rootName+'.maf')) and not os.path.exists(os.path.join(options.rootDir, 'burnin.maf')):
             mergeCMD = CMD_EVAL_BIN + ' JOB_FILE "'
-            treelessRootStr = ' -treelessRoot2='+ burninRootName( options ) # the burnin's root name
-            maf1 = os.path.join(options.rootDir, options.rootName+'.maf' )
-            maf2 = os.path.join(options.rootDir, 'burnin.tmp.maf' )
-            mergeOut  = os.path.join(options.rootDir, 'burnin.maf' )
-            drop = os.path.join(options.rootDir, 'burnin.dropped.tab' )
-            mergeStr = mergeCommand( maf1, maf2, mergeOut, treelessRootStr, options.rootName, drop )
-            mergeCMD += LSC.commandPacker( mergeStr )
+            treelessRootStr = ' -treelessRoot2='+ burninRootName(options) # the burnin's root name
+            maf1 = os.path.join(options.rootDir, options.rootName+'.maf')
+            maf2 = os.path.join(options.rootDir, 'burnin.tmp.maf')
+            mergeOut  = os.path.join(options.rootDir, 'burnin.maf')
+            drop = os.path.join(options.rootDir, 'burnin.dropped.tab')
+            mergeStr = mergeCommand(maf1, maf2, mergeOut, treelessRootStr, options.rootName, drop)
+            mergeCMD += LSC.commandPacker(mergeStr)
             mergeCMD += '"'
             runningJobs = runningJobs + 1
             followUpCommand = sys.argv[0] +\
@@ -406,9 +401,9 @@ def performMAFmerge( options, nodesList, leaves, nodeParentDict, nodesDict ):
                               ' --jobFile JOB_FILE '+\
                               ' --mergeStep '
             if not options.isDebug:
-                newChild = ET.SubElement( childrenElm, 'child' )
+                newChild = ET.SubElement(childrenElm, 'child')
                 newChild.attrib['command'] = mergeCMD
-                xmlTree.write( options.jobFile )
+                xmlTree.write(options.jobFile)
             
     if options.isDebug:
         if runningJobs:
@@ -417,7 +412,7 @@ def performMAFmerge( options, nodesList, leaves, nodeParentDict, nodesDict ):
             mCMD = mCMD.replace('&myCMD;&myCMD;', '\n')
             mCMD = mCMD.replace('&myCMD;', '\n')
             mCMD = mCMD.replace('"','')
-            sys.stderr.write('\nI wish to perform %s\n%s\n' %( mCMD, followUpCommand ))
+            sys.stderr.write('\nI wish to perform %s\n%s\n' %(mCMD, followUpCommand))
         else:
             sys.stderr.write('I think I\'m done -- I have no running jobs\n')
     else:
@@ -425,21 +420,21 @@ def performMAFmerge( options, nodesList, leaves, nodeParentDict, nodesDict ):
             jobElm.attrib['command'] = followUpCommand
             xmlTree.write(options.jobFile)
 
-def burninRootName( options ):
+def burninRootName(options):
     """returns a str that contains the name of the burnin's root genome
     """
-    if not os.path.exists( os.path.join(options.rootDir, 'burnin.tmp.maf')):
+    if not os.path.exists(os.path.join(options.rootDir, 'burnin.tmp.maf')):
         return ''
     pat = re.compile('^s (.*?)\.chr')
-    f = open( os.path.join(options.rootDir, 'burnin.tmp.maf') )
+    f = open(os.path.join(options.rootDir, 'burnin.tmp.maf'))
     names = {}
     for line in f:
         line = line.strip()
-        r = re.match( pat, line )
+        r = re.match(pat, line)
         if r:
             if r.group(1) not in names:
-                names[ r.group(1) ] = True
-    if  len( names ) == 2:
+                names[r.group(1)] = True
+    if  len(names) == 2:
         for n in names:
             if n != options.rootName:
                 return n
@@ -452,48 +447,59 @@ def nodeParentDictBuilder(nl):
             npd[c] = n.name
     return npd
 
-def buildCyclesDict( nl, leaves ):
+def buildCyclesDict(nl, leaves):
     """ this will be useful to lookup a node's leaf status.
     """
     nd = {}
     parent = {}
     for n in nl:
-        nd[ n.name ] = n
+        nd[n.name] = n
         for c in n.children:
-            parent[ c ] = n.name
+            parent[c] = n.name
     for l in leaves:
-        n = Node()
+        n = lscc.Node()
         n.name = l
-        n.parent = parent[ l ]
+        n.parent = parent[l]
         n.isLeaf = True
-        nd[ n.name ] = n
+        nd[n.name] = n
     return nd
 
+def launchJobTree(options):
+    jobResult = Stack(lscc.MasterMafGenerator(options)).startJobTree(options)
+    if jobResult:
+        raise RuntimeError('The jobTree contained %d failed jobs!\n' % jobResult)
+
 def main():
-    parser=OptionParser()
-    initOptions( parser )
-    ( options, args ) = parser.parse_args()
-    checkOptions( options )
-    nt = newickTreeParser( options.inputNewick, 0.0 )
-    if nt.iD == None:
-        nt.iD = options.rootName
-    #####
-    # step one, discover all the nodes and children
-    leaves={}
-    extractLeaves( nt, leaves )
-    nodesList=[]
-    cyclesDict={} # keyed by name 
-    buildNodesList( nt, nodesList, leaves )
-    cyclesDict = buildCyclesDict( nodesList, leaves )
-    if options.isDebug and options.isVerbose:
-        printNodesList( nodesList, leaves )
-    if not options.isMergeStep:
-        # step two, create the commands to build all pairwise MAFs
-        buildMAFpairs( options, nodesList, leaves )
-    else:
-        # step three, create the commands to progressively combine MAFs
-        nodeParentDict = nodeParentDictBuilder( nodesList )
-        performMAFmerge( options, nodesList, leaves, nodeParentDict, cyclesDict )
+    usage=('usage: %prog --simDir path/to/dir [options]')
+    parser=OptionParser(usage=usage)
+    initOptions(parser)
+    Stack.addJobTreeOptions(parser)
+    options, args = parser.parse_args()
+    
+    checkOptions(options, parser)
+    
+    launchJobTree(options)
+    
+    # nt = newickTreeParser(options.inputNewick, 0.0)
+    # if nt.iD is None:
+    #     nt.iD = options.rootName
+    # #####
+    # # step one, discover all the nodes and children
+    # leaves={}
+    # extractLeaves(nt, leaves)
+    # nodesList=[]
+    # cyclesDict={} # keyed by name 
+    # buildNodesList(nt, nodesList, leaves)
+    # cyclesDict = buildCyclesDict(nodesList, leaves)
+    # if options.isDebug and options.isVerbose:
+    #     printNodesList(nodesList, leaves)
+    # if not options.isMergeStep:
+    #     # step two, create the commands to build all pairwise MAFs
+    #     buildMAFpairs(options, nodesList, leaves)
+    # else:
+    #     # step three, create the commands to progressively combine MAFs
+    #     nodeParentDict = nodeParentDictBuilder(nodesList)
+    #     performMAFmerge(options, nodesList, leaves, nodeParentDict, cyclesDict)
 
 
 if __name__ == "__main__":
