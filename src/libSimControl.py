@@ -338,12 +338,13 @@ def nameTree(nt, reportDistance=True):
     from libSimControl import sanitizeTreeName
     from sonLib.bioio import printBinaryTree
     if nt is None:
+        print 'nt was none'
         return ''
     if nt.iD is not None:
         if nt.distance == 0.0 or not reportDistance:
             name = nt.iD
         else:
-            name = nt.iD+str(nt.distance)
+            name = nt.iD + str(nt.distance)
     else:
         name = printBinaryTree(nt, True)
     name = sanitizeTreeName(name)
@@ -1211,8 +1212,8 @@ def getParentDir(thisDir):
     """ getParentDir inspects the summary.xml file contained in the supplied directory
     and returns the text of the parentDir tag.
     CAUTION, if thisDir is None, getParentDir() returns None, but if getParentDir() is 
-    a string and is not a valid directory, getParentDir() throws an exception!
-    The None in, None out behavior allows us to easily run Cycle (step n) with Stats (n-1) 
+    a string and is not a valid directory, getParentDir() throws an exception.
+    The None in None out behavior allows us to easily run Cycle (step n) with Stats (n-1) 
     and Transalign (n-1) in parallel.
     """
     from libSimControl import verifyDirExists, verifyFileExists, lockfile, unlockfile, dirIsRoot
