@@ -399,12 +399,13 @@ def myLog(s):
         f.write(s)
     f.close()
 
-def runCommands(cmds, localTempDir, inPipes=[], outPipes=[], mode='s', debug = False):
+def runCommands(cmds, localTempDir, inPipes = [], outPipes = [], mode='s', debug = False):
     """ runCommands is a wrapper function for the parallel and serial
     versions of runCommands. mode may either be s or p.
     """
     from libSimControl import runCommandsP, runCommandsS
     import os
+    from sonLib.bioio import logger
     if not os.path.exists(localTempDir):
         raise ValueError('localTempDir "%s" does not exist!\n' % localTempDir)
     if not isinstance(cmds, list):
@@ -426,14 +427,18 @@ def runCommands(cmds, localTempDir, inPipes=[], outPipes=[], mode='s', debug = F
     else:
         inPipes = [None] * len(cmds)
     if mode == 's':
+        logger.info('Issuing serial commads %s %s %s.\n' % (str(cmds), str(inPipes), str(outPipes)))
         runCommandsS(cmds, localTempDir, inPipes = inPipes, outPipes = outPipes, debug = debug)
     else:
+        logger.info('Issuing parallel commads %s %s %s.\n' % (str(cmds), str(inPipes), str(outPipes)))
         runCommandsP(cmds, localTempDir, inPipes = inPipes, outPipes = outPipes, debug = debug)
 
 def runCommandsP(cmds, localTempDir, inPipes=[], outPipes=[], debug = False):
     """ runCommandsP uses the subprocess module
     to issue parallel processes from the cmds list.
     """
+    import os
+    from sonLib.bioio import logger
     import subprocess
     procs = []
     i = -1
@@ -447,9 +452,7 @@ def runCommandsP(cmds, localTempDir, inPipes=[], outPipes=[], debug = False):
             sout = None
         else:
             sout = subprocess.PIPE
-        if debug:
-            import sys
-            sys.stderr.write('Executing parallel %s\n' % ' '.join(c))
+        logger.debug('Executing parallel %s < %s > %s\n' % (' '.join(c), inPipes[i], outPipes[i]))
         procs.append(subprocess.Popen(c, cwd=localTempDir, stdin = sin, stdout = sout))
     i = -1
     for p in procs:
@@ -457,6 +460,8 @@ def runCommandsP(cmds, localTempDir, inPipes=[], outPipes=[], debug = False):
         if inPipes[i] is None:
             sin = None
         else:
+            if not os.path.exists(inPipes[i]):
+                raise IOError('Unable to locate inPipe file: %s for command %s' % (inPipes[i], cmds[i]))
             sin = open(inPipes[i], 'r').read()
         if outPipes[i] is None:
             pout, perr = p.communicate(sin)
@@ -471,7 +476,8 @@ def runCommandsS(cmds, localTempDir, inPipes=[], outPipes=[], debug = False):
     """ runCommandsS uses the subprocess module
     to issue serial processes from the cmds list.
     """
-    from libSimControlClasses import BadInputError
+    import os
+    from sonLib.bioio import logger
     import subprocess
     i = -1
     for c in cmds:
@@ -484,15 +490,14 @@ def runCommandsS(cmds, localTempDir, inPipes=[], outPipes=[], debug = False):
             sout = None
         else:
             sout = subprocess.PIPE
-        if debug:
-            import sys
-            sys.stderr.write('Executing serial %s < %s > %s\n' % (' '.join(c), inPipes[i],
-                                                                  outPipes[i]))
+        logger.debug('Executing serial %s < %s > %s\n' % (' '.join(c), inPipes[i], outPipes[i]))
         p = subprocess.Popen(c, cwd=localTempDir, stdin = sin, stdout = sout)
             
         if inPipes[i] is None:
             sin = None
         else:
+            if not os.path.exists(inPipes[i]):
+                raise IOError('Unable to locate inPipe file: %s for command %s' % (inPipes[i], c))
             sin = open(inPipes[i], 'r').read()
         if outPipes[i] is None:
             pout, perr = p.communicate(sin)
@@ -504,10 +509,9 @@ def runCommandsS(cmds, localTempDir, inPipes=[], outPipes=[], debug = False):
             handleReturnCode(p.returncode, cmds[i])
 
 def handleReturnCode(retcode, cmd):
-    from libSimControlClasses import BadInputError
     if not isinstance(retcode, int):
-        raise BadInputError('handleReturnCode takes an integer for '
-                            'retcode, not a %s.\n' % retcode.__class__)
+        raise TypeError('handleReturnCode takes an integer for '
+                        'retcode, not a %s.\n' % retcode.__class__)
     if retcode:
         if retcode < 0:
             raise RuntimeError('Experienced an error while trying to execute: '
@@ -1084,7 +1088,7 @@ def statsStep1CmdsP(thisDir, thisParentDir):
                os.path.join(thisDir, 'annots.gff')]:
         verifyFileExists(f)
     
-    pipes = []
+    outPipes = []
     cmds  = []
     followCmds = [] # used for atomicity
 
@@ -1098,7 +1102,7 @@ def statsStep1CmdsP(thisDir, thisParentDir):
         cmd.append('-log')
         cmd.append(outname + '.tmp')
         cmds.append(cmd)
-        pipes.append(None)
+        outPipes.append(None)
         cmd = [which('mv')]
         cmd.append(outname + '.tmp')
         cmd.append(outname)
@@ -1112,13 +1116,13 @@ def statsStep1CmdsP(thisDir, thisParentDir):
         cmd.append('-log')
         cmd.append(outname + '.tmp')
         cmds.append(cmd)
-        pipes.append(None)
+        outPipes.append(None)
         cmd = [which('mv')]
         cmd.append(outname + '.tmp')
         cmd.append(outname)
         followCmds.append(cmd)
 
-    return cmds, followCmds, pipes
+    return cmds, followCmds, outPipes
 
 def statsStep1CmdsS(thisDir, thisParentDir):
     """ Produces a list of commands to run the first stats step.
@@ -1133,7 +1137,7 @@ def statsStep1CmdsS(thisDir, thisParentDir):
                os.path.join(thisDir, 'seq.rev'), os.path.join(thisParentDir, 'seq.rev')]:
        verifyFileExists(f)
 
-    pipes = []
+    outPipes = []
     cmds  = []
 
     outname = os.path.join(thisDir, 'stats', 'cds_annots.gff')
@@ -1142,11 +1146,11 @@ def statsStep1CmdsS(thisDir, thisParentDir):
         cmd.append('CDS|UTR')
         cmd.append(os.path.join(thisDir, 'annots.gff'))
         cmds.append(cmd)
-        pipes.append(outname + '.tmp')
+        outPipes.append(outname + '.tmp')
         cmd = [which('mv')]
         cmd.append(outname + '.tmp')
         cmd.append(outname)
-        pipes.append(None)
+        outPipes.append(None)
         cmds.append(cmd)
     
     outname = os.path.join(thisDir, 'stats', 'exons.gff')
@@ -1154,11 +1158,11 @@ def statsStep1CmdsS(thisDir, thisParentDir):
         cmd = [which('evolver_gff_cdsutr2exons.py')]
         cmd.append(os.path.join(thisDir, 'stats', 'cds_annots.gff'))
         cmds.append(cmd)
-        pipes.append(outname + '.tmp')
+        outPipes.append(outname + '.tmp')
         cmd = [which('mv')]
         cmd.append(outname + '.tmp')
         cmd.append(outname)
-        pipes.append(None)
+        outPipes.append(None)
         cmds.append(cmd)
     
     outname = os.path.join(thisDir, 'stats', 'introns.gff')
@@ -1166,11 +1170,11 @@ def statsStep1CmdsS(thisDir, thisParentDir):
         cmd = [which('evolver_gff_exons2introns.py')]
         cmd.append(os.path.join(thisDir, 'stats', 'exons.gff'))
         cmds.append(cmd)
-        pipes.append(outname + '.tmp')
+        outPipes.append(outname + '.tmp')
         cmd = [which('mv')]
         cmd.append(outname + '.tmp')
         cmd.append(outname)
-        pipes.append(None)
+        outPipes.append(None)
         cmds.append(cmd)
     
     outname = os.path.join(thisDir, 'stats', 'expanded_annots.gff')
@@ -1180,11 +1184,11 @@ def statsStep1CmdsS(thisDir, thisParentDir):
         cmd.append(os.path.join(thisDir, 'stats', 'exons.gff'))
         cmd.append(os.path.join(thisDir, 'stats', 'introns.gff'))
         cmds.append(cmd)
-        pipes.append(outname + '.tmp')
+        outPipes.append(outname + '.tmp')
         cmd = [which('mv')]
         cmd.append(outname + '.tmp')
         cmd.append(outname)
-        pipes.append(None)
+        outPipes.append(None)
         cmds.append(cmd)
     
     outname = os.path.join(thisDir, 'stats', 'tmpstats.cycle.diffannots.txt')
@@ -1199,14 +1203,14 @@ def statsStep1CmdsS(thisDir, thisParentDir):
         cmd.append(os.path.join(thisDir, 'seq.rev'))
         cmd.append(which('evolver_cvt'))
         cmds.append(cmd)
-        pipes.append(outname + '.tmp')
+        outPipes.append(outname + '.tmp')
         cmd = [which('mv')]
         cmd.append(outname + '.tmp')
         cmd.append(outname)
-        pipes.append(None)
+        outPipes.append(None)
         cmds.append(cmd)
     
-    return cmds, pipes
+    return cmds, outPipes
 
 def getParentDir(thisDir):
     """ getParentDir inspects the summary.xml file contained in the supplied directory

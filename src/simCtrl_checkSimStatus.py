@@ -281,7 +281,7 @@ def updateTimingInfo(s, options):
                     continue
                 s.timeDict[key] = float(elmUtc.text)
 
-def timeoutParse(filename, timeout = 1.0, retry = 0.2):
+def timeoutParse(filename, timeout = 0.5, retry = 0.1):
     """ timeoutParse() takes an xml filename and attemps to parse the xml
     every [retry] seconds for a total of [timeout] seconds. We use this because
     the simulation must lock the xml to write data.
@@ -414,9 +414,12 @@ def str2link(s, directory, title=''):
         else:
             return '<a href="%s/%s/">' % (directory, s)
 
-def prettyTitle(n, s):
+def prettyTitle(n, s, done = True):
     t = prettyTime(s)
-    return 'Cycle %s took %s.' % (n, t)
+    if done:
+        return 'Cycle %s took %s.' % (n, t)
+    else:
+        return 'Cycle %s has taken %s.' % (n, t)
 
 def drawText(nt, options, sl, totalTreeDepth, rootName, scale = 4, 
              stepsDict = {}, isHtml = False, directory = ''):
@@ -488,9 +491,10 @@ def depthFirstWalk(nt, options, stepLength = 0.001, depth = 0, branch='root',
         name = lsc.nameTree(nt)
         if stepsDict[name].complete:
             # complete steps get filled in
-            offset = (offset + str2link(name, directory, 
-                                        title = prettyTitle(name, stepsDict[name].elapsedTime)) + 
-                      scale * symbolDict['done'] + stringCap)
+            offset = (offset 
+                      + str2link(name, directory, 
+                                 title = prettyTitle(name, stepsDict[name].elapsedTime))
+                      + scale * symbolDict['done'] + stringCap)
         else:
             if stepsDict[name].startTime == -1:
                 offset = offset + scale * symbolDict['none'] + stringCap
@@ -500,33 +504,22 @@ def depthFirstWalk(nt, options, stepLength = 0.001, depth = 0, branch='root',
                 symbValue = combineTernaryValues(statsValue, transValue)
                 if symbValue == 3:
                     # neither the stat nor trans has started
-                    offset = (offset + str2link(name, directory) 
-                              + scale * symbolDict['cycleDone'] + stringCap)
+                    step = getCycleStep(stepsDict[name])
+                    l = int(scale / 4 * step)
+                    offset = (offset 
+                              + str2link(name, directory, 
+                                         title = prettyTitle(name, 
+                                                             time.time() - stepsDict[name].startTime, 
+                                                             done = False)),
+                              + l * symbolDict['cycleDone']
+                              + (scale - l) * symbolDict['none'] + stringCap)
                 elif symbValue > 3:
-                    offset = (offset + str2link(name, directory) 
+                    offset = (offset 
+                              + str2link(name, directory, 
+                                         title = prettyTitle(name, 
+                                                             time.time() - stepsDict[name].startTime, 
+                                                             done = False))
                               + scale * symbolDict[symbValue] + stringCap)
-            # if ('StatsStep4_end' in stepsDict[name].timeDict 
-            #     and 'TransalignendEpochUTC' in stepsDict[name].timeDict):
-            #     # these are the + symbols, the main steps
-                
-            #     offset = (offset + str2link(name, directory)
-            #               + int(scale * int(prgStepsDict[name] - prgStepsDict[name] % 2) / 8)
-            #               * symbolDict['cycleDone']
-            #               + int(scale / 4 * int(prgStepsDict[name]) % 2) * symbolDict['cycleProg']
-            #               + (scale - int(scale * int(prgStepsDict[name] - prgStepsDict[name] % 2) / 8)
-            #                  - int(scale / 4 * int(prgStepsDict[name]) % 2)) * symbolDict['none']
-            #               + stringCap)
-            # else:
-            #     # these are the stats steps
-            #     offset = (offset + str2link(name, directory)
-            #               + int(scale * int(prgStepsDict[name] - 8 - (prgStepsDict[name] % 2)) / 8) 
-            #               * symStat + int(scale / 4 * int(prgStepsDict[name]) % 2) 
-            #               * '*'
-            #               + (scale - int(scale * int(prgStepsDict[name] - 8 - (prgStepsDict[name] % 2)) / 8) 
-            #                  - int(scale / 4 * int(prgStepsDict[name]) % 2)) 
-            #               * symbolDict['cycleDone'] + stringCap)
-        # else:
-        #     offset = offset + scale * symbolDict['none'] + stringCap
     if not nt.right or not nt.left:
         print '%s %s' % (offset, nt.iD)
         return True
@@ -560,6 +553,16 @@ def depthFirstWalk(nt, options, stepLength = 0.001, depth = 0, branch='root',
             print '%s' % (offset)
     if left or right:
         return 1
+
+def getCycleStep(s):
+    """ takes a Step() object and returns 1..4
+    depending on which cycle step the Step is residing on
+    """
+    step = 0
+    for i in xrange(1, 5):
+        if 'CycleStep%d_start' % i in s.timeDict:
+            step = i
+    return step
 
 def getTernaryValue(s, t, options):
     """ s is a Step() object and t is either 'stats' or 'trans'
