@@ -120,7 +120,7 @@ class Step:
         self.timeDict    = {}
 
 def initOptions(parser):
-    parser.add_option('--dir', dest = 'simDir',
+    parser.add_option('--simDir', dest = 'simDir',
                       help='Parent directory.')
     parser.add_option('--drawText', dest = 'drawText', action = 'store_true',
                       default = False,
@@ -792,13 +792,13 @@ pre, .code {
 </style>
 </head>
 <body bgcolor="#FFFFFFFF">
-'''
+''' % refresh
 
 def finishHtml():
     print '''
 </body>
 </html>
-''' % refresh
+''' 
 
 def stepsDictToTimeList(stepsDict):
     """stepsDictToTimeList() takes a dict of steps [stepsDict] and

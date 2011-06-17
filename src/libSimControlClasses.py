@@ -119,7 +119,8 @@ class TreeFollow(Target):
                                                     self.options.simDir)
             else:
                 # follow up to leaf cycles... Transalign and Stats only
-                self.setFollowOnTarget(LeafCleanUp(commonParentDir, self.thisGrandParentDir, self.options))
+                self.setFollowOnTarget(LeafCleanUp(commonParentDir, 
+                                                   self.thisGrandParentDir, self.options))
         else:
             # stem with distance
             self.addChildTarget(Tree(lsc.tree2str(nt), commonParentDir, 'stem', self.options))
@@ -216,7 +217,8 @@ class CycleStep2Chromosome(Cycle):
         if not os.path.exists(os.path.join(self.thisDir, 'xml', 'cycle.%s.xml' % self.thisChr)):
             lsc.newInfoXml(os.path.join(self.thisDir, 'xml', 'cycle.%s.xml' % self.thisChr))
             lsc.addTimestampsTag(os.path.join(self.thisDir, 'xml', 'cycle.%s.xml' % self.thisChr))
-            lsc.subTypeTimestamp(self.thisDir, 'cycleChr', 'CycleStep2Chr_%s_start' % self.thisChr, self.thisChr)
+            lsc.subTypeTimestamp(self.thisDir, 'cycleChr', 
+                                 'CycleStep2Chr_%s_start' % self.thisChr, self.thisChr)
         lsc.verifyDirExists(self.thisDir)
 
         # evolver intra on one chromosome
@@ -237,7 +239,8 @@ class CycleStep2Chromosome(Cycle):
         cmds = lsc.evolverIntraStepMoveTRFCmd(self.thisDir, self.thisChr, self.getLocalTempDir())
         lsc.runCommands(cmds, self.getLocalTempDir(), mode='p')
         
-        lsc.subTypeTimestamp(self.thisDir, 'cycleChr', 'CycleStep2Chr_%s_end' % self.thisChr, self.thisChr)
+        lsc.subTypeTimestamp(self.thisDir, 'cycleChr', 
+                             'CycleStep2Chr_%s_end' % self.thisChr, self.thisChr)
         lsc.addEndTimeAttribute(os.path.join(self.thisDir, 'xml', 'cycle.%s.xml' % self.thisChr))
 
 class CycleStep3(Cycle):
@@ -448,7 +451,8 @@ class TransalignStep1(Transalign):
         cmds, pipes = lsc.transalignStep1Cmds_1(self.thisDir, self.thisParentDir, self.options)
         lsc.runCommands(cmds, self.getLocalTempDir(), outPipes = pipes)
         
-        lsc.runTransalignStep1Cmds_2(self.thisDir, self.thisParentDir, self.getLocalTempDir(), self.options)
+        lsc.runTransalignStep1Cmds_2(self.thisDir, self.thisParentDir, 
+                                     self.getLocalTempDir(), self.options)
         
         lsc.subTypeTimestamp(self.thisDir, 'transalign', 'TransalignStep1_end')
         lsc.typeTimestamp(os.path.join(self.thisDir), 'transalign', 'end')
@@ -588,8 +592,9 @@ class MergeManager(Target):
         logger.info('Extract object running, rootDir: %s\n' % (self.options.rootDir))
         nt = newickTreeParser(self.options.inputNewick, 0.0)
         nt.iD = os.path.basename(self.options.rootDir)
-        self.addChildTarget(MergeTree(nt, self.nodeDict, self.nodeParentDict, self.leafsDict, self.options))
-        if not options.noBurninMerge:
+        self.addChildTarget(MergeTree(nt, self.nodeDict, self.nodeParentDict, 
+                                      self.leafsDict, self.options))
+        if not self.options.noBurninMerge:
             self.setFollowOnTarget(MergeTreeFollow(nt, self.nodeDict, self.nodeParentDict,
                                                    self.leafsDict, self.options))
 
@@ -622,14 +627,13 @@ class MergeTree(Target):
                 continue
             t.distance = 0.0
             if not os.path.exists(os.path.join(self.options.simDir, lsc.nameTree(t), self.name + '.maf')):
-                sys.stderr.write('%s does not exist, recurse\n' % os.path.join(self.options.simDir,
-                                                                               lsc.nameTree(t),
-                                                                               self.name+ '.maf'))
-                self.addChildTarget(MergeTree(t, self.nodeDict, self.nodeParentDict, self.leafsDict, self.options))
+                sys.stderr.write('%s does not exist, recurse\n' 
+                                 % os.path.join(self.options.simDir, lsc.nameTree(t), self.name+ '.maf'))
+                self.addChildTarget(MergeTree(t, self.nodeDict, 
+                                              self.nodeParentDict, self.leafsDict, self.options))
             else:
-                sys.stderr.write('%s does exist, don\'t recurse\n' % os.path.join(self.options.simDir, 
-                                                                                  lsc.nameTree(t),
-                                                                                  self.name + '.maf'))
+                sys.stderr.write('%s does exist, don\'t recurse\n' 
+                                 % os.path.join(self.options.simDir, lsc.nameTree(t),self.name + '.maf'))
         self.setFollowOnTarget(MergeMafsDown(self.nt, self.nodeDict, self.nodeParentDict, 
                                              self.leafsDict, self.nodeParent, self.options))
 
@@ -654,12 +658,14 @@ class MergeTreeFollow(Target):
     def run(self):
         logger.info('MergeTreeFollow object running, name: %s\n' % (self.name))
         outname = os.path.join(self.options.rootDir, 'burnin.maf')
-        if os.path.exists(os.path.join(self.options.rootDir, 'burnin.tmp.maf')) and not os.path.exists(outname):
+        if (os.path.exists(os.path.join(self.options.rootDir, 'burnin.tmp.maf')) 
+            and not os.path.exists(outname)):
             treelessRootCmd = ['-treelessRoot2=%s' % lsc.burninRootName(self.options)]
             maf1 = os.path.join(self.options.rootDir, self.options.rootName + '.maf')
             maf2 = os.path.join(self.options.rootDir, 'burnin.tmp.maf')
             drop = os.path.join(self.options.rootDir, 'burnin.dropped.maf')
-            cmds = lsc.buildMergeCommand(maf1, maf2, outname, treelessRootCmd, self.name, self.options, drop)
+            cmds = lsc.buildMergeCommand(maf1, maf2, outname, treelessRootCmd, 
+                                         self.name, self.options, drop)
             lsc.runCommands(cmds, self.getLocalTempDir())
 
 class MergeMafsDown(MergeTree):
@@ -672,7 +678,8 @@ class MergeMafsDown(MergeTree):
         self.nodeParent = nodeParent
 
     def run(self):
-        logger.info('MergeTreeDown object running, name: %s nodeParent: %s\n' % (self.name, self.nodeParent))
+        logger.info('MergeTreeDown object running, name: %s nodeParent: %s\n' 
+                    % (self.name, self.nodeParent))
         treelessRootCmd = []
         for i in xrange(0,2):
             if self.nodeDict[self.name].children[i] in self.leafsDict:
@@ -681,10 +688,13 @@ class MergeMafsDown(MergeTree):
         # the 'lookdown' aspect of the merge is performed for every node, including the root.
         outname = os.path.join(self.options.simDir, self.name, self.name + '.maf')
         if not os.path.exists(outname):
-            maf1 = os.path.join(self.options.simDir, self.nodeDict[self.name].children[0], self.name + '.maf')
-            maf2 = os.path.join(self.options.simDir, self.nodeDict[self.name].children[1], self.name + '.maf')
+            maf1 = os.path.join(self.options.simDir, self.nodeDict[self.name].children[0], 
+                                self.name + '.maf')
+            maf2 = os.path.join(self.options.simDir, self.nodeDict[self.name].children[1], 
+                                self.name + '.maf')
             drop = os.path.join(self.options.simDir, self.name, self.name + '.dropped.tab')
-            cmds = lsc.buildMergeCommand(maf1, maf2, outname, treelessRootCmd, self.name, self.options, drop)
+            cmds = lsc.buildMergeCommand(maf1, maf2, outname, treelessRootCmd, self.name, 
+                                         self.options, drop)
             lsc.runCommands(cmds, self.getLocalTempDir())
         self.setFollowOnTarget(MergeMafsUp(self.nt, self.nodeDict, self.nodeParentDict, 
                                            self.leafsDict, self.nodeParent, self.options))
@@ -700,7 +710,8 @@ class MergeMafsUp(MergeTree):
         self.nodeParent = nodeParent
 
     def run(self):
-        logger.info('MergeMafsUp object running, name: %s nodeParent: %s\n' % (self.name, self.nodeParent))
+        logger.info('MergeMafsUp object running, name: %s nodeParent: %s\n' 
+                    % (self.name, self.nodeParent))
         ##############################
         # The 'lookup' aspect of the merge is only performed when we are not at the root
         # This merge merges the results of the 'lookdown' merge, that is to say the maf that contains
@@ -714,6 +725,7 @@ class MergeMafsUp(MergeTree):
             maf1 = os.path.join(self.options.simDir, self.name, self.name + '.maf')
             maf2 = os.path.join(self.options.simDir, self.name, self.nodeParent + '.tmp.maf')
             drop = os.path.join(self.options.simDir, self.name, self.nodeParent + '.dropped.tab')
-            cmds = lsc.buildMergeCommand(maf1, maf2, outname, treelessRootCmd, self.name, self.options, drop)
+            cmds = lsc.buildMergeCommand(maf1, maf2, outname, treelessRootCmd, 
+                                         self.name, self.options, drop)
             lsc.runCommands(cmds, self.getLocalTempDir())
     
