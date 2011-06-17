@@ -752,11 +752,8 @@ def initHtml(status):
     if 'isDone' in status.variables:
         refresh = ''
     else:
-        refresh = '<meta http-equiv="refresh" content="30;">'
-    print '''
-<head>
-<title>Simulation Status</title>
-<meta http-equiv="Content-Type" content="text / html; charset = iso-8859-1">
+        # refresh = '<meta http-equiv="refresh" content="30;">'
+        refresh = '''
 <script type="text/javascript">
 // Simple Debug, written by Chris Klimas // licensed under the GNU LGPL. // http://www.gnu.org/licenses/lgpl.txt // // There are three functions defined here: // // log (message) // Logs a message. Every second, all logged messages are displayed // in an alert box. This saves you from having to hit Return a ton // of times as your script executes. // // inspect (object) // Logs the interesting properties an object possesses. Skips functions // and anything in CAPS_AND_UNDERSCORES. // // inspectValues (object) // Like inspect(), but displays values for the properties. The output // for this can get very large -- for example, if you are inspecting // a DOM element. 
 //function log (message) { if (! _log_timeout) _log_timeout = window.setTimeout(dump_log, 1000); _log_messages.push(message); function dump_log() { var message = ''; for (var i = 0; i < _log_messages.length; i++) message += _log_messages[i] + '\\n'; alert(message); _log_timeout = null; delete _log_messages; _log_messages = new Array(); } } function inspect (obj) { var message = 'Object possesses these properties:\\n'; if (obj) { for (var i in obj) { if ((obj[i] instanceof Function) || (obj[i] == null) || (i.toUpperCase() == i)) continue; message += i + ', '; } message = message.substr(0, message.length - 2); } else message = 'Object is null'; log(message); } function inspectValues (obj) { var message = ''; if (obj) for (var i in obj) { if ((obj[i] instanceof Function) || (obj[i] == null) || (i.toUpperCase() == i)) continue; message += i + ': ' + obj[i] + '\\n'; } else message = 'Object is null'; log(message); } var _log_timeout; var _log_messages = new Array();
@@ -775,6 +772,12 @@ def initHtml(status):
   window.onload = StartTime();
   //log("end of script loads. StartTime() should have been launched.");
 </script>
+'''
+    print '''
+<head>
+<title>Simulation Status</title>
+<meta http-equiv="Content-Type" content="text / html; charset = iso-8859-1">
+%s
 
 <style type="text/css">
 pre, .code {
@@ -795,7 +798,7 @@ def finishHtml():
     print '''
 </body>
 </html>
-'''
+''' % refresh
 
 def stepsDictToTimeList(stepsDict):
     """stepsDictToTimeList() takes a dict of steps [stepsDict] and
