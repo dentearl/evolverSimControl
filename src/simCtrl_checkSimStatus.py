@@ -94,6 +94,18 @@ class Status:
         self.name = ''
         self.variables = {}
 
+class SimNode:
+    """ The SimNode object is used to store the binary tree of simulation
+    nodes / directories. Useful for doing smart updating of timestamps.
+    name should refer to a basename of a sim step directory inside of the 
+    simulation dir. left right and parent are all dirs as well.
+    """
+    def __init__(self):
+        self.name   = ''
+        self.parent = None
+        self.left   = None
+        self.right  = None
+
 class Step:
     """ The Step class keeps track of a single step and all the timing
     information in that step.
@@ -203,7 +215,7 @@ def totalTreeDepthStepsFinder(nt, sl):
     treeLength = math.ceil(nt.distance / sl)
     return treeLength + max(totalTreeDepthStepsFinder(nt.right, sl), totalTreeDepthStepsFinder(nt.left, sl))
 
-def simStepUpdater(nt, sl, cycleDirs, stepsDict, options):
+def simStepUpdater(nt, sl, stepsDict, simNodeTree, options):
     """ simStepUpdater goes through the tree and the stepsDict and updates the 
     steps in stepsDict that need updating.
     """
@@ -212,12 +224,27 @@ def simStepUpdater(nt, sl, cycleDirs, stepsDict, options):
         if s not in stepsDict:
             stepsDict[s] = Step()
             stepsDict[s].name = s
-    for s in stepsDict:
-        if stepsDict[s].complete:
-            continue
-        updateTimingInfo(stepsDict[s], options)
-    
+    simStepTreeUpdater(simNodeTree, stepsDict, options)
     return numCompletedSteps(stepsDict), stepsDict
+
+def simStepTreeUpdater(snt, stepsDict, options):
+    if snt is None:
+        return
+    if not options.isHtml:
+        print snt.name
+    started = False
+    if snt.name != options.rootName:
+        if not stepsDict[snt.name].complete:
+            started = updateTimingInfo(stepsDict[snt.name], options)
+        else:
+            started = True
+    else:
+        started = True
+    if started:
+        # if the current node has not started, there is no 
+        # sense in descending the tree
+        simStepTreeUpdater(snt.left, stepsDict, options)
+        simStepTreeUpdater(snt.right, stepsDict, options)
 
 def numCompletedSteps(stepsDict):
     c = 0
@@ -228,18 +255,21 @@ def numCompletedSteps(stepsDict):
 
 def updateTimingInfo(s, options):
     """ takes a Step() object and updates all the timing info associated
-    with that sim step.
+    with that sim step. If the Step has started running, returns True
     """
+    updated = False
     if not os.path.exists(os.path.join(options.simDir, s.name, 'xml')):
-        return
+        return updated
     # summary.xml
     infotree = timeoutParse(os.path.join(options.simDir, s.name, 'xml', 'summary.xml'))
     if infotree is not None:
         ts = infotree.find('timestamps')
         if ts is not None:
             if 'startEpochUTC' in ts.attrib:
+                updated = True
                 s.startTime = float(ts.attrib['startEpochUTC'])
             if 'endEpochUTC' in ts.attrib:
+                updated = True
                 s.endTime = float(ts.attrib['endEpochUTC'])
                 s.elapsedTime = s.endTime - s.startTime
                 s.complete = True
@@ -252,6 +282,7 @@ def updateTimingInfo(s, options):
                 for elm in ['start', 'end']:
                     key = '%sEpochUTC' % elm
                     if key in ts.attrib:
+                        updated = True
                         s.timeDict[t + key] = float(ts.attrib[key])
                 for i in xrange(1, 5):
                     for p in ['_start', '_end']:
@@ -262,6 +293,7 @@ def updateTimingInfo(s, options):
                         elmUtc = elm.find('epochUTC')
                         if elmUtc is None:
                             continue
+                        updated = True
                         s.timeDict[key] = float(elmUtc.text)
     # trans.xml
     infotree = timeoutParse(os.path.join(options.simDir, s.name, 'xml', 'transalign.xml'))
@@ -271,6 +303,7 @@ def updateTimingInfo(s, options):
             for elm in ['start', 'end']:
                 key = '%sEpochUTC' % elm
                 if key in ts.attrib:
+                    updated = True
                     s.timeDict['Transalign' + key] = float(ts.attrib[key])
                 key = 'TransalignStep1_%s' % elm
                 elm = ts.find(key)
@@ -279,7 +312,9 @@ def updateTimingInfo(s, options):
                 elmUtc = elm.find('epocUTC')
                 if elmUtc is None:
                     continue
+                updated = True
                 s.timeDict[key] = float(elmUtc.text)
+    return updated
 
 def timeoutParse(filename, timeout = 0.5, retry = 0.1):
     """ timeoutParse() takes an xml filename and attemps to parse the xml
@@ -297,66 +332,56 @@ def timeoutParse(filename, timeout = 0.5, retry = 0.1):
             s += retry
     return tree
 
-def longestRemainingBranchFinder(nt, sl, stepsDict):
+def longestRemainingBranchFinder(snt, sl, stepsDict, options):
     """longestRemainingBranchFinder() takes a newickTree,
     a stepLength, and a list of the present cycle directories,
     and returns a Branch() object with the longest path (in steps)
     and the name of the leaf-est branch.
     """
     b = Branch()
-    path = 0.0
-    if nt is None:
+    if snt is None:
         return b
-    while nt.distance > 0:
-        nt.distance -= sl
-        if nt.distance < 0:
-            nt.distance = 0
-        path += 1
-        b.longestPath += 1
-        name = lsc.nameTree(nt)
-        if b.longestChild == '':
-            b.longestChild = name
-        if stepsDict[name].complete:
+    b.longestPath = 1.0
+    b.longestChild = snt.name
+    if snt.name != options.rootName:
+        if stepsDict[snt.name].complete:
             path = 0.0
             del b
             b = Branch()
-            b.name = name
-    r = longestRemainingBranchFinder(nt.right, sl, stepsDict)
-    l = longestRemainingBranchFinder(nt.left, sl, stepsDict)
-
-    if  r.longestPath >= l.longestPath:
+            b.name = snt.name
+    else:
+        b.longestPath = 0.0
+    l = longestRemainingBranchFinder(snt.left, sl, stepsDict, options)
+    r = longestRemainingBranchFinder(snt.right, sl, stepsDict, options)
+    if  l.longestPath >= r.longestPath:
+        b.longestPath += l.longestPath
+        if l.longestChild != '':
+            b.longestChild = l.longestChild
+        if l.name != '':
+            b.name = l.name
+    else:
         b.longestPath += r.longestPath
         if r.name != '':
             b.name = r.name
+        if r.longestChild != '':
             b.longestChild = r.longestChild
-    else:
-        b.longestPath += l.longestPath
-        if l.name != '':
-            b.name = l.name
-            b.longestChild = l.longestChild
     # print('id: %s name: %s %f, right: %s %f left: %s %f\n' 
-    #       % (nt.iD, b.name, b.longestPath, r.name, r.longestPath, l.name, l.longestPath))
+    #       % (snt.name, b.name, b.longestPath, r.name, r.longestPath, l.name, l.longestPath))
     return b
 
 def elapsedTreeTimeFinder(elapsedTimesDict, stepsDict):
-    """elapsedTreeTimeFinder() takes a newickTree, a stepLength, the location of the
-    simulation directory, a list of all the present cycle directories, and the parentNode
-    and returns the total amount of machine time spent on the tree including all branches.
+    """elapsedTreeTimeFinder() takes a newickTree, a list of all the present cycle 
+    directories, and the parentNode and returns the total amount of machine time 
+    spent on the tree including all branches.
     """
     prgTimesDict = {}
-    totalElapsedTime = 0.0
-    for s in stepsDict:
-        if stepsDict[s].startTime != -1:
-            if stepsDict[s].endTime != -1:
-                totalElapsedTime += stepsDict[s].elapsedTime
-            else:
-                totalElapsedTime += time.time() - stepsDict[s].startTime
     for c in stepsDict:
         if stepsDict[c].complete:
             if c not in elapsedTimesDict:
                 elapsedTimesDict[c] = stepsDict[c].elapsedTime
         else:
-            prgTimesDict[c] = time.time() - stepsDict[c].startTime
+            if stepsDict[c].startTime != -1:
+                prgTimesDict[c] = time.time() - stepsDict[c].startTime
     return (elapsedTimesDict, prgTimesDict)
 
 def howLongSimulationFinder(simDir, cycles, useNow = True):
@@ -479,9 +504,11 @@ def depthFirstWalk(nt, options, stepLength = 0.001, depth = 0, branch='root',
     else:
         offset += '|'
     if isHtml:
-        stringCap = '</a>|'
+        linkCap = '</a>'
     else:
-        stringCap = '|'
+        linkCap = ''
+    stringCap = '|'
+    
     for i in xrange(0, int(math.ceil(originalBranchLength / stepLength))):
         # print symNone for steps not started, symStat for complete steps, 
         # symCycle for partially complete steps
@@ -491,35 +518,46 @@ def depthFirstWalk(nt, options, stepLength = 0.001, depth = 0, branch='root',
         name = lsc.nameTree(nt)
         if stepsDict[name].complete:
             # complete steps get filled in
-            offset = (offset 
-                      + str2link(name, directory, 
-                                 title = prettyTitle(name, stepsDict[name].elapsedTime))
-                      + scale * symbolDict['done'] + stringCap)
+            link = str2link(name, directory, 
+                            title = prettyTitle(name, stepsDict[name].elapsedTime))
+            chunk = scale * symbolDict['done']
+            assert len(chunk) == scale
+            offset += link + chunk + linkCap + stringCap
         else:
             if stepsDict[name].startTime == -1:
-                offset = offset + scale * symbolDict['none'] + stringCap
+                chunk = scale * symbolDict['none']
+                assert len(chunk) == scale
+                offset += chunk + stringCap
             else:
                 statsValue = getTernaryValue(stepsDict[name], 'stats', options)
                 transValue = getTernaryValue(stepsDict[name], 'trans', options)
                 symbValue = combineTernaryValues(statsValue, transValue)
                 if symbValue == 3:
                     # neither the stat nor trans has started
-                    step = getCycleStep(stepsDict[name])
-                    l = int(scale / 4 * step)
-                    offset = (offset 
-                              + str2link(name, directory, 
-                                         title = prettyTitle(name, 
-                                                             time.time() - stepsDict[name].startTime, 
-                                                             done = False)),
-                              + l * symbolDict['cycleDone']
-                              + (scale - l) * symbolDict['none'] + stringCap)
+                    stepProg = getCycleStep(stepsDict[name])
+                    lp = int(scale / 4 * stepProg)
+                    if stepProg == 4:
+                        stepDone = 4
+                    else:
+                        stepDone = stepProg - 1
+                    ld = int(scale / 4 * stepDone)
+                    link = str2link(name, directory, 
+                                    title = prettyTitle(name, 
+                                                        time.time() - stepsDict[name].startTime, 
+                                                        done = False))
+                    chunk = (ld * symbolDict['cycleDone']
+                             + (lp - ld) * symbolDict['cycleProg']
+                             + (scale - lp) * symbolDict['none'])
+                    assert len(chunk) == scale
+                    offset += link + chunk + linkCap + stringCap
                 elif symbValue > 3:
-                    offset = (offset 
-                              + str2link(name, directory, 
-                                         title = prettyTitle(name, 
-                                                             time.time() - stepsDict[name].startTime, 
-                                                             done = False))
-                              + scale * symbolDict[symbValue] + stringCap)
+                    link = str2link(name, directory, 
+                                      title = prettyTitle(name, 
+                                                          time.time() - stepsDict[name].startTime, 
+                                                          done = False))
+                    chunk = scale * symbolDict[symbValue]
+                    assert len(chunk) == scale
+                    offset += link + chunk + linkCap + stringCap
     if not nt.right or not nt.left:
         print '%s %s' % (offset, nt.iD)
         return True
@@ -558,7 +596,7 @@ def getCycleStep(s):
     """ takes a Step() object and returns 1..4
     depending on which cycle step the Step is residing on
     """
-    step = 0
+    step = 1
     for i in xrange(1, 5):
         if 'CycleStep%d_start' % i in s.timeDict:
             step = i
@@ -571,11 +609,17 @@ def getTernaryValue(s, t, options):
     if t not in ['stats', 'trans']:
         raise RuntimeError('Unanticipated value %s' % t)
     value = 0
-    for i in xrange(0, 5):
-        if '%s%sStep%d_start' % (t[0].upper(), t[1:], i) in s.timeDict:
+    if t == 'stats':
+        if 'StatsStep1_start' in s.timeDict:
             value = 1
-            if i == 4:
-                value = 2
+    if t == 'trans':
+        if 'TransalignstartEpochUTC' in s.timeDict:
+            value = 1
+    if t == 'stats' and 'StatsStep4_end' in s.timeDict:
+        value = 2
+    if t == 'transalign' and 'TransalignendEpochUTC' in s.timeDict:
+        value = 2
+
     return value
 
 def combineTernaryValues(statsValue, transValue):
@@ -616,7 +660,7 @@ def drawLegend():
     print ('| %3s %21s %3s %21s %3s %21s%26s |\n'
            '| %3s %21s %3s %21s %3s %21s %3s %21s |\n'
            '| %3s %21s %3s %21s %3s %21s %3s %21s |'
-           % (symbolDict['none'], 'unfinished', symbolDict['cycleProg'], 'cycle running',
+           % (symbolDict['none'], 'unstarted', symbolDict['cycleProg'], 'cycle running',
               symbolDict['cycleDone'], 'cycle done', ' ',
               '1', 'stat run trans -run', '2', 'stat -run trans run',
               '3', 'stat -run trans done', '4', 'stat done trans -run',
@@ -627,61 +671,54 @@ def drawLegend():
     print '+%s+' % ('-' * 105)
 
 def timeHandler(status, options):
+    curCycleElapsedTime = 0.0
     if status.longBranchSteps.name == '':
         parentNode = ''
     else:
         parentNode = os.path.basename(lsc.getParentDir(os.path.join(options.simDir, 
                                                                     status.longBranchSteps.name)))
-
-    if os.path.exists(os.path.join(options.simDir, status.longBranchSteps.name)):
-        curCycleElapsedTime = time.time() - os.path.getmtime(os.path.join(options.simDir, 
-                                                                          status.longBranchSteps.name))
-    else:
-        curCycleElapsedTime = time.time() - os.path.getmtime(os.path.join(options.simDir, 
-                                                                          status.longBranchSteps.longestChild))
+        if parentNode in status.stepsDict:
+            if status.stepsDict[parentNode].startTime != -1:
+                curCycleElapsedTime = time.time() - status.stepsDict[parentNode].startTime
     (status.elapsedTreeTimeDict, prgTimeDict) = elapsedTreeTimeFinder(status.elapsedTreeTimeDict, 
                                                                       status.stepsDict)
     elapsedTreeTime = sum(status.elapsedTreeTimeDict.values()) + sum(prgTimeDict.values())
     status.treeTime = prettyTime(elapsedTreeTime)
-    newickTree = newickTreeParser(options.inputNewick, 0.0)
     
     if status.numCompletedSteps == status.numTotalSteps:
         # the simulation is complete
-        status.elapsedTime = prettyTime(howLongSimulationFinder(options.simDir, status.cycleDirs, useNow = False))
+        status.elapsedTime = howLongSimulationFinder(options.simDir, status.cycleDirs, 
+                                                     useNow = False)
     else:
         # simulation is in progress
-        # longBranchSteps counts the current running cycle so we subtract 0.5
-        status.longBranchSteps.longestPath -= 0.5 
-        status.elapsedTime = prettyTime(howLongSimulationFinder(options.simDir, status.cycleDirs))
+        status.elapsedTime = howLongSimulationFinder(options.simDir, status.cycleDirs)
     if status.numCompletedSteps and status.numTotalSteps:
         # check to make sure these values are not 0
-        status.aveBranchTime = prettyTime(elapsedTreeTime / status.numCompletedSteps)
+        status.aveBranchTime = prettyTime(elapsedTreeTime / float(status.numCompletedSteps))
         if status.numCompletedSteps != status.numTotalSteps:
-            if curCycleElapsedTime > (elapsedTreeTime / status.numCompletedSteps):
+            if curCycleElapsedTime > (elapsedTreeTime / float(status.numCompletedSteps)):
                 # don't subtract off more than one cycle, it makes the estimates come out weird.
                 # rt is remainingTime
-                rt = ((elapsedTreeTime / status.numCompletedSteps) * 
+                rt = ((elapsedTreeTime / float(status.numCompletedSteps)) * 
                       status.longBranchSteps.longestPath)
             else:
-                rt = ((elapsedTreeTime / status.numCompletedSteps) * 
+                rt = ((elapsedTreeTime / float(status.numCompletedSteps)) * 
                       status.longBranchSteps.longestPath) - curCycleElapsedTime
             if rt < 0:
                 status.remainingTime = 'Soon'
                 status.estTimeOfComp = 'Soon'
-                status.estTotalRunLength = prettyTime(howLongSimulationFinder(options.simDir, status.cycleDirs))
+                status.estTotalRunLength = prettyTime(status.elapsedTime)
             else:
-                status.estTotalRunLength = prettyTime(rt + 
-                                                      howLongSimulationFinder(options.simDir, status.cycleDirs))
+                status.estTotalRunLength = prettyTime(rt + status.elapsedTime)
                 status.remainingTime = prettyTime(rt)
                 status.estTimeOfComp = time.strftime('%a, %d %b %Y %H:%M:%S (UTC) ', 
                                                      time.gmtime(rt + time.time()))
         else:
             # simulation is complete
-            status.estTotalRunLength = prettyTime(howLongSimulationFinder(options.simDir, 
-                                                                          status.cycleDirs, useNow = False))
+            status.variables['isDone'] = True
+            status.estTotalRunLength = prettyTime(status.elapsedTime)
             status.remainingTime = 'Done'
             status.estTimeOfComp = 'Done'
-            status.variables['Done'] = True
     else:
         # numComSteps or numPrgSteps are 0, indeterminate result
         status.aveBranchTime = '--'
@@ -698,13 +735,18 @@ def pureHtmlStart():
     print 'Content-type: text / html'
     print ''
 
-def initHtml():
+def initHtml(status):
     print '<!doctype html>'
     print '<html>'
+    if 'isDone' in status.variables:
+        refresh = ''
+    else:
+        refresh = '<meta http-equiv="refresh" content="30;">'
     print '''
 <head>
 <title>Simulation Status</title>
 <meta http-equiv="Content-Type" content="text / html; charset = iso-8859-1">
+%s
 <style type="text / css">
 pre, .code {
         padding: 10px 15px;
@@ -719,7 +761,7 @@ hist { color: red;}
 </style>
 </head>
 <body bgcolor="#FFFFFFFF">
-'''
+''' % refresh
 
 def finishHtml():
     print '''
@@ -756,7 +798,10 @@ def stepStatsBreakdown(options, status):
     the distribution of time spent in each step.
     cs_dict is the completed steps dict
     """
-    print 'stats step breakdown'
+    if options.isHtml:
+        print '<h4>Step Stats</h4>'
+    else:
+        print 'Step Stats breakdown'
 
 def findStalledCycles(runDir, stepsDict, isHtml, htmlDir = ''):
     """findStalledCycles() calculates the average time cycles take and the
@@ -793,18 +838,18 @@ def findStalledCycles(runDir, stepsDict, isHtml, htmlDir = ''):
                          prettyTime(time.time() - stepsDict[p].startTime), 
                          prettyTime(3 * sdTime + meanTime)))
 
-def numRunningSteps(stepDict):
-    """ takes a stepDict and returns the current 
+def numRunningSteps(stepsDict):
+    """ takes a stepsDict and returns the current 
     number of incomplete and running steps
     """
     n = 0
-    for s in stepDict:
-        if not stepDict[s].complete:
-            if stepDict[s].startTime != -1:
+    for s in stepsDict:
+        if not stepsDict[s].complete:
+            if stepsDict[s].startTime != -1:
                 n += 1
     return n
 
-def listCurrentCycles(runDir, stepDict, isHtml, options, htmlDir=''):
+def listCurrentCycles(runDir, stepsDict, isHtml, options, htmlDir=''):
     """listCurretnCycles() lists all currently running cycles, their current
     step, current step runtime and current cycle runtime.
     """
@@ -814,25 +859,25 @@ def listCurrentCycles(runDir, stepDict, isHtml, options, htmlDir=''):
             stepArray.append('%sStep%d_start' % (c, i))
             stepArray.append('%sStep%d_end' % (c, i))
     running = False
-    if numRunningSteps(stepDict):
+    if numRunningSteps(stepsDict):
         running = True
         if isHtml:
             print '<h4>Currently running cycles</h4>'
             print '<table cellpadding="5">'
-            print ('<tr><th align="right">%s</th><th>%s</th>'
+            print ('<tr><th align="left">%s</th><th>%s</th>'
                    '<th>%s</th><th>%s</th></tr>' % ('Cycle', 'Total Time', 'Step', 'Step Time'))
         else:
             print 'Currently running cycles:'
             print '%30s %15s %25s %15s' % ('Cycle', 'Total Time', 'Step', 'Step Time')
-    for p in stepDict:
-        if stepDict[p].complete:
+    for p in stepsDict:
+        if stepsDict[p].complete:
             continue
-        if stepDict[p].startTime == -1:
+        if stepsDict[p].startTime == -1:
             continue
-        runTime = time.time() - stepDict[p].startTime
-        stepName, stepTime = currentStepInfo(stepDict[p], options.simDir)
+        runTime = time.time() - stepsDict[p].startTime
+        stepName, stepTime = currentStepInfo(stepsDict[p], options.simDir)
         if isHtml:
-            print('<tr><td>%s%s</a></td><td>%s</td><td align="center">%25s</td>'
+            print('<tr><td>%s%s</a></td><td>%s</td><td>%25s</td>'
                   '<td>%s</td></tr>' 
                   % (str2link(p, htmlDir), p, prettyTime(runTime), stepName, prettyTime(stepTime)))
         else:
@@ -958,6 +1003,13 @@ def collectData(options, status):
     # The tree parsing and directory globing goes in here.
     status.cycleDirs = glob.glob(os.path.join(options.simDir, '*'))
     status.cycleDirs = cycleDirectoriesOnly(status.cycleDirs, options)
+    if 'simNodeTree' not in status.variables:
+        newickTree = newickTreeParser(options.inputNewick, True)
+        newickTree.iD = options.rootName
+        status.simNodeTree = buildSimNodeTree(newickTree, options)
+        status.variables['simNodeTree'] = True
+        # printSimNodeTree(status.simNodeTree)
+
     if 'totalTreeLength' not in status.variables:
         newickTree = newickTreeParser(options.inputNewick, 0.0)
         status.totalTreeLength = totalTreeLengthFinder(newickTree)
@@ -976,6 +1028,7 @@ def collectData(options, status):
     if 'elapsedTreeTimeDict' not in status.variables:
         status.elapsedTreeTimeDict = {}
         status.variables['elapsedTreeTimeDict'] = True
+    
     if 'timeDict' not in status.variables:
         status.timeDict = {}
         for c in ['Cycle', 'Stats']:
@@ -987,21 +1040,66 @@ def collectData(options, status):
     newickTree = newickTreeParser(options.inputNewick, 0.0)
     newickTree.iD = options.rootName
     status.numCompletedSteps, status.stepsDict = simStepUpdater(newickTree, options.stepLength,
-                                                                status.cycleDirs, status.stepsDict, 
-                                                                options)
+                                                                status.stepsDict, 
+                                                                status.simNodeTree, options)
     #####
     # now we find the longest continuous branch yet to be simulated
     # longBranchSteps is a Branch() object
-    newickTree = newickTreeParser(options.inputNewick, 0.0)
-    newickTree.iD = options.rootName
-    status.longBranchSteps = longestRemainingBranchFinder(newickTree, options.stepLength, status.stepsDict) 
+    status.longBranchSteps = longestRemainingBranchFinder(status.simNodeTree, options.stepLength,
+                                                          status.stepsDict, options) 
 
     if not status.longBranchSteps.longestPath:
         status.longBranchSteps.name = ''
-        
-    #####
-    # Time Handling!
     timeHandler(status, options)
+
+def buildSimNodeTree(nt, options):
+    if nt is None:
+        return None
+    root = SimNode()
+    t = None
+    while nt.distance > 0:
+        nt.distance -= options.stepLength
+        if nt.distance < 0:
+            nt.distance = 0
+        if t is None:
+            root = SimNode()
+            root.name = lsc.nameTree(nt)
+            t = root
+        else:
+            p = t
+            t = SimNode()
+            p.left = t
+            t.parent = p
+            t.name = lsc.nameTree(nt)
+    if t is None:
+        root.name = lsc.nameTree(nt)
+        t = root
+    t.left = buildSimNodeTree(nt.left, options)
+    if t.left is not None:
+        t.left.parent = t
+    t.right = buildSimNodeTree(nt.right, options)
+    if t.right is not None:
+        t.right.parent = t
+    return root
+
+def printSimNodeTree(sn):
+    if sn is None:
+        return
+    if sn.parent is None:
+        p = 'None'
+    else:
+        p = sn.parent.name
+    if sn.left is None:
+        l = 'None'
+    else:
+        l = sn.left.name
+    if sn.right is None:
+        r = 'None'
+    else:
+        r = sn.right.name
+    print 'node: %s parent: %s left: %s right: %s' % (sn.name, p, l, r)
+    printSimNodeTree(sn.left)
+    printSimNodeTree(sn.right)
 
 def tree2stepList(nt, sl):
     """ takes a newick tree and a step length, returns
@@ -1020,8 +1118,8 @@ def tree2stepList(nt, sl):
 def packData(status, filename):
     """packData() stores all of the Status in the appropriate pickle file.
     """
-    f = open(filename, 'w')
-    cPickle.dump(status, f) # 2 is the format protocol, 2 = binary
+    f = open(filename, 'wb')
+    cPickle.dump(status, f, 2) # 2 is the format protocol, 2 = binary
     f.close()
     
 def printInfoTable(status, options):
@@ -1035,11 +1133,14 @@ def printInfoTable(status, options):
     info1 = ('Tot. tree len: %f (%d steps of %s)' 
              % (status.totalTreeLength, status.numTotalSteps,
                 str(options.stepLength).rstrip('0')))
-    info2 = ('Longest remaining branch: %.1f %s' 
-             % (status.longBranchSteps.longestPath, status.workingCycleString))
+    if status.longBranchSteps.longestPath > 0.0:
+        info2 = ('Longest remaining branch: %.1f %s' 
+                 % (status.longBranchSteps.longestPath, status.workingCycleString))
+    else:
+        info2 = 'Longest remaining branch: --' 
     print '%s%s%s%s' % (info1,elmDiv, info2, rowDiv)
-    info1 = ('Tot. stps taken: %d (%2.2f%% complete)' 
-             % (status.numCompletedSteps,
+    info1 = ('Tot. stps taken: %d of %d (%2.2f%% complete)' 
+             % (status.numCompletedSteps, status.numTotalSteps,
                 100 * (float(status.numCompletedSteps) / float(status.numTotalSteps))))
     info2 = '%sElapsed CPU time: %s (ave: %s / step)' % (' ' * 5, status.treeTime, status.aveBranchTime)
     print '%s%s%s%s' % (info1, elmDiv, info2, rowDiv)
@@ -1050,7 +1151,7 @@ def printInfoTable(status, options):
         status.remainingTimeStr = status.remainingTime
     info1 = 'ETtC: %31s ' % status.remainingTimeStr
     info2 = '%sEToC: %12s ' % (' ' * 4, status.estTimeOfComp)
-    info3 = 'Elapsed wall-clock: %17s ' % status.elapsedTime
+    info3 = 'Elapsed wall-clock: %17s ' % prettyTime(status.elapsedTime)
     info4 = '%sETRL: %12s' % (' ' * 4, status.estTotalRunLength)
     print('%s%s%s%s\n%s%s%s\n' 
           % (info1, elmDiv, info2, rowDiv, info3, elmDiv, info4))
@@ -1104,10 +1205,10 @@ def main():
     
     if 'isDone' not in status.variables:
         collectData(options, status)
-        
+
     if options.isHtml:
         pureHtmlStart()
-        initHtml()
+        initHtml(status)
         
     printInfoTable(status, options)
     printTree(status, options)
