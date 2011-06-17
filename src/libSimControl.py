@@ -101,7 +101,7 @@ def typeTimestamp(dirname, typeTS, value):
     infoTree = ET.parse(lockname)
     root = infoTree.getroot()
     timeTag = root.find('timestamps')
-    timeStart = ET.SubElement(timeTag, typeTS+value)
+    timeStart = ET.SubElement(timeTag, typeTS + value)
     timeHuman = ET.SubElement(timeStart, 'humanUTC')
     timeHuman.text = str(time.strftime("%a, %d %b %Y %H:%M:%S (UTC)", time.gmtime()))
     timeEpoch = ET.SubElement(timeStart, 'epochUTC')
@@ -1575,7 +1575,9 @@ def addEndTimeAttribute(filename):
     t = root.find('timestamps')
     if t is None:
         raise RuntimeError('%s does not contain "timestamps" tag' % filename)
-    t.attrib['endEpochUTC'] = str(time.time())
+    now = time.time()
+    t.attrib['endEpochUTC'] = str(now)
+    t.attrib['elapsedTime'] = str(now - float(t.attrib['startEpochUTC']))
     info = ET.ElementTree(root)
     info.write(lockname)
     unlockfile(lockname)
@@ -1602,7 +1604,9 @@ def lastOneOutTurnOffTheLightsSimulation(thisDir, options):
         if timeTag is None:
             raise RuntimeError('%s does not contain "timestamps" tag' % 
                                os.path.join(thisDir, 'simulationInfo.xml'))
-        timeTag.attrib['endEpochUTC'] = str(time.time())
+        now = time.time()
+        timeTag.attrib['endEpochUTC'] = str(now)
+        timeTag.attrib['elapsedTime'] = str(now - float(timeTag.attrib['startEpochUTC']))
         endTag = timeTag.find('end')
         if endTag is not None:
             return

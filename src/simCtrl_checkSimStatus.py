@@ -45,6 +45,7 @@ import glob
 import math
 from optparse import OptionParser
 import os
+import re
 from sonLib.bioio import newickTreeParser
 from sonLib.bioio import printBinaryTree
 import sys
@@ -230,8 +231,6 @@ def simStepUpdater(nt, sl, stepsDict, simNodeTree, options):
 def simStepTreeUpdater(snt, stepsDict, options):
     if snt is None:
         return
-    if not options.isHtml:
-        print snt.name
     started = False
     if snt.name != options.rootName:
         if not stepsDict[snt.name].complete:
@@ -295,6 +294,22 @@ def updateTimingInfo(s, options):
                             continue
                         updated = True
                         s.timeDict[key] = float(elmUtc.text)
+    # chromosomes
+    chrs = glob.glob(os.path.join(options.simDir, s.name, 'xml', 'cycle.*.xml'))
+    regex = r'cycle\.(.*)\.xml'
+    pat = re.compile(regex)
+    s.timeDict['chromosomes'] = {}
+    for c in chrs:
+        m = re.search(pat, os.path.basename(c))
+        if m is None:
+            raise RuntimeError('Regular expression %s failed to match chr xml file %s' % (regex, c))
+        infotree = timeoutParse(c)
+        if infotree is not None:
+            ts = infotree.find('timestamps')
+            if 'endEpochUTC' in ts.attrib:
+                updated = True
+                s.timeDict['chromosomes'][m.group(1)] = (float(ts.attrib['endEpochUTC']) - 
+                                                         float(ts.attrib['startEpochUTC']))
     # trans.xml
     infotree = timeoutParse(os.path.join(options.simDir, s.name, 'xml', 'transalign.xml'))
     if infotree is not None:
@@ -309,11 +324,12 @@ def updateTimingInfo(s, options):
                 elm = ts.find(key)
                 if elm is None:
                     continue
-                elmUtc = elm.find('epocUTC')
+                elmUtc = elm.find('epochUTC')
                 if elmUtc is None:
                     continue
                 updated = True
                 s.timeDict[key] = float(elmUtc.text)
+            
     return updated
 
 def timeoutParse(filename, timeout = 0.5, retry = 0.1):
@@ -350,6 +366,7 @@ def longestRemainingBranchFinder(snt, sl, stepsDict, options):
             b = Branch()
             b.name = snt.name
     else:
+        b.name = options.rootName
         b.longestPath = 0.0
     l = longestRemainingBranchFinder(snt.left, sl, stepsDict, options)
     r = longestRemainingBranchFinder(snt.right, sl, stepsDict, options)
@@ -369,8 +386,8 @@ def longestRemainingBranchFinder(snt, sl, stepsDict, options):
     #       % (snt.name, b.name, b.longestPath, r.name, r.longestPath, l.name, l.longestPath))
     return b
 
-def elapsedTreeTimeFinder(elapsedTimesDict, stepsDict):
-    """elapsedTreeTimeFinder() takes a newickTree, a list of all the present cycle 
+def elapsedTreeTimeExtractor(elapsedTimesDict, stepsDict):
+    """elapsedTreeTimeExtractor() takes a newickTree, a list of all the present cycle 
     directories, and the parentNode and returns the total amount of machine time 
     spent on the tree including all branches.
     """
@@ -672,18 +689,13 @@ def drawLegend():
 
 def timeHandler(status, options):
     curCycleElapsedTime = 0.0
-    if status.longBranchSteps.name == '':
-        parentNode = ''
-    else:
-        parentNode = os.path.basename(lsc.getParentDir(os.path.join(options.simDir, 
-                                                                    status.longBranchSteps.name)))
-        if parentNode in status.stepsDict:
-            if status.stepsDict[parentNode].startTime != -1:
-                curCycleElapsedTime = time.time() - status.stepsDict[parentNode].startTime
-    (status.elapsedTreeTimeDict, prgTimeDict) = elapsedTreeTimeFinder(status.elapsedTreeTimeDict, 
-                                                                      status.stepsDict)
+    if status.longBranchSteps.name in status.stepsDict:
+        if status.stepsDict[status.longBranchSteps.name].startTime != -1:
+            curCycleElapsedTime = time.time() - status.stepsDict[status.longBranchSteps.name].startTime
+    (status.elapsedTreeTimeDict, prgTimeDict) = elapsedTreeTimeExtractor(status.elapsedTreeTimeDict, 
+                                                                         status.stepsDict)
     elapsedTreeTime = sum(status.elapsedTreeTimeDict.values()) + sum(prgTimeDict.values())
-    status.treeTime = prettyTime(elapsedTreeTime)
+    status.elapsedTreeTimeStr = prettyTime(elapsedTreeTime)
     
     if status.numCompletedSteps == status.numTotalSteps:
         # the simulation is complete
@@ -694,36 +706,35 @@ def timeHandler(status, options):
         status.elapsedTime = howLongSimulationFinder(options.simDir, status.cycleDirs)
     if status.numCompletedSteps and status.numTotalSteps:
         # check to make sure these values are not 0
-        status.aveBranchTime = prettyTime(elapsedTreeTime / float(status.numCompletedSteps))
+        status.aveBranchTime = elapsedTreeTime / float(status.numCompletedSteps)
+        status.aveBranchTimeStr = prettyTime(status.aveBranchTime)
         if status.numCompletedSteps != status.numTotalSteps:
-            if curCycleElapsedTime > (elapsedTreeTime / float(status.numCompletedSteps)):
+            if curCycleElapsedTime > status.aveBranchTime:
                 # don't subtract off more than one cycle, it makes the estimates come out weird.
                 # rt is remainingTime
-                rt = ((elapsedTreeTime / float(status.numCompletedSteps)) * 
-                      status.longBranchSteps.longestPath)
+                rt = status.aveBranchTime * status.longBranchSteps.longestPath
             else:
-                rt = ((elapsedTreeTime / float(status.numCompletedSteps)) * 
-                      status.longBranchSteps.longestPath) - curCycleElapsedTime
+                rt = status.aveBranchTime * status.longBranchSteps.longestPath - curCycleElapsedTime
             if rt < 0:
-                status.remainingTime = 'Soon'
-                status.estTimeOfComp = 'Soon'
+                status.remainingTimeStr = 'Soon'
+                status.estTimeOfCompStr = 'Soon'
                 status.estTotalRunLength = prettyTime(status.elapsedTime)
             else:
                 status.estTotalRunLength = prettyTime(rt + status.elapsedTime)
-                status.remainingTime = prettyTime(rt)
-                status.estTimeOfComp = time.strftime('%a, %d %b %Y %H:%M:%S (UTC) ', 
+                status.remainingTimeStr = prettyTime(rt)
+                status.estTimeOfCompStr = time.strftime('%a, %d %b %Y %H:%M:%S (UTC) ', 
                                                      time.gmtime(rt + time.time()))
         else:
             # simulation is complete
             status.variables['isDone'] = True
             status.estTotalRunLength = prettyTime(status.elapsedTime)
-            status.remainingTime = 'Done'
-            status.estTimeOfComp = 'Done'
+            status.remainingTimeStr = 'Done'
+            status.estTimeOfCompStr = 'Done'
     else:
         # numComSteps or numPrgSteps are 0, indeterminate result
-        status.aveBranchTime = '--'
-        status.remainingTime = '--'
-        status.estTimeOfComp = '--'
+        status.aveBranchTimeStr = '--'
+        status.remainingTimeStr = '--'
+        status.estTimeOfCompStr = '--'
         status.estTotalRunLength = '--'
     if status.longBranchSteps.longestPath != '':
         status.workingCycleString = '(%s->%s)' % (status.longBranchSteps.name, 
@@ -746,22 +757,39 @@ def initHtml(status):
 <head>
 <title>Simulation Status</title>
 <meta http-equiv="Content-Type" content="text / html; charset = iso-8859-1">
-%s
-<style type="text / css">
+<script type="text/javascript">
+// Simple Debug, written by Chris Klimas // licensed under the GNU LGPL. // http://www.gnu.org/licenses/lgpl.txt // // There are three functions defined here: // // log (message) // Logs a message. Every second, all logged messages are displayed // in an alert box. This saves you from having to hit Return a ton // of times as your script executes. // // inspect (object) // Logs the interesting properties an object possesses. Skips functions // and anything in CAPS_AND_UNDERSCORES. // // inspectValues (object) // Like inspect(), but displays values for the properties. The output // for this can get very large -- for example, if you are inspecting // a DOM element. 
+//function log (message) { if (! _log_timeout) _log_timeout = window.setTimeout(dump_log, 1000); _log_messages.push(message); function dump_log() { var message = ''; for (var i = 0; i < _log_messages.length; i++) message += _log_messages[i] + '\\n'; alert(message); _log_timeout = null; delete _log_messages; _log_messages = new Array(); } } function inspect (obj) { var message = 'Object possesses these properties:\\n'; if (obj) { for (var i in obj) { if ((obj[i] instanceof Function) || (obj[i] == null) || (i.toUpperCase() == i)) continue; message += i + ', '; } message = message.substr(0, message.length - 2); } else message = 'Object is null'; log(message); } function inspectValues (obj) { var message = ''; if (obj) for (var i in obj) { if ((obj[i] instanceof Function) || (obj[i] == null) || (i.toUpperCase() == i)) continue; message += i + ': ' + obj[i] + '\\n'; } else message = 'Object is null'; log(message); } var _log_timeout; var _log_messages = new Array();
+  //log("javascript");
+  function StartTime(){
+    //log("starting StartTime");
+    setTimeout("RefreshPage()", 30000);
+  }
+  function RefreshPage(){
+    //log("RefreshPage");
+    if(document.Reload.checkboxReload.checked){
+      //log("preparing to reload");
+      document.location.href = document.location.href;
+    }
+  }
+  window.onload = StartTime();
+  //log("end of script loads. StartTime() should have been launched.");
+</script>
+
+<style type="text/css">
 pre, .code {
-        padding: 10px 15px;
-        margin: 5px 0 15px;
-        border-left: 5px solid #CCCCCC;
-        background: #FFFFFF; 
-        font: 1em / 1.5 "Courier News", monospace;
-        color: #333333;
-        overflow : auto;
+  padding: 10px 15px;
+  margin: 5px 0 15px;
+  border-left: 5px solid #CCCCCC;
+  background: #FFFFFF; 
+  font: 1em / 1.5 "Courier News", monospace;
+  color: #333333;
+  overflow : auto;
 }
-hist { color: red;}
 </style>
 </head>
 <body bgcolor="#FFFFFFFF">
-''' % refresh
+'''
 
 def finishHtml():
     print '''
@@ -799,9 +827,94 @@ def stepStatsBreakdown(options, status):
     cs_dict is the completed steps dict
     """
     if options.isHtml:
-        print '<h4>Step Stats</h4>'
+        print '<h3>Step Stats</h3>'
+        print '<div style="margin-left:2em;">'
+        print '<table border="1" bordercolor="#cccccc"><thead>'
+        print ('<tr><th>%s</th><th>%s</th><th>%s</th></tr>' 
+               % ('Cycles', 'Stats', 'Transalign'))
+        print '</thead><tbody><tr>'
+        for s in ['cycle', 'stats', 'trans']:
+            print '<td valign="top">'
+            printStatsSection(s, options, status)
+            print '</td>'
+        print '</tr></tbody></table></div>'
     else:
         print 'Step Stats breakdown'
+        for s in ['cycle', 'stats', 'trans']:
+            printStatsSection(s, options, status)
+
+def printStatsSection(s, options, status):
+    if s not in ['cycle', 'stats', 'trans']:
+        raise TypeError('Unanticipated input to printStats: %s' % s)
+    if s == 'cycle':
+        printCycleStats(options, status)
+    elif s == 'stats':
+        printCycleStats(options, status, 'Stats')
+    elif s == 'trans':
+        printCycleStats(options, status, 'Transalign', 1)
+
+def printCycleStats(options, status, pre = 'Cycle', length = 4):
+    subList = []
+    subTimesDict = {}
+    for i in xrange(1, length + 1):
+        subList.append('%sStep%d' % (pre, i))
+        subTimesDict['%sStep%d' % (pre, i)] = []
+    times = []
+    for s in status.stepsDict:
+        if '%sendEpochUTC' % pre in status.stepsDict[s].timeDict:
+            times.append(status.stepsDict[s].timeDict['%sendEpochUTC' % pre] -
+                         status.stepsDict[s].timeDict['%sstartEpochUTC' % pre])
+        for u in subList:
+            if '%s_end' % u in status.stepsDict[s].timeDict:
+                subTimesDict[u].append(status.stepsDict[s].timeDict['%s_end' % u] - 
+                                       status.stepsDict[s].timeDict['%s_start' % u])
+    
+    if options.isHtml:
+        print('<table cellpadding="5"><thead><tr><th>Name</th><th><span style="font-style:italic">n</span></th>'
+              '<th>Mean time (s)</th><th>(pretty)</th></tr></thead>')
+        print '<tbody>'
+        
+        print('<tr style="background-color:#F6E8AE"><td>%s</td><td align="center">%d</td>'
+              '<td align="center">%.2f</td><td align="center">%s</td></tr>'
+              % ('Overall', len(times), mean(times), prettyTime(mean(times))))
+        for u in subList:
+            print('<tr><td>%s</td><td align="center">%d</td>'
+                  '<td align="center">%.2f</td><td align="center">%s</td></tr>'
+              % (u, len(subTimesDict[u]), mean(subTimesDict[u]), prettyTime(mean(subTimesDict[u]))))
+        
+    else:
+        print('%20s %4s %20s %20s' % ('Name', 'n', 'Mean time (s)', '(pretty)'))
+        print('%20s %4d %20.2f %20s'
+              % ('Overall', len(times), mean(times), prettyTime(mean(times))))
+        for u in subList:
+            print('%20s %4d %20.2f %20s'
+              % (u, len(subTimesDict[u]), mean(subTimesDict[u]), prettyTime(mean(subTimesDict[u]))))
+
+    if pre != 'Cycle':
+        if options.isHtml:
+            print '</tbody></table>'
+        return
+        
+    chromTimesDict = {}
+    for s in status.stepsDict:
+        if 'chromosomes' not in status.stepsDict[s].timeDict:
+            continue
+        for c in status.stepsDict[s].timeDict['chromosomes']:
+            if c in chromTimesDict:
+                chromTimesDict[c].append(status.stepsDict[s].timeDict['chromosomes'][c])
+            else:
+                chromTimesDict[c] = [status.stepsDict[s].timeDict['chromosomes'][c]]
+    sortedChromTimes = sorted(chromTimesDict, key=lambda c: mean(chromTimesDict[c]), reverse = True)
+    if options.isHtml:
+        for c in sortedChromTimes:
+            print('<tr><td>%s</td><td align="center">%d</td>'
+                  '<td align="center">%.2f</td><td align="center">%s</td></tr>'
+              % (c, len(chromTimesDict[c]), mean(chromTimesDict[c]), prettyTime(mean(chromTimesDict[c]))))
+        print '</tbody></table>'
+    else:
+        for c in sortedChromTimes:
+            print('%20s %4d %20.2f %20s'
+              % (c, len(chromTimesDict[c]), mean(chromTimesDict[c]), prettyTime(mean(chromTimesDict[c]))))
 
 def findStalledCycles(runDir, stepsDict, isHtml, htmlDir = ''):
     """findStalledCycles() calculates the average time cycles take and the
@@ -862,10 +975,12 @@ def listCurrentCycles(runDir, stepsDict, isHtml, options, htmlDir=''):
     if numRunningSteps(stepsDict):
         running = True
         if isHtml:
-            print '<h4>Currently running cycles</h4>'
-            print '<table cellpadding="5">'
+            print '<h3>Currently running cycles</h3>'
+            print '<div style="margin-left:2em;">'
+            print '<table cellpadding="5"><thead>'
             print ('<tr><th align="left">%s</th><th>%s</th>'
-                   '<th>%s</th><th>%s</th></tr>' % ('Cycle', 'Total Time', 'Step', 'Step Time'))
+                   '<th>%s</th><th>%s</th></tr></thead>' % ('Cycle', 'Total Time', 'Step', 'Step Time'))
+            print '<tbody>'
         else:
             print 'Currently running cycles:'
             print '%30s %15s %25s %15s' % ('Cycle', 'Total Time', 'Step', 'Step Time')
@@ -883,7 +998,7 @@ def listCurrentCycles(runDir, stepsDict, isHtml, options, htmlDir=''):
         else:
             print '%30s %15s %25s %15s' % (p, prettyTime(runTime), stepName, prettyTime(stepTime))
     if isHtml and running:
-        print '</table>'
+        print '</tbody></table></div>'
 
 def currentStepInfo(s, simDir):
     curStep = 'CycleStep'
@@ -926,10 +1041,10 @@ def printStem(aList, isHtml, inHours):
             # times are in seconds.
             aList[i] = aList[i] / 60.0 / 60.0
     if isHtml:
-        print '<h4>Distribution of cycle runtimes (%s)</h4>' % timeUnits
-        print '<pre>'
+        print '<h3>Distribution of simulation step runtimes (%s)</h3>' % timeUnits
+        print '<pre style="margin-left:2em;">'
     else:
-        print 'Distribution of cycle runtimes (%s):' % timeUnits
+        print 'Distribution of simulation step runtimes (%s):' % timeUnits
     lsc.stem(aList)
     if isHtml:
         print '</pre>'
@@ -944,11 +1059,13 @@ def printSortedStepTimes(stepsDict, isHtml, htmlDir):
             completedTimesDict[s] = stepsDict[s].elapsedTime
     items = completedTimesDict.items()
     returnItems = [[v[1], v[0]] for v in items]
-    returnItems.sort(reverse = False)
+    returnItems.sort(reverse = True)
     if isHtml:
-        print '<h4>List of step runtimes</h4>'
-        print '<table cellpadding="5">'
-        print '<tr><th>Time (s)</th><th></th><th>Cycle</th></tr>'
+        print '<h3>List of step runtimes</h3>'
+        print '<div style="margin-left:2em;">'
+        print '<table cellpadding="5" border="1" bordercolor="#cccccc"><thead>'
+        print '<tr><th>Time (s)</th><th>(pretty)</th><th>Cycle</th></tr></thead>'
+        print '<tbody>'
     else:
         print 'List of step runtimes:'
         print '%12s %12s %30s' % ('Time (s)', '(Pretty)', 'Step name')
@@ -960,7 +1077,7 @@ def printSortedStepTimes(stepsDict, isHtml, htmlDir):
         else:
             print '%12.2f %12s %30s' % (float(k), prettyTime(k), v)
     if isHtml:
-        print '</table>'
+        print '</tbody></table></div>'
     
     
 def mean(a):
@@ -1124,12 +1241,26 @@ def packData(status, filename):
     
 def printInfoTable(status, options):
     if options.isHtml:
-        print '<table><tr><td>\n'
+        if 'isDone' not in status.variables:
+            print '<form name="Reload">'
+            print('<input type="checkbox" name="checkboxReload" onclick="StartTime()" checked="checked">%s'
+                  % 'Autoreload (30s)')
+            print '</form>'
+        print '<h3>Information</h3>'
+        print('<p style="margin-left:2em;">Generated at %s, %s</p>' 
+              % (time.strftime("%a, %d %b %Y %H:%M:%S (%Z)", time.localtime()),
+                 time.strftime("%a, %d %b %Y %H:%M:%S (UTC)", time.gmtime())))
+        print '<div style="margin-left:2em;">'
+        print '<table cellpadding="5"><tr><td>\n'
         elmDiv = '</td><td>'
         rowDiv = '<td></tr><tr><td>'
     else:
+        print 'Information'
+        print 'Generated at %s, %s' % (time.strftime("%a, %d %b %Y %H:%M:%S (%Z)", time.localtime()),
+                                       time.strftime("%a, %d %b %Y %H:%M:%S (UTC)", time.gmtime()))
         elmDiv = ' '
         rowDiv = ' '
+    
     info1 = ('Tot. tree len: %f (%d steps of %s)' 
              % (status.totalTreeLength, status.numTotalSteps,
                 str(options.stepLength).rstrip('0')))
@@ -1142,37 +1273,32 @@ def printInfoTable(status, options):
     info1 = ('Tot. stps taken: %d of %d (%2.2f%% complete)' 
              % (status.numCompletedSteps, status.numTotalSteps,
                 100 * (float(status.numCompletedSteps) / float(status.numTotalSteps))))
-    info2 = '%sElapsed CPU time: %s (ave: %s / step)' % (' ' * 5, status.treeTime, status.aveBranchTime)
+    info2 = '%sElapsed CPU time: %s (ave: %s / step)' % (' ' * 5, status.elapsedTreeTimeStr, 
+                                                         status.aveBranchTimeStr)
     print '%s%s%s%s' % (info1, elmDiv, info2, rowDiv)
                                                                                               
     if options.isHtml:
-        status.remainingTimeStr = '<b>' + status.remainingTime + '</b>'
+        status.remainingTimeStr = '<b>' + status.remainingTimeStr + '</b>'
     else:
-        status.remainingTimeStr = status.remainingTime
+        status.remainingTimeStr = status.remainingTimeStr
     info1 = 'ETtC: %31s ' % status.remainingTimeStr
-    info2 = '%sEToC: %12s ' % (' ' * 4, status.estTimeOfComp)
+    info2 = '%sEToC: %12s ' % (' ' * 4, status.estTimeOfCompStr)
     info3 = 'Elapsed wall-clock: %17s ' % prettyTime(status.elapsedTime)
     info4 = '%sETRL: %12s' % (' ' * 4, status.estTotalRunLength)
     print('%s%s%s%s\n%s%s%s\n' 
           % (info1, elmDiv, info2, rowDiv, info3, elmDiv, info4))
     if options.isHtml:
         print '</td></tr></table>'
+        print '</div>'
         print '<br>'
-    print 'Generated at %s' % (time.strftime("%a, %d %b %Y %H:%M:%S (%Z)", time.localtime()))
-    if options.isHtml:
-        print '<br>'
-    print 'Generated at %s' % (time.strftime("%a, %d %b %Y %H:%M:%S (UTC)", time.gmtime()))
-    if options.isHtml:
-        print '<br>'
-    else:
-        print ' '
 
 def printTree(status, options):
     #####
     # Draw the Tree!
     if options.drawText is not None:
         if options.isHtml:
-            print '<pre>'
+            print '<h3>Simulation Tree Status</h3>'
+            print '<pre style="margin-left:2em;">'
         nt = newickTreeParser(options.inputNewick, 0.0)
         drawText(nt, options, options.stepLength, status.totalTreeDepthSteps, options.rootName,
                   scale = options.scale, stepsDict = status.stepsDict,
