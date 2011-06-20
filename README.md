@@ -16,6 +16,7 @@ A [jobTree](https://github.com/benedictpaten/jobTree/) based wrapper for the [Ev
     * <code>evolver_evostats_report.py</code>
     * <code>evolver_exons2introns.py</code>
     * <code>evolver_gff_featuresats2.py</code>
+    * <code>evolver_gff_featuresats2.sh</code>
     * <code>evolver_handle_mobiles.pl</code>
     * <code>evolver_handle_gene_deactivate.sh</code>
     * <code>evolver_merge_evostats.py</code>
