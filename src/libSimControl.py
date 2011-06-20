@@ -23,6 +23,24 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 # THE SOFTWARE.
 ##################################################
+requiredPrograms = ['cat', 'cp', 'egrep', 'ln', 'mkdir', 
+                    'mv', 'sed', 'touch', 'trf',
+                    'evolver_codon_report.pl', 
+                    'evolver_cvt', 
+                    'evolver_drawrev', 
+                    'evolver_evo', 
+                    'evolver_evostats_report.py', 
+                    'evolver_gene_deactivate.sh', 
+                    'evolver_gff_cdsutr2exons.py', 
+                    'evolver_gff_exons2introns.py', 
+                    'evolver_gff_featurestats2.py', 
+                    'evolver_gff_featurestats2.sh', 
+                    'evolver_handle_mobiles.pl', 
+                    'evolver_merge_evostats.py', 
+                    'evolver_mobile_report.pl', 
+                    'evolver_transalign', 
+                    'evolver_trf2gff.py']
+
 def verifyPrograms(programs):
     """verifyPrograms(programs) takes a list of executable names, and acts on the list object
     to look up the full path to the executables, or if they are not found it raises an exeption

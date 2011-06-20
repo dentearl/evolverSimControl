@@ -25,6 +25,7 @@ A [jobTree](https://github.com/benedictpaten/jobTree/) based wrapper for the [Ev
     * <code>evolver_transalign</code>
     * <code>evolver_trf2gff.py</code>
 * mafJoin: https://github.com/dentearl/mafTools Not necessary for simple simulations, mafJoin (part of mafTools) is only needed if you wish to create an maf alignment of all sequences following a simulation.
+* trf: http://tandem.bu.edu/trf/trf.html Tandem Repeats Finder.
 
 ##Installation
 1. Download the package.

@@ -3,12 +3,9 @@
 runSim.py
 dent earl, dearl (a) soe ucsc edu
 19 April 2009
-In order to run a simulation you call runSim.py
-runSim.py checks to make sure that every single
-piece of software called (eventually) by the simulation
-will exist and it does some prep work before the first
-call to simTree.py, which begins the recursive process
-of performing the genome simulation.
+
+runSim launches a new simulation.
+
 """
 ##################################################
 # Copyright (C) 2009-2011 by
@@ -46,50 +43,42 @@ import sys
 # this is the first script to run in a simulation, so it will check for the
 # existance of everything the entire simulation will end up calling, not
 # just the scripts or external files used by runSim.py.
-programs = ['cp',
-            'mkdir',
-            'evolver_evo', 'evolver_cvt', 'evolver_transalign',
-            'evolver_drawrev', 'evolver_gff_cdsutr2exons.py',
-            'evolver_gff_exons2introns.py', 'evolver_gff_featurestats2.sh',
-            'evolver_gff_featurestats2.py', 'evolver_codon_report.pl',
-            'evolver_merge_evostats.py', 'evolver_mobile_report.pl',
-            'touch', 'ln', 'egrep', 'cat']
-lsc.verifyPrograms(programs)
+lsc.verifyPrograms(lsc.requiredPrograms)
 
 def initOptions(parser):
-    parser.add_option('--rootName', dest='rootName', default='root',
-                      help=('name of the root genome, to differentiate it from '
+    parser.add_option('--rootName', dest = 'rootName', default = 'root',
+                      help = ('name of the root genome, to differentiate it from '
                             'the input newick. default=%default'))
     # Sim Tree Options
-    parser.add_option('-o', '--outDir',dest='outDir',
-                      help='Out directory.')
-    parser.add_option('-t', '--inputNewick',dest='inputNewick',
-                      help='Newick tree.')
-    parser.add_option('--testTree', action='store_true', 
-                      default=False, dest='testTree',
-                      help='Instead of performing a simulation, does dry run with empty dirs.')
-    parser.add_option('--noBurninMerge', action='store_true', 
-                      dest='noBurninMerge', default=False, 
-                      help=('Turns off checks for an aln.rev file in the root dir. '
+    parser.add_option('-o', '--outDir',dest = 'outDir',
+                      help = 'Out directory.')
+    parser.add_option('-t', '--inputNewick',dest = 'inputNewick',
+                      help = 'Newick tree.')
+    parser.add_option('--testTree', action = 'store_true', 
+                      default=False, dest = 'testTree',
+                      help = 'Instead of performing a simulation, does dry run with empty dirs.')
+    parser.add_option('--noBurninMerge', action = 'store_true', 
+                      dest = 'noBurninMerge', default=False, 
+                      help = ('Turns off checks for an aln.rev file in the root dir. '
                             'default=%default'))
     # Sim Control Options
-    parser.add_option('--rootDir',dest='rootInputDir',
-                      help='Input root directory.')
-    parser.add_option('--stepLength',dest='stepLength', action="store",
-                      type ='float', default=0.001,
-                      help='stepLength for each cycle. default=%default')
-    parser.add_option('--params',dest='paramsDir',
-                      help='Parameter directory.')
-    parser.add_option('--seed',dest='seed',default='stochastic',
-                      type='string', 
-                      help='Random seed, either an int or "stochastic". default%default')
-    parser.add_option('--noMEs', action='store_true', 
-                      dest='noMEs', default=False, 
-                      help=('Turns off all mobile element '
+    parser.add_option('--rootDir',dest = 'rootInputDir',
+                      help = 'Input root directory.')
+    parser.add_option('--stepLength',dest = 'stepLength', action = "store",
+                      type  = 'float', default = 0.001,
+                      help = 'stepLength for each cycle. default=%default')
+    parser.add_option('--params',dest = 'paramsDir',
+                      help = 'Parameter directory.')
+    parser.add_option('--seed',dest = 'seed',default = 'stochastic',
+                      type = 'string', 
+                      help = 'Random seed, either an int or "stochastic". default%default')
+    parser.add_option('--noMEs', action = 'store_true', 
+                      dest = 'noMEs', default = False, 
+                      help = ('Turns off all mobile element '
                             'and RPG modules in the sim. default=%default'))
-    parser.add_option('--noGeneDeactivation', action='store_true', 
-                      dest='noGeneDeactivation', default=False, 
-                      help=('Turns off the gene deactivation step. '
+    parser.add_option('--noGeneDeactivation', action = 'store_true', 
+                      dest = 'noGeneDeactivation', default = False, 
+                      help = ('Turns off the gene deactivation step. '
                             'default=%default'))
 
 def checkOptions(options, parser):
@@ -179,7 +168,7 @@ def populateRootDir(options):
     if not options.noMEs:
         jobs.append(['cp', os.path.join(options.paramsDir,'mes.cfg'),
                      os.path.join(options.outDir, 'parameters')])
-    lsc.runCommands(jobs, options.outDir, mode='p')
+    lsc.runCommands(jobs, options.outDir, mode = 'p')
     options.paramsInputDir = options.paramsDir
     options.paramsDir    = os.path.abspath(os.path.join(options.outDir, 'parameters'))
     options.parentDir    = os.path.abspath(os.path.join(options.outDir, options.rootName))
@@ -193,11 +182,11 @@ def launchSimTree(options):
         raise RuntimeError('The jobTree contained %d failed jobs!\n' % jobResult)
 
 def main():
-    usage=('usage: %prog --rootName=name --parent=/path/to/dir --params=/path/to/dir\n'
-           '--tree=newickTree --stepLength=stepLength --out=/path/to/dir'
-           '--jobTree=/path/to/dir\n\n'
-           '%prog is used to initiate an evolver simulation using jobTree/scriptTree.')
-    parser=OptionParser(usage=usage)
+    usage = ('usage: %prog --rootName=name --parent=/path/to/dir --params=/path/to/dir\n'
+             '--tree=newickTree --stepLength=stepLength --out=/path/to/dir'
+             '--jobTree=/path/to/dir\n\n'
+             '%prog is used to initiate an evolver simulation using jobTree/scriptTree.')
+    parser = OptionParser(usage = usage)
     initOptions(parser)
     Stack.addJobTreeOptions(parser)
     options, args = parser.parse_args()

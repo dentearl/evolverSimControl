@@ -1,14 +1,9 @@
 #!/usr/bin/env python
 """
-runSim.py
+testDependencies.py
 dent earl, dearl (a) soe ucsc edu
-19 April 2009
-In order to run a simulation you call runSim.py
-runSim.py checks to make sure that every single
-piece of software called (eventually) by the simulation
-will exist and it does some prep work before the first
-call to simTree.py, which begins the recursive process
-of performing the genome simulation.
+20 June 2011
+
 """
 ##################################################
 # Copyright (C) 2009-2011 by
@@ -54,23 +49,7 @@ def initOptions(parser):
                       help = 'Checks for mafJoin. default=%default')
 
 def testSimple():
-    programs = ['cp', 'mkdir', 'touch', 'ln', 'egrep', 'cat',
-                'evolver_codon_report.pl', 
-                'evolver_cvt', 
-                'evolver_drawrev', 
-                'evolver_evo', 
-                'evolver_evostats_report.py', 
-                'evolver_gene_deactivate.sh', 
-                'evolver_gff_cdsutr2exons.py', 
-                'evolver_gff_exons2introns.py', 
-                'evolver_gff_featurestats2.py', 
-                'evolver_gff_featurestats2.sh', 
-                'evolver_handle_mobiles.pl', 
-                'evolver_merge_evostats.py', 
-                'evolver_mobile_report.pl', 
-                'evolver_transalign', 
-                'evolver_trf2gff.py']
-    lsc.verifyPrograms(programs)
+    lsc.verifyPrograms(lsc.requiredPrograms)
 
 def testMafJoin():
     programs = ['mafJoin']
@@ -82,11 +61,12 @@ def checkOptions(options, parser):
 def main():
     usage=('usage: %prog [options]\n\n'
            '%prog checks to ensure that all required executables are contained in the PATH.')
-    parser=OptionParser(usage=usage)
+    parser = OptionParser(usage = usage)
     initOptions(parser)
     Stack.addJobTreeOptions(parser)
     options, args = parser.parse_args()
     checkOptions(options, parser)
+
     testSimple()
     print 'Dependencies for simple simulations..... OK'
     
