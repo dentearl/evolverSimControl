@@ -13,6 +13,7 @@ all: ${py_progs:%=${binPath}/%} ${progs} $(foreach l,${libraries}, ${libPath}/$l
 ${libPath}/%: src/%
 	@mkdir -p $(dir $@)
 	touch ${libPath}/__init__.py
+	touch __init__.py
 	cp -f $< $@.tmp
 	mv $@.tmp $@
 
@@ -23,4 +24,4 @@ ${binPath}/%: src/%
 	mv $@.tmp $@
 
 clean:
-	rm -rf ${binPath} ${libPath}/
+	rm -rf ${binPath} ${libPath}/ __init__.py*
