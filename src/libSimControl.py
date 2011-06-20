@@ -40,7 +40,7 @@ def verifyPrograms(programs):
        c=c+1
        p = which(p)
        if p is None:
-           raise ProgramDoesNotExistError('Error verifyPrograms(): Could not locate "%s"'
+           raise ProgramDoesNotExistError('Error verifyPrograms(): Could not locate "%s" '
                                           'in PATH.\n' %(programs[c]))
        else:
            programs[c] = p
