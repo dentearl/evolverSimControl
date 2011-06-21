@@ -47,9 +47,10 @@ A [jobTree](https://github.com/benedictpaten/jobTree/) based wrapper for the [Ev
 2. Follow the use section instructions. ;)
 
 ##Example
-This example will work you through a small simulation using the toy test example available at **http://soe.ucsc.edu/~dearl/software/evolverSimControl/** . If you want to create your own infile you can use [evolverInfileGeneration](https://github.com/dentearl/evolverInfileGeneration).
-1. Download and expand the archive. For simplicity I'll assume that both <code>root/</code> and <code>params/</code> are in the working directory, i.e. <code>./</code> .
+This example will work you through a small simulation using the toy test example available at http://soe.ucsc.edu/~dearl/software/evolverSimControl/. If you want to create your own infile you can use [evolverInfileGeneration](https://github.com/dentearl/evolverInfileGeneration) to generate your own infile set.
+1. Download and expand the toy archive. For simplicity I'll assume that both <code>root/</code> and <code>params/</code> are in the working directory, i.e. <code>./</code> .
 2. Next we run the runSim program:
+
     * <code>simCtrl_runSim.py --inputNewick '(Knife:0.004, (Fork:0.003, (Ladle:0.002, (Spoon:0.001, Teaspoon:0.001)S-TS:.001)S-TS-L:.001)S-TS-L-F:0.001);' --outDir toyExampleSim --rootDir root/ --rootName hg18 --params params/ --noMEs --jobTree jobTreeToyExampleSim --maxThreads 32 --seed 3571</code>
     * <code>--outDir</code> is where you simulation is going to end up.
     * <code>--rootDir</code> should point to the <code>root/</code> dir you created.
@@ -59,6 +60,7 @@ This example will work you through a small simulation using the toy test example
     * <code>--maxThreads</code> is a [jobTree](https://github.com/benedictpaten/jobTree/) option for limiting the maximum number of parallel threads. The default is rather low.
     * <code>--seed</code> allows you to give a random seed (an integer) to the simulation. The default is the string 'stochastic'.
     * You can check on a running simulation by using <code>simCtrl_checkSimStatus.py</code> , use <code>--help</code> for options.
+
 3. Post simulation you can run <code>simCtrl_postSimFastaExtractor.py</code> to extract fasta sequence files from the genomes.
 4. You may also wish to run <code>simCtrl_postSimAnnotDistExtractor.py</code> which will use the ggplot2 package for R to display the length distributions of some of the annotations.
 5. You may also wish to construct a single multiple alignment file ([.maf](http://genome.ucsc.edu/FAQ/FAQformat.html#format5)) for the simulation using <code>simCtrl_postSimMafExtractor.py</code> which will use [mafJoin](https://github.com/dentearl/mafTools/) to join the pairwise maf output from Evolver into a single simulation wide maf. This process is extremely memory intensive with the 120Mb Mammal simulation requiring aprroximately 500Gb of memory.
