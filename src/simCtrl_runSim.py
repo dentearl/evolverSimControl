@@ -145,12 +145,27 @@ def newickContainsReservedWord(nt, options):
 def checkForFiles(options):
     """ If files are missing, complains and dies.
     """
-    if not os.path.exists(os.path.join(options.rootInputDir, 'seq.rev')):
-        sys.stderr.write('Error, unable to find seq.rev in --rootDir %s.\n' % options.rootInputDir)
-    for p in ['model.txt', 'model.mes.txt', 'mes.cfg']:
-        if not os.path.exists(os.path.join(options.paramsDir, p)):
-            sys.stderr.write('Error, unable to find %s in --params %s' % (p, options.paramsDir))
-            sys.exit(1)
+    lsc.verifyDirExists(os.path.join(options.rootInputDir, 'xml'))
+    lsc.verifyDirExists(os.path.join(options.rootInputDir, 'stats'))
+    for f in [os.path.join(options.rootInputDir, 'seq.rev'), 
+              os.path.join(options.rootInputDir, 'annots.gff'), 
+              os.path.join(options.paramsDir, 'model.txt'),
+              os.path.join(options.rootInputDir, 'stats', 'merged_root.stats.txt'),
+              os.path.join(options.rootInputDir, 'stats', 'cds_annots.gff'),
+              os.path.join(options.rootInputDir, 'stats', 'exons.gff'),
+              os.path.join(options.rootInputDir, 'stats', 'introns.gff'),
+              os.path.join(options.rootInputDir, 'stats', 'expanded_annots.gff'),
+              os.path.join(options.rootInputDir, 'stats', 'annotstats.txt')]:
+        lsc.verifyFileExists(f)
+    if not options.noMEs:
+        lsc.verifyDirExists(os.path.join(options.rootInputDir, 'mobiles'))
+        for f in [os.path.join(options.paramsDir, 'model.mes.txt'), 
+                  os.path.join(options.paramsDir, 'mes.cfg'),
+                  os.path.join(options.options.rootInputDir, 'mobiles', 'LTR.fa'),
+                  os.path.join(options.options.rootInputDir, 'mobiles', 'ME.fa'),
+                  os.path.join(options.options.rootInputDir, 'mobiles', 'ME.gff')]:
+            lsc.verifyFileExists(f)
+            
 
 def populateRootDir(options):
     """ The first order of business in a simulation is to create the basic directory structure
@@ -163,17 +178,17 @@ def populateRootDir(options):
     jobs.append(['cp', '-r', options.rootInputDir, os.path.join(options.outDir, options.rootName)])
     jobs.append(['cp', os.path.join(options.paramsDir,'model.txt'), 
                  os.path.join(options.outDir, 'parameters')])
-    jobs.append(['cp', os.path.join(options.paramsDir,'model.mes.txt'),
-                 os.path.join(options.outDir, 'parameters')])
     if not options.noMEs:
+        jobs.append(['cp', os.path.join(options.paramsDir,'model.mes.txt'),
+                     os.path.join(options.outDir, 'parameters')])
         jobs.append(['cp', os.path.join(options.paramsDir,'mes.cfg'),
                      os.path.join(options.outDir, 'parameters')])
     lsc.runCommands(jobs, options.outDir, mode = 'p')
     options.paramsInputDir = options.paramsDir
-    options.paramsDir    = os.path.abspath(os.path.join(options.outDir, 'parameters'))
-    options.parentDir    = os.path.abspath(os.path.join(options.outDir, options.rootName))
+    options.paramsDir = os.path.abspath(os.path.join(options.outDir, 'parameters'))
+    options.parentDir = os.path.abspath(os.path.join(options.outDir, options.rootName))
     options.simDir, tail = os.path.split(options.parentDir)
-    options.rootDir      = os.path.abspath(os.path.join(options.simDir, options.rootName))
+    options.rootDir = os.path.abspath(os.path.join(options.simDir, options.rootName))
     lsc.createRootXmls(sys.argv, options)
     
 def launchSimTree(options):
