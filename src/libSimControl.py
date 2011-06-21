@@ -104,6 +104,7 @@ def typeTimestamp(dirname, typeTS, value):
     import sys
     import time
     import xml.etree.ElementTree as ET
+    import xml.parsers.expat as expat
     value = value.lower()
     if typeTS not in ('cycle', 'stats', 'transalign'):
         raise BadInputError('typeTS must be either "cycle", "stats", or "transalign" not %s\n' % typeTS)
@@ -116,7 +117,11 @@ def typeTimestamp(dirname, typeTS, value):
         # new xml, needs new timestamp tag
         addTimestampsTag(filename)
     lockname = lockfile(filename)
-    infoTree = ET.parse(lockname)
+    try:
+        infoTree = ET.parse(lockname)
+    except expat.ExpatError: # broken xml file
+        sys.stderr.write('Bad xml: %s\n' % lockname)
+        raise
     root = infoTree.getroot()
     timeTag = root.find('timestamps')
     timeStart = ET.SubElement(timeTag, typeTS + value)
@@ -134,9 +139,14 @@ def addTimestampsTag(filename):
     from libSimControl import lockfile, unlockfile
     import os
     import xml.etree.ElementTree as ET
+    import xml.parsers.expat as expat
     import time
     lockname = lockfile(filename)
-    infoTree = ET.parse(lockname)
+    try:
+        infoTree = ET.parse(lockname)
+    except expat.ExpatError: # broken xml file
+        sys.stderr.write('Bad xml: %s\n' % lockname)
+        raise
     root = infoTree.getroot()
     if len(root.findall('timestamps')) > 0:
         raise RuntimeError('There should be no timestamps tag\n')
@@ -146,7 +156,7 @@ def addTimestampsTag(filename):
     info.write(lockname)
     unlockfile(lockname)
 
-def subTypeTimestamp(dirname, typeTS, timeName, chrName=None):
+def subTypeTimestamp(dirname, typeTS, timeName, chrName = None):
     """dirname is the cycle directory, type is in {cycle, stats, transalign}, timeName is something
     like 'CycleStep1_start' or 'cycleStep1_end'
     """
@@ -154,6 +164,7 @@ def subTypeTimestamp(dirname, typeTS, timeName, chrName=None):
     from libSimControl import lockfile, unlockfile
     import os
     import xml.etree.ElementTree as ET
+    import xml.parsers.expat as expat
     import time
     if typeTS not in ('cycle', 'stats', 'transalign', 'cycleChr'):
         raise BadInputError('typeTS must be either "cycle", "stats", '
@@ -163,7 +174,11 @@ def subTypeTimestamp(dirname, typeTS, timeName, chrName=None):
     else:
         filename = os.path.join(dirname, 'xml', typeTS + '.xml')
     lockname = lockfile(filename)
-    infoTree = ET.parse(lockname)
+    try:
+        infoTree = ET.parse(lockname)
+    except expat.ExpatError: # broken xml file
+        sys.stderr.write('Bad xml: %s\n' % lockname)
+        raise
     root = infoTree.getroot()
     timeTag = root.find('timestamps')
     timeObj = ET.SubElement(timeTag, timeName)
@@ -704,7 +719,7 @@ def evolverInterStepCmd(thisDir, thisParentDir, theChild, thisStepLength, seed, 
 
 def evolverInterStepMobilesCmd(thisDir, thisParentDir, theParent, thisStepLength, paramsDir):
     """ produces the command argument list needed to run an evolver inter step mobiles command.
-    Called by CycleStep1.
+    Called by runEvolverInterCmds(). This is only run when options.noMEs is False.
     """
     from libSimControl import which, verifyDirExists, verifyFileExists
     import os
@@ -1240,6 +1255,8 @@ def getParentDir(thisDir):
     from libSimControl import verifyDirExists, verifyFileExists, lockfile, unlockfile, dirIsRoot
     import os
     import xml.etree.ElementTree as ET
+    import xml.parsers.expat as expat
+
     if thisDir is None:
        return None
     for d in [thisDir]:
@@ -1247,7 +1264,11 @@ def getParentDir(thisDir):
     if dirIsRoot(thisDir):
        return None
     lockname = lockfile(os.path.join(thisDir, 'xml', 'summary.xml'))
-    infoTree = ET.parse(lockname)
+    try:
+        infoTree = ET.parse(lockname)
+    except expat.ExpatError: # broken xml file
+        sys.stderr.write('Bad xml: %s\n' % lockname)
+        raise
     unlockfile(lockname)
     root = infoTree.getroot()
     t = root.find('parentDir')
@@ -1274,10 +1295,16 @@ def dirIsRoot(thisDir):
     from libSimControl import verifyDirExists, lockfile, unlockfile
     import os
     import xml.etree.ElementTree as ET
+    import xml.parsers.expat as expat
+
     for d in [thisDir]:
        verifyDirExists(d)
     lockname = lockfile(os.path.join(thisDir, 'xml', 'summary.xml'))
-    infoTree = ET.parse(lockname)
+    try:
+        infoTree = ET.parse(lockname)
+    except expat.ExpatError: # broken xml file
+        sys.stderr.write('Bad xml: %s\n' % lockname)
+        raise
     unlockfile(lockname)
     root = infoTree.getroot()
     t = root.find('cycleIsRoot')
@@ -1463,12 +1490,18 @@ def isBranchOrRoot(thisDir):
     from libSimControl import verifyFileExists, verifyDirExists, lockfile, unlockfile, dirIsRoot
     import os
     import xml.etree.ElementTree as ET
+    import xml.parsers.expat as expat
+    
     for d in [thisDir]:
         verifyDirExists(d)
     if dirIsRoot(thisDir):
         return True
     lockname = lockfile(os.path.join(thisDir, 'xml', 'summary.xml'))
-    infoTree = ET.parse(lockname)
+    try:
+        infoTree = ET.parse(lockname)
+    except expat.ExpatError: # broken xml file
+        sys.stderr.write('Bad xml: %s\n' % lockname)
+        raise
     unlockfile(lockname)
     root = infoTree.getroot()
     nc = root.find('numberChildren')
@@ -1485,12 +1518,18 @@ def isLeaf(thisDir):
     from libSimControl import verifyFileExists, verifyDirExists, lockfile, unlockfile, dirIsRoot
     import os
     import xml.etree.ElementTree as ET
+    import xml.parsers.expat as expat
+    
     for d in [thisDir]:
         verifyDirExists(d)
     if dirIsRoot(thisDir):
         return True
     lockname = lockfile(os.path.join(thisDir, 'xml', 'summary.xml'))
-    infoTree = ET.parse(lockname)
+    try:
+        infoTree = ET.parse(lockname)
+    except expat.ExpatError: # broken xml file
+        sys.stderr.write('Bad xml: %s\n' % lockname)
+        raise
     unlockfile(lockname)
     root = infoTree.getroot()
     nc = root.find('numberChildren')
@@ -1541,11 +1580,16 @@ def cycleIsComplete(thisDir):
     from libSimControl import lockfile, unlockfile, dirIsRoot
     import os
     import xml.etree.ElementTree as ET
+    import xml.parsers.expat as expat
 
     if not os.path.exists(thisDir):
         return False
     lockname = lockfile(os.path.join(thisDir, 'xml', 'summary.xml'))
-    infoTree = ET.parse(lockname)
+    try:
+        infoTree = ET.parse(lockname)
+    except expat.ExpatError: # broken xml file
+        sys.stderr.write('Bad xml: %s\n' % lockname)
+        raise
     unlockfile(lockname)
     root = infoTree.getroot()
     stamps = root.find('timestamps')
@@ -1558,13 +1602,18 @@ def statsAndTransAreComplete(thisDir):
     from libSimControl import lockfile, unlockfile, dirIsRoot
     import os
     import xml.etree.ElementTree as ET
+    import xml.parsers.expat as expat
 
     if not os.path.exists(thisDir):
         return False
     endings = { 'transalign': False, 'stats': False }
     for f in endings:
         lockname = lockfile(os.path.join(thisDir, 'xml', f+'.xml'))
-        infoTree = ET.parse(lockname)
+        try:
+            infoTree = ET.parse(lockname)
+        except expat.ExpatError: # broken xml file
+            sys.stderr.write('Bad xml: %s\n' % lockname)
+            raise
         unlockfile(lockname)
         root = infoTree.getroot()
         stamps = root.find('timestamps')
@@ -1584,9 +1633,14 @@ def addEndTimeAttribute(filename):
     import os
     import time
     import xml.etree.ElementTree as ET
+    import xml.parsers.expat as expat
     verifyFileExists(filename)
     lockname = lockfile(filename)
-    infoTree = ET.parse(lockname)
+    try:
+        infoTree = ET.parse(lockname)
+    except expat.ExpatError: # broken xml file
+        sys.stderr.write('Bad xml: %s\n' % lockname)
+        raise
     root = infoTree.getroot()
     t = root.find('timestamps')
     if t is None:
@@ -1608,13 +1662,18 @@ def lastOneOutTurnOffTheLightsSimulation(thisDir, options):
     import os
     import time
     import xml.etree.ElementTree as ET
+    import xml.parsers.expat as expat
     for d in [thisDir]:
         verifyDirExists(d)
     for f in [os.path.join(thisDir, 'simulationInfo.xml')]:
         verifyFileExists(f)
     if allLeafsComplete(options):
         lockname = lockfile(os.path.join(thisDir, 'simulationInfo.xml'))
-        infoTree = ET.parse(lockname)
+        try:
+            infoTree = ET.parse(lockname)
+        except expat.ExpatError: # broken xml file
+            sys.stderr.write('Bad xml: %s\n' % lockname)
+            raise
         root = infoTree.getroot()
         timeTag = root.find('timestamps')
         if timeTag is None:
