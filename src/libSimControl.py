@@ -45,21 +45,21 @@ def verifyPrograms(programs):
     """verifyPrograms(programs) takes a list of executable names, and acts on the list object
     to look up the full path to the executables, or if they are not found it raises an exeption
     """
-    from libSimControlClasses import BadInputError, ProgramDoesNotExistError
+    from libSimControlClasses import BadInputError
     from libSimControl import which
     if not isinstance(programs, list):
-       raise BadInputError('verifyPrograms takes a list of program '
-                           'names, not %s.\n' % programs.__class__)
+       raise TypeError('verifyPrograms takes a list of program '
+                       'names, not %s.\n' % programs.__class__)
     c=-1
     for p in programs:
        if not isinstance(p, str):
-          raise BadInputError('verifyPrograms list members should all be strings, '
-                              '"%s" not a string, is a %s.\n' %(str(p), p.__class__))
+          raise TypeError('verifyPrograms list members should all be strings, '
+                          '"%s" not a string, is a %s.\n' %(str(p), p.__class__))
        c=c+1
        p = which(p)
        if p is None:
-           raise ProgramDoesNotExistError('Error verifyPrograms(): Could not locate "%s" '
-                                          'in PATH.\n' %(programs[c]))
+           raise RuntimeError('Error verifyPrograms(): Could not locate "%s" '
+                              'in PATH.\n' %(programs[c]))
        else:
            programs[c] = p
 
@@ -131,7 +131,6 @@ def typeTimestamp(dirname, typeTS, value):
 def addTimestampsTag(filename):
     """
     """
-    from libSimControlClasses import BadInputError
     from libSimControl import lockfile, unlockfile
     import os
     import xml.etree.ElementTree as ET
@@ -561,8 +560,8 @@ def createNewCycleXmls(directory, parentDir, stepLength, newickStr, options):
         children = {}
         if nt.distance == 0:
             if nt.internal:
-                branches = { 'left' : tree2str(nt.left),
-                             'right': tree2str(nt.right) }
+                branches = {'left' : tree2str(nt.left),
+                            'right': tree2str(nt.right)}
                 for b in branches:
                     children[b] = nameTree(newickTreeParser(takeNewickStep(branches[b], options)[0], 0.0))
         else:
@@ -597,10 +596,10 @@ def createRootXmls(command, options):
     import time
     import xml.etree.ElementTree as ET
     #os.mkdir(os.path.join(options.rootInputDir, 'xml'))
-    root=ET.Element('info')
-    e=ET.SubElement(root, 'cycleIsRoot')
-    e.text=str(True)
-    info=ET.ElementTree(root)
+    root = ET.Element('info')
+    e = ET.SubElement(root, 'cycleIsRoot')
+    e.text = str(True)
+    info = ET.ElementTree(root)
     info.write(os.path.join(options.rootInputDir, 'xml', 'summary.xml'))
     createSimulationInfoXml(command, options)
 
@@ -611,34 +610,34 @@ def createSimulationInfoXml(command, options):
     import time
     import xml.etree.ElementTree as ET
     if(os.path.exists(os.path.join(options.outDir, 'simulationInfo.xml'))):
-        os.remove(os.path.join(options.outDir, 'simulationInfo.xml'))
-    root=ET.Element('info')
-    tObj=ET.SubElement(root, 'sourceRootDir')
-    tObj.text=str(options.rootInputDir)
-    tObj=ET.SubElement(root, 'sourceParamsDir')
-    tObj.text=str(options.paramsInputDir)
-    tObj=ET.SubElement(root, 'rootDir')
-    tObj.text=str(options.rootDir)
-    tObj=ET.SubElement(root, 'paramsDir')
-    tObj.text=str(options.paramsDir)
-    tObj=ET.SubElement(root, 'rootName')
-    tObj.text=str(options.rootName)
-    tObj=ET.SubElement(root, 'tree')
-    tObj.text=str(options.inputNewick)
-    tObj=ET.SubElement(root, 'stepLength')
-    tObj.text=str(options.stepLength)
-    timeTag=ET.SubElement(root, 'timestamps')
+        raise RuntimeError('simulationInfo.xml already exists at %s' % options.outDir)
+    root = ET.Element('info')
+    tObj = ET.SubElement(root, 'sourceRootDir')
+    tObj.text = str(options.rootInputDir)
+    tObj = ET.SubElement(root, 'sourceParamsDir')
+    tObj.text = str(options.paramsInputDir)
+    tObj = ET.SubElement(root, 'rootDir')
+    tObj.text = str(options.rootDir)
+    tObj = ET.SubElement(root, 'paramsDir')
+    tObj.text = str(options.paramsDir)
+    tObj = ET.SubElement(root, 'rootName')
+    tObj.text = str(options.rootName)
+    tObj = ET.SubElement(root, 'tree')
+    tObj.text = str(options.inputNewick)
+    tObj = ET.SubElement(root, 'stepLength')
+    tObj.text = str(options.stepLength)
+    timeTag = ET.SubElement(root, 'timestamps')
     timeTag.attrib['startEpochUTC'] = str(time.time())
-    timeStart      = ET.SubElement(timeTag,'start')
-    timeLocal      = ET.SubElement(timeStart, 'humanLocal')
+    timeStart = ET.SubElement(timeTag,'start')
+    timeLocal = ET.SubElement(timeStart, 'humanLocal')
     timeLocal.text = str(time.strftime("%a, %d %b %Y %H:%M:%S (%Z) ", time.localtime()))
-    timeHuman      = ET.SubElement(timeStart, 'humanUTC')
+    timeHuman = ET.SubElement(timeStart, 'humanUTC')
     timeHuman.text = str(time.strftime("%a, %d %b %Y %H:%M:%S (UTC) ", time.gmtime()))
-    timeEpoch      = ET.SubElement(timeStart, 'epochUTC')
+    timeEpoch = ET.SubElement(timeStart, 'epochUTC')
     timeEpoch.text = str(time.time())
     cmd = ET.SubElement(root, 'command')
     cmd.text = ' '.join(command)
-    info=ET.ElementTree(root)
+    info = ET.ElementTree(root)
     info.write(os.path.join(options.outDir,'simulationInfo.xml'))
 
 def verifyDirExists(directory):
@@ -1516,13 +1515,12 @@ def treeStr2Dir(treeStr, simDir):
     returns the directory path for this pair.
     """
     from libSimControl import nameTree
-    from libSimControlClasses import BadInputError
     import os
     from sonLib.bioio import newickTreeParser
     if not isinstance(treeStr, str):
-        raise BadInputError('treeStr should be a string, is %s\n' % treeStr.__class__)
+        raise TypeError('treeStr should be a string, is %s\n' % treeStr.__class__)
     if not isinstance(simDir, str):
-        raise BadInputError('simDir should be a string, is %s\n' % treeStr.__class__)
+        raise TypeError('simDir should be a string, is %s\n' % treeStr.__class__)
     return os.path.abspath(os.path.join(simDir, 
                                         nameTree(newickTreeParser(treeStr, 0.0))
                                         ))
