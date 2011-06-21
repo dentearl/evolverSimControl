@@ -6,6 +6,7 @@
 
 The Evolver team is Robert C. Edgar. George Asimenos, Serafim Batzoglou and Arend Sidow.
 
+## Summary
 A [jobTree](https://github.com/benedictpaten/jobTree/) based wrapper for the [Evolver](http://www.drive5.com/evolver/) genome evolution simulation tool suite.
 
 ##Dependencies
@@ -46,10 +47,10 @@ A [jobTree](https://github.com/benedictpaten/jobTree/) based wrapper for the [Ev
 2. Follow the use section instructions. ;)
 
 ##Example
-This example will work you through a small simulation using the toy test example available at **http://soe.ucsc.edu/~dearl/software/evolverSimControl/** . If you want to create your own infile you can use [evolverInfileGeneration](https://github.com/dentearl/evolverInfileGeneration). 
+This example will work you through a small simulation using the toy test example available at **http://soe.ucsc.edu/~dearl/software/evolverSimControl/** . If you want to create your own infile you can use [evolverInfileGeneration](https://github.com/dentearl/evolverInfileGeneration).
 1. Download and expand the archive. For simplicity I'll assume that both <code>root/</code> and <code>params/</code> are in the working directory, i.e. <code>./</code> .
-2. Next we run the runSim prgoram:
-    <code>simCtrl_runSim.py --inputNewick '(Knife:0.004, (Fork:0.003, (Ladle:0.002, (Spoon:0.001, Teaspoon:0.001)S-TS:.001)S-TS-L:.001)S-TS-L-F:0.001);' --outDir toyExampleSim --rootDir root/ --rootName hg18 --params params/ --noMEs --jobTree jobTreeToyExampleSim --maxThreads 32 --seed 3571</code>
+2. Next we run the runSim program:
+    * <code>simCtrl_runSim.py --inputNewick '(Knife:0.004, (Fork:0.003, (Ladle:0.002, (Spoon:0.001, Teaspoon:0.001)S-TS:.001)S-TS-L:.001)S-TS-L-F:0.001);' --outDir toyExampleSim --rootDir root/ --rootName hg18 --params params/ --noMEs --jobTree jobTreeToyExampleSim --maxThreads 32 --seed 3571</code>
     * <code>--outDir</code> is where you simulation is going to end up.
     * <code>--rootDir</code> should point to the <code>root/</code> dir you created.
     * <code>--rootName</code> in this case is hg18. It's set in the infile creation step and you can pull this out of a .rev file with 'evolver_cvt -dumpchrids path/to/seq.rev'
