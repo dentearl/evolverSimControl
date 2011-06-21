@@ -155,9 +155,11 @@ class Cycle(Target):
     def run(self):
         logger.info('Cycle object running, %s\n' % self.thisDir)
         os.mkdir(self.thisDir)
-        for d in ['inter', 'intra', 'logs', 'mobiles', 'stats', 'xml']:
+        for d in ['inter', 'intra', 'logs', 'stats', 'xml']:
             if not os.path.exists(os.path.join(self.thisDir, d)):
                 os.mkdir(os.path.join(self.thisDir, d))
+        if not self.options.noMEs:
+            os.mkdir(os.path.join(self.thisDir, 'mobiles'))
         lsc.createNewCycleXmls(self.thisDir, self.thisParentDir, self.thisStepLength, 
                                 self.thisNewickStr, self.options)
         self.addChildTarget(CycleStep1(self.thisNewickStr, self.thisParentDir, 
