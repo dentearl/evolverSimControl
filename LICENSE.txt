@@ -1,4 +1,5 @@
 ##################################################
+This Area of the License pertains to all content except external/
 Copyright (C) 2009-2011 by
 Dent Earl (dearl@soe.ucsc.edu, dentearl@gmail.com)
 Benedict Paten (benedict@soe.ucsc.edu, benedictpaten@gmail.com)
@@ -22,4 +23,10 @@ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
 LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
+##################################################
+This Area of the License pertains to the contents of external/
+Copyright (C) 2008-2011 by
+Robert C. Edgar, George Asimenos, Serafim Batzoglou and Arend Sidow.
+
+All rights reserved. Reproduced and distributed here with permission.
 ##################################################

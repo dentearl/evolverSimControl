@@ -1,0 +1,7 @@
+##################################################
+This Area of the License pertains to the contents of external/
+Copyright (C) 2008-2011 by
+George Asimenos, Robert C. Edgar, Serafim Batzoglou and Arend Sidow.
+
+All rights reserved. Reproduced and distributed here with permission.
+##################################################
