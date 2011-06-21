@@ -1,4 +1,4 @@
-#!/usr / bin / env python
+#!/usr/bin/env python
 """
 simCtrl_checkTreeStatus.py
 dent earl, dearl (a) soe ucsc edu
