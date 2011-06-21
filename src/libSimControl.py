@@ -610,12 +610,12 @@ def createRootXmls(command, options):
     import os
     import time
     import xml.etree.ElementTree as ET
-    #os.mkdir(os.path.join(options.rootInputDir, 'xml'))
+
     root = ET.Element('info')
     e = ET.SubElement(root, 'cycleIsRoot')
     e.text = str(True)
     info = ET.ElementTree(root)
-    info.write(os.path.join(options.rootInputDir, 'xml', 'summary.xml'))
+    info.write(os.path.join(options.outDir, options.rootName, 'xml', 'summary.xml'))
     createSimulationInfoXml(command, options)
 
 def createSimulationInfoXml(command, options):
