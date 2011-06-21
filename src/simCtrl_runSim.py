@@ -50,28 +50,28 @@ def initOptions(parser):
                       help = ('name of the root genome, to differentiate it from '
                             'the input newick. default=%default'))
     # Sim Tree Options
-    parser.add_option('-o', '--outDir',dest = 'outDir',
+    parser.add_option('-o', '--outDir', dest = 'outDir',
                       help = 'Out directory.')
-    parser.add_option('-t', '--inputNewick',dest = 'inputNewick',
+    parser.add_option('-t', '--inputNewick', dest = 'inputNewick',
                       help = 'Newick tree.')
     parser.add_option('--testTree', action = 'store_true', 
-                      default=False, dest = 'testTree',
-                      help = 'Instead of performing a simulation, does dry run with empty dirs.')
+                      default = False, dest = 'testTree',
+                      help = 'Instead of performing a simulation, does dry run with empty dirs. default=%default')
     parser.add_option('--noBurninMerge', action = 'store_true', 
-                      dest = 'noBurninMerge', default=False, 
+                      dest = 'noBurninMerge', default = False, 
                       help = ('Turns off checks for an aln.rev file in the root dir. '
                             'default=%default'))
     # Sim Control Options
-    parser.add_option('--rootDir',dest = 'rootInputDir',
+    parser.add_option('--rootDir', dest = 'rootInputDir',
                       help = 'Input root directory.')
-    parser.add_option('--stepLength',dest = 'stepLength', action = "store",
+    parser.add_option('--stepLength', dest = 'stepLength', action = "store",
                       type  = 'float', default = 0.001,
                       help = 'stepLength for each cycle. default=%default')
     parser.add_option('--params',dest = 'paramsDir',
                       help = 'Parameter directory.')
-    parser.add_option('--seed',dest = 'seed',default = 'stochastic',
+    parser.add_option('--seed',dest = 'seed', default = 'stochastic',
                       type = 'string', 
-                      help = 'Random seed, either an int or "stochastic". default%default')
+                      help = 'Random seed, either an int or "stochastic". default=%default')
     parser.add_option('--noMEs', action = 'store_true', 
                       dest = 'noMEs', default = False, 
                       help = ('Turns off all mobile element '
@@ -161,9 +161,9 @@ def checkForFiles(options):
         lsc.verifyDirExists(os.path.join(options.rootInputDir, 'mobiles'))
         for f in [os.path.join(options.paramsDir, 'model.mes.txt'), 
                   os.path.join(options.paramsDir, 'mes.cfg'),
-                  os.path.join(options.options.rootInputDir, 'mobiles', 'LTR.fa'),
-                  os.path.join(options.options.rootInputDir, 'mobiles', 'ME.fa'),
-                  os.path.join(options.options.rootInputDir, 'mobiles', 'ME.gff')]:
+                  os.path.join(options.rootInputDir, 'mobiles', 'LTR.fa'),
+                  os.path.join(options.rootInputDir, 'mobiles', 'ME.fa'),
+                  os.path.join(options.rootInputDir, 'mobiles', 'ME.gff')]:
             lsc.verifyFileExists(f)
             
 
