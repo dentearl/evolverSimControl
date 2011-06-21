@@ -1,10 +1,10 @@
 #evolverSimControl
-2009 - 2011
+(c) 2009 - 2011 The Authors, see LICENSE.txt for details.
 
 ##Authors
 [Dent Earl](https://github.com/dentearl/), [Benedict Paten](https://github.com/dentearl/), Mark Diekhans
 
-The Evolver team is Robert C. Edgar. George Asimenos, Serafim Batzoglou and Arend Sidow.
+The evolver team is responsible for items in external/ : George Asimenos, Robert C. Edgar, Serafim Batzoglou and Arend Sidow.
 
 ## Summary
 A [jobTree](https://github.com/benedictpaten/jobTree/) based wrapper for the [Evolver](http://www.drive5.com/evolver/) genome evolution simulation tool suite.
@@ -51,7 +51,7 @@ This example will work you through a small simulation using the toy test example
 
 1. Download and expand the toy archive. For simplicity I'll assume that both <code>root/</code> and <code>params/</code> are in the working directory, i.e. <code>./</code> .
 2. Next we run the runSim program:
-    * <code>simCtrl_runSim.py --inputNewick '(Knife:0.004, (Fork:0.003, (Ladle:0.002, (Spoon:0.001, Teaspoon:0.001)S-TS:.001)S-TS-L:.001)S-TS-L-F:0.001);' --outDir toyExampleSim --rootDir root/ --rootName hg18 --params params/ --noMEs --jobTree jobTreeToyExampleSim --maxThreads 32 --seed 3571</code>
+    * <code>$ simCtrl_runSim.py --inputNewick '(Knife:0.004, (Fork:0.003, (Ladle:0.002, (Spoon:0.001, Teaspoon:0.001)S-TS:.001)S-TS-L:.001)S-TS-L-F:0.001);' --outDir toyExampleSim --rootDir root/ --rootName hg18 --params params/ --jobTree jobTreeToyExampleSim --maxThreads 32 --seed 3571</code>
     * <code>--outDir</code> is where you simulation is going to end up.
     * <code>--rootDir</code> should point to the <code>root/</code> dir you created.
     * <code>--rootName</code> in this case is hg18. It's set in the infile creation step and you can pull this out of a .rev file with 'evolver_cvt -dumpchrids path/to/seq.rev'
