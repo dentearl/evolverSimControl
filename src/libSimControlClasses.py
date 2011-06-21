@@ -36,9 +36,6 @@ import sys
 class BadInputError(TypeError):
     pass
 
-class ProgramDoesNotExistError(ValueError):
-    pass
-
 class SimTree(Target):
     """
     The SimTree class runs the entire simulation. It begins by either calling one Tree() or
