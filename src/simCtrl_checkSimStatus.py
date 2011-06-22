@@ -221,6 +221,7 @@ def simStepUpdater(nt, sl, stepsDict, simNodeTree, options):
     steps in stepsDict that need updating.
     """
     stepList = tree2stepList(nt, sl)
+    print stepList
     for s in stepList:
         if s not in stepsDict:
             stepsDict[s] = Step()
@@ -233,6 +234,8 @@ def simStepTreeUpdater(snt, stepsDict, options):
         return
     started = False
     if snt.name != options.rootName:
+        if snt.name not in stepsDict:
+            raise RuntimeError('Unable to find expected SimNode snt.name = %s' % (snt.name))
         if not stepsDict[snt.name].complete:
             started = updateTimingInfo(stepsDict[snt.name], options)
         else:
@@ -1124,8 +1127,9 @@ def collectData(options, status):
     status.cycleDirs = glob.glob(os.path.join(options.simDir, '*'))
     status.cycleDirs = cycleDirectoriesOnly(status.cycleDirs, options)
     if 'simNodeTree' not in status.variables:
-        newickTree = newickTreeParser(options.inputNewick, True)
-        newickTree.iD = options.rootName
+        newickTree = newickTreeParser(options.inputNewick, 0.0)
+        if newickTree.iD == None:
+            newickTree.iD = options.rootName
         status.simNodeTree = buildSimNodeTree(newickTree, options)
         status.variables['simNodeTree'] = True
         # printSimNodeTree(status.simNodeTree)
@@ -1158,7 +1162,8 @@ def collectData(options, status):
         status.csAlreadyAdded = {}
         status.variables['timeDict'] = True
     newickTree = newickTreeParser(options.inputNewick, 0.0)
-    newickTree.iD = options.rootName
+    if newickTree.iD == None:
+            newickTree.iD = options.rootName
     status.numCompletedSteps, status.stepsDict = simStepUpdater(newickTree, options.stepLength,
                                                                 status.stepsDict, 
                                                                 status.simNodeTree, options)
@@ -1191,6 +1196,7 @@ def buildSimNodeTree(nt, options):
             p.left = t
             t.parent = p
             t.name = lsc.nameTree(nt)
+        print t.name, printBinaryTree(nt, True)
     if t is None:
         root.name = lsc.nameTree(nt)
         t = root
