@@ -221,7 +221,6 @@ def simStepUpdater(nt, sl, stepsDict, simNodeTree, options):
     steps in stepsDict that need updating.
     """
     stepList = tree2stepList(nt, sl)
-    print stepList
     for s in stepList:
         if s not in stepsDict:
             stepsDict[s] = Step()
