@@ -1324,7 +1324,7 @@ def printStats(status, options):
         printSortedStepTimes(status.stepsDict, options.isHtml, options.htmlDir)
 
 def main():
-    usage = ('usage: %prog --dir path/to/dir\n\n')
+    usage = ('usage: %prog --simDir path/to/dir\n\n')
     parser = OptionParser(usage = usage)
     initOptions(parser)
     options, args = parser.parse_args()
