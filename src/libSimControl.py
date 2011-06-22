@@ -432,7 +432,7 @@ def myLog(s):
         f.write(s)
     f.close()
 
-def runCommands(cmds, localTempDir, inPipes = [], outPipes = [], mode='s', debug = False):
+def runCommands(cmds, localTempDir, inPipes = [], outPipes = [], mode = 's', debug = False):
     """ runCommands is a wrapper function for the parallel and serial
     versions of runCommands. mode may either be s or p.
     """
@@ -466,7 +466,7 @@ def runCommands(cmds, localTempDir, inPipes = [], outPipes = [], mode='s', debug
         logger.info('Issuing parallel commads %s %s %s.\n' % (str(cmds), str(inPipes), str(outPipes)))
         runCommandsP(cmds, localTempDir, inPipes = inPipes, outPipes = outPipes, debug = debug)
 
-def runCommandsP(cmds, localTempDir, inPipes=[], outPipes=[], debug = False):
+def runCommandsP(cmds, localTempDir, inPipes = [], outPipes = [], debug = False):
     """ runCommandsP uses the subprocess module
     to issue parallel processes from the cmds list.
     """
@@ -486,7 +486,7 @@ def runCommandsP(cmds, localTempDir, inPipes=[], outPipes=[], debug = False):
         else:
             sout = subprocess.PIPE
         logger.debug('Executing parallel %s < %s > %s\n' % (' '.join(c), inPipes[i], outPipes[i]))
-        procs.append(subprocess.Popen(c, cwd=localTempDir, stdin = sin, stdout = sout))
+        procs.append(subprocess.Popen(c, cwd = localTempDir, stdin = sin, stdout = sout))
     i = -1
     for p in procs:
         i += 1
@@ -524,7 +524,7 @@ def runCommandsS(cmds, localTempDir, inPipes=[], outPipes=[], debug = False):
         else:
             sout = subprocess.PIPE
         logger.debug('Executing serial %s < %s > %s\n' % (' '.join(c), inPipes[i], outPipes[i]))
-        p = subprocess.Popen(c, cwd=localTempDir, stdin = sin, stdout = sout)
+        p = subprocess.Popen(c, cwd = localTempDir, stdin = sin, stdout = sout)
             
         if inPipes[i] is None:
             sin = None
@@ -907,7 +907,7 @@ def callEvolverIntraStepTRFCmd(thisDir, thisChr, localTempDir):
         cmd = [which('trf')]
         cmd.append(os.path.join(localTempDir, thisChr+'.outseq.fa'))
         cmd += ['2', '7', '7', '80', '10', '50', str(MAX_PERIOD_SIZE), '-d', '-h']
-        returncode = subprocess.call(cmd, cwd=localTempDir)
+        returncode = subprocess.call(cmd, cwd = localTempDir)
         # note that TRF's returncode is the number of successfully processed
         # sequences special wrapper.
         if returncode != 1:
@@ -1013,7 +1013,7 @@ def runEvolverInterCmds(thisDir, thisParentDir, theChild, theParent, thisStepLen
         # we split this up to run it in parallel with the mobiles command
         cmd1, followCmd1 = evolverInterStepCmd(thisDir, thisParentDir, theChild, 
                                                thisStepLength, seed, paramsDir)
-        p1 = subprocess.Popen(cmd1, cwd=localTempDir) 
+        p1 = subprocess.Popen(cmd1, cwd = localTempDir) 
     else:
         p1 = None
         followCmd1 = None
@@ -1022,7 +1022,7 @@ def runEvolverInterCmds(thisDir, thisParentDir, theChild, theParent, thisStepLen
         outname = os.path.join(thisDir, 'logs', 'mobiles.log')
         if not os.path.exists(outname):
             cmd2 = evolverInterStepMobilesCmd(thisDir, thisParentDir, theParent, thisStepLength, paramsDir)
-            p2 = subprocess.Popen(cmd2, cwd=localTempDir, stdout=subprocess.PIPE)
+            p2 = subprocess.Popen(cmd2, cwd = localTempDir, stdout = subprocess.PIPE)
             f = open(outname + '.tmp', 'w')
             f.write(p2.communicate()[0])
             f.close()
@@ -2040,13 +2040,13 @@ def runTransalignStep1Cmds_2(thisDir, thisParentDir, localTempDir, options):
     for c in cmds:
         i += 1
         if inPipes[i] is None:
-            p = subprocess.Popen(c, cwd=localTempDir, stdout=subprocess.PIPE)
+            p = subprocess.Popen(c, cwd = localTempDir, stdout = subprocess.PIPE)
             f = open(outPipes[i], 'w')
             f.write(p.communicate()[0])
             f.close()
             handleReturnCode(p.returncode, c)
         else:
-            p = subprocess.Popen(c, cwd=localTempDir, stdin=subprocess.PIPE, stdout=subprocess.PIPE)
+            p = subprocess.Popen(c, cwd = localTempDir, stdin = subprocess.PIPE, stdout = subprocess.PIPE)
             f = open(outPipes[i], 'w')
             f.write(p.communicate(open(inPipes[i]).read())[0])
             f.close()
@@ -2072,7 +2072,7 @@ def extractLeafsFromNewick(nt, leafDict):
         extractLeafsFromNewick(nt.right, leafDict = leafDict)
         extractLeafsFromNewick(nt.left , leafDict = leafDict)
 
-def buildNodesListFromNewick(nt, nodesList, leafs, parentNode=''):
+def buildNodesListFromNewick(nt, nodesList, leafs, parentNode = ''):
     """buildNodesListFromNewick() takes in a newick tree and the
     final output list and it creates a new Node object
     with appropriate information given the status of
