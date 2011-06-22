@@ -363,7 +363,7 @@ def stem(data, scale=1, width=80, atom=1e-8):
         lo += mu
     sys.stdout.write('\n')
 
-def nameTree(nt, reportDistance=True):
+def nameTree(nt, reportDistance = True):
     """nameTree(nt) takes a newick tree and returns a str that can be used
     to name the cycle-step that the tree represents. Distance included in
     the name by default.
