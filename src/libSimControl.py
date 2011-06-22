@@ -568,13 +568,13 @@ def createNewCycleXmls(directory, parentDir, stepLength, newickStr, options):
     if not os.path.isdir(directory):
         raise RuntimeError('cycleNewCycleInfoXml: directory: %s is not a directory!\n' % directory)
     if not os.path.exists(os.path.join(directory, 'xml', 'summary.xml')):
-        root=ET.Element('info')
-        e=ET.SubElement(root, 'parentDir')  
-        e.text=parentDir
-        e=ET.SubElement(root, 'thisDir')
-        e.text=directory
-        e=ET.SubElement(root, 'stepLength')
-        e.text=str(stepLength).rstrip('0')
+        root = ET.Element('info')
+        e = ET.SubElement(root, 'parentDir')  
+        e.text = parentDir
+        e = ET.SubElement(root, 'thisDir')
+        e.text = directory
+        e = ET.SubElement(root, 'stepLength')
+        e.text = str(stepLength).rstrip('0')
         nt = newickTreeParser(newickStr, 0.0)
         children = {}
         if nt.distance == 0:
@@ -585,14 +585,14 @@ def createNewCycleXmls(directory, parentDir, stepLength, newickStr, options):
                     children[b] = nameTree(newickTreeParser(takeNewickStep(branches[b], options)[0], 0.0))
         else:
             children['stem'] = nameTree(newickTreeParser(takeNewickStep(tree2str(nt), options)[0], 0.0))
-        e=ET.SubElement(root, 'numberChildren')
-        e.text=str(len(children))
+        e = ET.SubElement(root, 'numberChildren')
+        e.text = str(len(children))
         for c in children:
-            e=ET.SubElement(root, 'child')
-            e.text=children[c]
+            e = ET.SubElement(root, 'child')
+            e.text = children[c]
             e.attrib['type'] = c # left, right, stem
 
-        info=ET.ElementTree(root)
+        info = ET.ElementTree(root)
         info.write(os.path.join(directory, 'xml', 'summary.xml'))
         addTimestampsTag(os.path.join(directory, 'xml', 'summary.xml'))
     if not os.path.exists(os.path.join(directory, 'xml', 'cycle.xml')):
