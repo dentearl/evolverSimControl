@@ -46,40 +46,38 @@ import sys
 lsc.verifyPrograms(lsc.requiredPrograms)
 
 def initOptions(parser):
-    parser.add_option('--rootName', dest = 'rootName', default = 'root',
-                      help = ('name of the root genome, to differentiate it from '
-                            'the input newick. default=%default'))
-    # Sim Tree Options
     parser.add_option('-o', '--outDir', dest = 'outDir',
                       help = 'Out directory.')
     parser.add_option('-t', '--inputNewick', dest = 'inputNewick',
                       help = 'Newick tree.')
-    parser.add_option('--testTree', action = 'store_true', 
-                      default = False, dest = 'testTree',
-                      help = 'Instead of performing a simulation, does dry run with empty dirs. default=%default')
-    parser.add_option('--noBurninMerge', action = 'store_true', 
-                      dest = 'noBurninMerge', default = False, 
-                      help = ('Turns off checks for an aln.rev file in the root dir. '
-                            'default=%default'))
-    # Sim Control Options
-    parser.add_option('--rootDir', dest = 'rootInputDir',
-                      help = 'Input root directory.')
     parser.add_option('--stepLength', dest = 'stepLength', action = "store",
                       type  = 'float', default = 0.001,
                       help = 'stepLength for each cycle. default=%default')
-    parser.add_option('--params',dest = 'paramsDir',
+    parser.add_option('--rootDir', dest = 'rootInputDir',
+                      help = 'Input root directory.')
+    parser.add_option('--rootName', dest = 'rootName', default = 'root',
+                      help = ('name of the root genome, to differentiate it from '
+                            'the input newick. default=%default'))
+    parser.add_option('--paramsDir', dest = 'paramsDir',
                       help = 'Parameter directory.')
-    parser.add_option('--seed',dest = 'seed', default = 'stochastic',
+    parser.add_option('--seed', dest = 'seed', default = 'stochastic',
                       type = 'string', 
                       help = 'Random seed, either an int or "stochastic". default=%default')
     parser.add_option('--noMEs', action = 'store_true', 
                       dest = 'noMEs', default = False, 
                       help = ('Turns off all mobile element '
                             'and RPG modules in the sim. default=%default'))
+    parser.add_option('--noBurninMerge', action = 'store_true', 
+                      dest = 'noBurninMerge', default = False, 
+                      help = ('Turns off checks for an aln.rev file in the root dir. '
+                            'default=%default'))
     parser.add_option('--noGeneDeactivation', action = 'store_true', 
                       dest = 'noGeneDeactivation', default = False, 
                       help = ('Turns off the gene deactivation step. '
                             'default=%default'))
+    parser.add_option('--testTree', action = 'store_true', 
+                      default = False, dest = 'testTree',
+                      help = 'Instead of performing a simulation, does dry run with empty dirs. default=%default')
 
 def checkOptions(options, parser):
     if options.inputNewick is None:
@@ -145,7 +143,6 @@ def newickContainsReservedWord(nt, options):
 def checkForFiles(options):
     """ If files are missing, complains and dies.
     """
-    lsc.verifyDirExists(os.path.join(options.rootInputDir, 'xml'))
     lsc.verifyDirExists(os.path.join(options.rootInputDir, 'stats'))
     for f in [os.path.join(options.rootInputDir, 'seq.rev'), 
               os.path.join(options.rootInputDir, 'annots.gff'), 
