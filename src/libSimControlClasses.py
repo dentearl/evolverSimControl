@@ -69,7 +69,7 @@ class Tree(Target):
         self.options = options
         
     def run(self):
-        logger.info('Tree object running, %s\n' % self.parentDir)
+        logger.info('Tree object running, %s' % self.parentDir)
         if self.thisBranchStr in ['left', 'stem']:
             self.addChildTarget(Transalign(self.parentDir, lsc.getParentDir(self.parentDir), 
                                            self.options))
@@ -100,7 +100,7 @@ class TreeFollow(Target):
             self.options.seed = abs(self.options.seed)
 
     def run(self):
-        logger.info('TreeFollow object running, %s\n' % self.thisGrandParentDir)
+        logger.info('TreeFollow object running, %s' % self.thisGrandParentDir)
         nt = newickTreeParser(self.thisNewickStr, 0.0)
         name = lsc.nameTree(nt)
         commonParentDir = os.path.abspath(os.path.join(self.options.simDir, name))
@@ -135,7 +135,7 @@ class LeafCleanUp(Target):
         self.parentDir = parentDir
         self.options = options
     def run(self):
-        logger.info('LeafCleanUp object running, %s\n' % self.thisDir)
+        logger.info('LeafCleanUp object running, %s' % self.thisDir)
         self.addChildTarget(Transalign(self.thisDir, self.parentDir, self.options))
         self.addChildTarget(Stats(self.thisDir, self.parentDir, self.options))
 
@@ -153,7 +153,7 @@ class Cycle(Target):
         self.theChild  = os.path.basename(self.thisDir)
         self.theParent = os.path.basename(self.thisParentDir)
     def run(self):
-        logger.info('Cycle object running, %s\n' % self.thisDir)
+        logger.info('Cycle object running, %s' % self.thisDir)
         os.mkdir(self.thisDir)
         for d in ['inter', 'intra', 'logs', 'stats', 'xml']:
             if not os.path.exists(os.path.join(self.thisDir, d)):
@@ -171,7 +171,7 @@ class CycleStep1(Cycle):
     def __init__(self, thisNewickStr, thisParentDir, thisStepLength, options):
         Cycle.__init__(self, thisNewickStr, thisParentDir, thisStepLength, options)
     def run(self):
-        logger.info('CycleStep1 object running, %s\n' % self.thisDir)
+        logger.info('CycleStep1 object running, %s' % self.thisDir)
         lsc.verifyDirExists(self.thisDir)
         lsc.subTypeTimestamp(self.thisDir, 'cycle', 'CycleStep1_start')
         
@@ -190,7 +190,7 @@ class CycleStep2(Cycle):
     def __init__(self, thisNewickStr, thisParentDir, thisStepLength, options):
         Cycle.__init__(self, thisNewickStr, thisParentDir, thisStepLength, options)
     def run(self):
-        logger.info('CycleStep2 object running, %s\n' % self.thisDir)
+        logger.info('CycleStep2 object running, %s' % self.thisDir)
         lsc.verifyDirExists(self.thisDir)
         lsc.subTypeTimestamp(self.thisDir, 'cycle', 'CycleStep2_start')
         lsc.verifyDirExists(os.path.join(self.thisDir, 'inter'))
@@ -212,7 +212,7 @@ class CycleStep2Chromosome(Cycle):
         Cycle.__init__(self, thisNewickStr, thisParentDir, thisStepLength, options)
         self.thisChr = thisChr
     def run(self):
-        logger.info('CycleStep2Chromosome object running, %s %s\n' % (self.thisDir, self.thisChr))
+        logger.info('CycleStep2Chromosome object running, %s %s' % (self.thisDir, self.thisChr))
         lsc.verifyDirExists(self.thisDir)
         if not os.path.exists(os.path.join(self.thisDir, 'xml', 'cycle.%s.xml' % self.thisChr)):
             lsc.newInfoXml(os.path.join(self.thisDir, 'xml', 'cycle.%s.xml' % self.thisChr))
@@ -248,7 +248,7 @@ class CycleStep3(Cycle):
     def __init__(self, thisNewickStr, thisParentDir, thisStepLength, options):
         Cycle.__init__(self, thisNewickStr, thisParentDir, thisStepLength, options)
     def run(self):
-        logger.info('CycleStep3 object running, %s\n' % self.thisDir)
+        logger.info('CycleStep3 object running, %s' % self.thisDir)
         lsc.verifyDirExists(self.thisDir)
         lsc.subTypeTimestamp(self.thisDir, 'cycle', 'CycleStep2_end')
         lsc.subTypeTimestamp(self.thisDir, 'cycle', 'CycleStep3_start')
@@ -298,7 +298,7 @@ class CycleStep4(Cycle):
     def __init__(self, thisNewickStr, thisParentDir, thisStepLength, options):
         Cycle.__init__(self, thisNewickStr, thisParentDir, thisStepLength, options)
     def run(self):
-        logger.info('CycleStep4 object running, %s\n' % self.thisDir)
+        logger.info('CycleStep4 object running, %s' % self.thisDir)
         lsc.verifyDirExists(self.thisDir)
         lsc.subTypeTimestamp(self.thisDir, 'cycle', 'CycleStep4_start')
 
@@ -352,7 +352,7 @@ class StatsStep1(Stats):
     def __init__(self, thisDir, thisParentDir, options):
         Stats.__init__(self, thisDir, thisParentDir, options)
     def run(self):
-        logger.info('StatsStep1 object running, %s\n' % self.thisDir)
+        logger.info('StatsStep1 object running, %s' % self.thisDir)
         lsc.verifyDirExists(self.thisDir)
         lsc.subTypeTimestamp(self.thisDir, 'stats', 'StatsStep1_start')
         
@@ -371,7 +371,7 @@ class StatsStep2(Stats):
     def __init__(self, thisDir, thisParentDir, options):
         Stats.__init__(self, thisDir, thisParentDir, options)
     def run(self):
-        logger.info('StatsStep2 object running, %s\n' % self.thisDir)
+        logger.info('StatsStep2 object running, %s' % self.thisDir)
         lsc.verifyDirExists(self.thisDir)
         lsc.subTypeTimestamp(self.thisDir, 'stats', 'StatsStep2_start')
 
@@ -387,7 +387,7 @@ class StatsStep3(Stats):
     def __init__(self, thisDir, thisParentDir, options):
         Stats.__init__(self, thisDir, thisParentDir, options)
     def run(self):
-        logger.info('StatsStep3 object running, %s\n' % self.thisDir)
+        logger.info('StatsStep3 object running, %s' % self.thisDir)
         lsc.verifyDirExists(self.thisDir)
         lsc.subTypeTimestamp(self.thisDir, 'stats', 'StatsStep3_start')
 
@@ -403,7 +403,7 @@ class StatsStep4(Stats):
     def __init__(self, thisDir, thisParentDir, options):
         Stats.__init__(self, thisDir, thisParentDir, options)
     def run(self):
-        logger.info('StatsStep4 object running, %s\n' % self.thisDir)
+        logger.info('StatsStep4 object running, %s' % self.thisDir)
         lsc.verifyDirExists(self.thisDir)
         lsc.subTypeTimestamp(self.thisDir, 'stats', 'StatsStep4_start')
         
@@ -427,7 +427,7 @@ class Transalign(Target):
         self.thisParentDir = thisParentDir
         self.options = options
     def run(self):
-        logger.info('Transalign object running, thisDir: %s thisParentDir: %s\n' 
+        logger.info('Transalign object running, thisDir: %s thisParentDir: %s' 
                     % (self.thisDir, self.thisParentDir))
         if self.thisParentDir is None:
             # happens when thisParentDir is the root
@@ -444,7 +444,7 @@ class TransalignStep1(Transalign):
     def __init__(self, thisDir, thisParentDir, options):
         Transalign.__init__(self, thisDir, thisParentDir, options)
     def run(self):
-        logger.info('TransalignStep1 object running, thisDir: %s thisParentDir: %s\n' 
+        logger.info('TransalignStep1 object running, thisDir: %s thisParentDir: %s' 
                     % (self.thisDir, self.thisParentDir))
         lsc.verifyDirExists(self.thisDir)
         lsc.subTypeTimestamp(self.thisDir, 'transalign', 'TransalignStep1_start')
@@ -496,7 +496,7 @@ class ExtractionManager(Target):
         self.options = options
 
     def run(self):
-        logger.info('ExtractionManager object running, rootDir: %s\n' % (self.options.rootDir))
+        logger.info('ExtractionManager object running, rootDir: %s' % (self.options.rootDir))
         nt = newickTreeParser(self.options.inputNewick, 0.0)
         nodesList = []
         leafsDict = {}
@@ -526,7 +526,7 @@ class Extract(Target):
         self.options = options
 
     def run(self):
-        logger.info('Extract object running, thisDir: %s\n' % (self.thisDir))
+        logger.info('Extract object running, thisDir: %s' % (self.thisDir))
         if self.isLeaf:
             ext = '.maf'
         else:
@@ -590,7 +590,7 @@ class MergeManager(Target):
         self.nodeDict = lsc.buildNodesDict(self.nodesList, self.leafsDict)
 
     def run(self):
-        logger.info('Extract object running, rootDir: %s\n' % (self.options.rootDir))
+        logger.info('Extract object running, rootDir: %s' % (self.options.rootDir))
         nt = newickTreeParser(self.options.inputNewick, 0.0)
         nt.iD = os.path.basename(self.options.rootDir)
         self.addChildTarget(MergeTree(nt, self.nodeDict, self.nodeParentDict, 
@@ -620,7 +620,7 @@ class MergeTree(Target):
             self.nodeParent = self.options.rootName
 
     def run(self):
-        logger.info('MergeTree object running, name: %s\n' % (self.name))
+        logger.info('MergeTree object running, name: %s' % (self.name))
         if self.nt is None:
             return
         for t in [self.nt.left, self.nt.right]:
@@ -657,7 +657,7 @@ class MergeTreeFollow(Target):
         else:
             self.nodeParent = self.options.rootName
     def run(self):
-        logger.info('MergeTreeFollow object running, name: %s\n' % (self.name))
+        logger.info('MergeTreeFollow object running, name: %s' % (self.name))
         outname = os.path.join(self.options.rootDir, 'burnin.maf')
         if (os.path.exists(os.path.join(self.options.rootDir, 'burnin.tmp.maf')) 
             and not os.path.exists(outname)):
@@ -679,7 +679,7 @@ class MergeMafsDown(MergeTree):
         self.nodeParent = nodeParent
 
     def run(self):
-        logger.info('MergeTreeDown object running, name: %s nodeParent: %s\n' 
+        logger.info('MergeTreeDown object running, name: %s nodeParent: %s' 
                     % (self.name, self.nodeParent))
         treelessRootCmd = []
         for i in xrange(0,2):
@@ -711,7 +711,7 @@ class MergeMafsUp(MergeTree):
         self.nodeParent = nodeParent
 
     def run(self):
-        logger.info('MergeMafsUp object running, name: %s nodeParent: %s\n' 
+        logger.info('MergeMafsUp object running, name: %s nodeParent: %s' 
                     % (self.name, self.nodeParent))
         ##############################
         # The 'lookup' aspect of the merge is only performed when we are not at the root
