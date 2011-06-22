@@ -12,7 +12,7 @@ A [jobTree](https://github.com/benedictpaten/jobTree/) based wrapper for the [Ev
 ##Dependencies
 * sonLib: https://github.com/benedictpaten/sonLib/
 * jobTree: https://github.com/benedictpaten/jobTree/
-* Evolver: http://www.drive5.com/evolver/ Specifically, make sure that the Evolver tools are on your <code>PATH</code> environmental variable and that their names are preceeded with <code>evolver_</code>. Specifically all of the following list of files need to be on your <code>PATH</code>. Depending on how you add these things to your <code>PATH</code>, you may need to edit some of the evolver python scripts to ensure that they can import the evolver <code>gff.py</code> library.
+* Evolver: http://www.drive5.com/evolver/ Specifically, make sure that the Evolver tools are on your <code>PATH</code> environmental variable and that their names are preceeded with <code>evolver_</code>. Specifically all of the following list of files need to be on your <code>PATH</code>. Depending on how you add these things to your <code>PATH</code>, you may need to edit some of the evolver python scripts to ensure that they can import the evolver <code>evolver_gff.py</code> module.
     * <code>evolver_codon_report.pl</code> *
     * <code>evolver_cvt</code>
     * <code>evolver_drawrev</code> *

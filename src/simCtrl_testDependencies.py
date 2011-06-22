@@ -49,11 +49,11 @@ def initOptions(parser):
                       help = 'Checks for mafJoin. default=%default')
 
 def testSimple():
-    lsc.verifyPrograms(lsc.requiredPrograms)
+    lsc.verifyPrograms(lsc.requiredPrograms, verbose = True)
 
 def testMafJoin():
     programs = ['mafJoin']
-    lsc.verifyPrograms(programs)
+    lsc.verifyPrograms(programs, verbose = True)
 
 def checkOptions(options, parser):
     pass

@@ -42,27 +42,54 @@ requiredPrograms = ['cat', 'cp', 'egrep', 'ln', 'mkdir',
                     'evolver_transalign', 
                     'evolver_trf2gff.py']
 
-def verifyPrograms(programs):
+def verifyPrograms(programs, verbose = False):
     """verifyPrograms(programs) takes a list of executable names, and acts on the list object
     to look up the full path to the executables, or if they are not found it raises an exeption
     """
-    from libSimControlClasses import BadInputError
     from libSimControl import which
     if not isinstance(programs, list):
        raise TypeError('verifyPrograms takes a list of program '
-                       'names, not %s.\n' % programs.__class__)
+                       'names, not %s.' % programs.__class__)
     c=-1
-    for p in programs:
-       if not isinstance(p, str):
+    for prog in programs:
+       if not isinstance(prog, str):
           raise TypeError('verifyPrograms list members should all be strings, '
-                          '"%s" not a string, is a %s.\n' %(str(p), p.__class__))
+                          '"%s" not a string, is a %s.' %(str(prog), prog.__class__))
        c=c+1
-       p = which(p)
+       p = which(prog)
        if p is None:
            raise RuntimeError('Error verifyPrograms(): Could not locate "%s" '
-                              'in PATH.\n' %(programs[c]))
+                              'in PATH.' %(prog))
        else:
+           if verbose:
+               print '   located executable %s %s OK' % (p, (90 - len(p)) * '.')
+           if prog.endswith('.py') or prog.endswith('.pl') or prog.endswith('.sh'):
+               verifyUnixLineEndings(prog, verbose = verbose)
            programs[c] = p
+
+def verifyUnixLineEndings(prog, verbose = False):
+    """ verifyUnixLineEndngs takes a program (no path) and checks the line endings to
+    verify that they are unix (LF). If they are not, it raises a RuntimeError.
+    """
+    from libSimControl import which
+    if not isinstance(prog, str):
+        raise TypeError('verifyUnixLineEndings takes a string, not %s.' % prog.__class__)
+    p = which(prog)
+    if p is None:
+        raise RuntimeError('Error verifyUnixLineEndings(): '
+                           'Could not locate "%s" in PATH' % prog)
+    else:
+        dat = open(p, 'rb').read()
+        if '\0' in dat:
+            # binary
+            return
+        newDat = dat.replace("\r\n", "\n") # replace CRLF with LF
+        if newDat != dat:
+            raise RuntimeError('Error verifyUnixLineEndings(): %s '
+                               'contains CRLF line endings.' % p)
+        else:
+            if verbose:
+                print '   unix line endings %s %s OK' % (p, (90 - len(p)) * '.')
 
 def which(program):
     """which() acts like the unix utility which, but is portable between os.
@@ -108,9 +135,9 @@ def typeTimestamp(dirname, typeTS, value):
     import xml.parsers.expat as expat
     value = value.lower()
     if typeTS not in ('cycle', 'stats', 'transalign'):
-        raise BadInputError('typeTS must be either "cycle", "stats", or "transalign" not %s\n' % typeTS)
+        raise BadInputError('typeTS must be either "cycle", "stats", or "transalign" not %s.' % typeTS)
     if value not in ('start', 'end'):
-        raise BadInputError('value must be either "start" or "end", not %s\n' % value)
+        raise BadInputError('value must be either "start" or "end", not %s.' % value)
     value = value[0].upper() + value[1:]
     fileMap = {'cycle':'cycle', 'stats':'stats', 'transalign':'transalign'}
     filename = os.path.join(dirname, 'xml', fileMap[typeTS] + '.xml')
@@ -150,7 +177,7 @@ def addTimestampsTag(filename):
         raise
     root = infoTree.getroot()
     if len(root.findall('timestamps')) > 0:
-        raise RuntimeError('There should be no timestamps tag\n')
+        raise RuntimeError('There should be no timestamps tag in %s.' % filename)
     timeTag = ET.SubElement(root, 'timestamps')
     timeTag.attrib['startEpochUTC'] = str(time.time())
     info = ET.ElementTree(root)
@@ -169,7 +196,7 @@ def subTypeTimestamp(dirname, typeTS, timeName, chrName = None):
     import time
     if typeTS not in ('cycle', 'stats', 'transalign', 'cycleChr'):
         raise BadInputError('typeTS must be either "cycle", "stats", '
-                             '"transalign", or "cycleChr" not %s\n' % typeTS)
+                             '"transalign", or "cycleChr" not %s.' % typeTS)
     if chrName is not None:
         filename = os.path.join(dirname, 'xml', 'cycle.%s.xml' % chrName)
     else:
@@ -213,7 +240,7 @@ def lockfile(filename):
         except:
             time.sleep(1)
     if not os.path.exists(filename + '.lock'):
-        raise RuntimeError('Unable to lock file %s after %d seconds!\n' % (filename, timeout))
+        raise RuntimeError('Unable to lock file %s after %d seconds.' % (filename, timeout))
     return filename + '.lock'
 
 def unlockfile(filename):
@@ -225,9 +252,9 @@ def unlockfile(filename):
         try:
             os.rename(filename, filename[:-5])
         except:
-            raise RuntimeError('Database access rate is likely too high for filesystem, %s\n' % filename)
+            raise RuntimeError('Database access rate is likely too high for filesystem, %s' % filename)
     else:                                                                                            
-        raise RuntimeError('unlockfile: Supplied filename, %s, does not end in ".lock"\n' % filename)
+        raise RuntimeError('unlockfile: Supplied filename, %s, does not end in ".lock"' % filename)
 
 def stem_print(close, dist, ndigits):
     """/*
@@ -440,30 +467,30 @@ def runCommands(cmds, localTempDir, inPipes = [], outPipes = [], mode = 's', deb
     import os
     from sonLib.bioio import logger
     if not os.path.exists(localTempDir):
-        raise ValueError('localTempDir "%s" does not exist!\n' % localTempDir)
+        raise ValueError('localTempDir "%s" does not exist.' % localTempDir)
     if not isinstance(cmds, list):
         raise TypeError('runCommands takes a list for the "cmds" '
-                        'argument, not a %s.\n' % cmds.__class__)
+                        'argument, not a %s.' % cmds.__class__)
     if mode not in ('s', 'p'):
         raise ValueError('runCommands "mode" argument must be either '
-                         's or p, not %s.\n' % mode)
+                         's or p, not %s.' % mode)
     if outPipes != []:
         if len(cmds) != len(outPipes):
             raise ValueError('runCommands length of outPipes list %d '
-                             'not equal to cmds list %d!.\n' % (len(outPipes), len(cmds)))
+                             'not equal to cmds list %d.' % (len(outPipes), len(cmds)))
     else:
         outPipes = [None] * len(cmds)
     if inPipes != []:
         if len(cmds) != len(inPipes):
             raise ValueError('runCommands length of inPipes list %d '
-                             'not equal to cmds list %d!.\n' % (len(inPipes), len(cmds)))
+                             'not equal to cmds list %d.' % (len(inPipes), len(cmds)))
     else:
         inPipes = [None] * len(cmds)
     if mode == 's':
-        logger.info('Issuing serial commads %s %s %s.\n' % (str(cmds), str(inPipes), str(outPipes)))
+        logger.info('Issuing serial commads %s %s %s.' % (str(cmds), str(inPipes), str(outPipes)))
         runCommandsS(cmds, localTempDir, inPipes = inPipes, outPipes = outPipes, debug = debug)
     else:
-        logger.info('Issuing parallel commads %s %s %s.\n' % (str(cmds), str(inPipes), str(outPipes)))
+        logger.info('Issuing parallel commads %s %s %s.' % (str(cmds), str(inPipes), str(outPipes)))
         runCommandsP(cmds, localTempDir, inPipes = inPipes, outPipes = outPipes, debug = debug)
 
 def runCommandsP(cmds, localTempDir, inPipes = [], outPipes = [], debug = False):
@@ -485,7 +512,7 @@ def runCommandsP(cmds, localTempDir, inPipes = [], outPipes = [], debug = False)
             sout = None
         else:
             sout = subprocess.PIPE
-        logger.debug('Executing parallel %s < %s > %s\n' % (' '.join(c), inPipes[i], outPipes[i]))
+        logger.info('Executing parallel %s < %s > %s' % (' '.join(c), inPipes[i], outPipes[i]))
         procs.append(subprocess.Popen(c, cwd = localTempDir, stdin = sin, stdout = sout))
     i = -1
     for p in procs:
@@ -523,7 +550,7 @@ def runCommandsS(cmds, localTempDir, inPipes=[], outPipes=[], debug = False):
             sout = None
         else:
             sout = subprocess.PIPE
-        logger.debug('Executing serial %s < %s > %s\n' % (' '.join(c), inPipes[i], outPipes[i]))
+        logger.info('Executing serial %s < %s > %s' % (' '.join(c), inPipes[i], outPipes[i]))
         p = subprocess.Popen(c, cwd = localTempDir, stdin = sin, stdout = sout)
             
         if inPipes[i] is None:
@@ -544,17 +571,17 @@ def runCommandsS(cmds, localTempDir, inPipes=[], outPipes=[], debug = False):
 def handleReturnCode(retcode, cmd):
     if not isinstance(retcode, int):
         raise TypeError('handleReturnCode takes an integer for '
-                        'retcode, not a %s.\n' % retcode.__class__)
+                        'retcode, not a %s.' % retcode.__class__)
     if not isinstance(cmd, list):
         raise TypeError('handleReturnCode takes a list for '
-                        'cmd, not a %s.\n' % cmd.__class__)
+                        'cmd, not a %s.' % cmd.__class__)
     if retcode:
         if retcode < 0:
             raise RuntimeError('Experienced an error while trying to execute: '
-                               '%s SIGNAL:%d\n' %(' '.join(cmd), -retcode))
+                               '%s SIGNAL:%d' %(' '.join(cmd), -retcode))
         else:
             raise RuntimeError('Experienced an error while trying to execute: '
-                               '%s retcode:%d\n' %(' '.join(cmd), retcode))
+                               '%s retcode:%d' %(' '.join(cmd), retcode))
 
 def createNewCycleXmls(directory, parentDir, stepLength, newickStr, options):
     """
@@ -564,9 +591,9 @@ def createNewCycleXmls(directory, parentDir, stepLength, newickStr, options):
     from sonLib.bioio import newickTreeParser
     import xml.etree.ElementTree as ET
     if not os.path.exists(directory):
-        raise RuntimeError('cycleNewCycleInfoXml: directory: %s does not exist!\n' % directory)
+        raise RuntimeError('cycleNewCycleInfoXml: directory: %s does not exist.' % directory)
     if not os.path.isdir(directory):
-        raise RuntimeError('cycleNewCycleInfoXml: directory: %s is not a directory!\n' % directory)
+        raise RuntimeError('cycleNewCycleInfoXml: directory: %s is not a directory.' % directory)
     if not os.path.exists(os.path.join(directory, 'xml', 'summary.xml')):
         root = ET.Element('info')
         e = ET.SubElement(root, 'parentDir')  
@@ -664,16 +691,16 @@ def verifyDirExists(directory):
     """
     import os
     if not os.path.exists(directory):
-        raise RuntimeError('Error, unable to locate directory %s\n' % directory)
+        raise RuntimeError('Error, unable to locate directory %s.' % directory)
     if not os.path.isdir(directory):
-        raise RuntimeError('Error, directory %s is not a directory\n' % directory)
+        raise RuntimeError('Error, directory %s is not a directory.' % directory)
 
 def verifyFileExists(filename):
     """ Convenience function to verify the existence of a file
     """
     import os
     if not os.path.exists(filename):
-        raise RuntimeError('Error, unable to locate file %s\n' % filename)
+        raise RuntimeError('Error, unable to locate file %s.' % filename)
 
 def evolverInterStepCmd(thisDir, thisParentDir, theChild, thisStepLength, seed, paramsDir):
     """ produces the command argument list needed to run an evolver inter step.
@@ -913,10 +940,10 @@ def callEvolverIntraStepTRFCmd(thisDir, thisChr, localTempDir):
         if returncode != 1:
             if returncode < 0:
                 raise RuntimeError('callEvolverIntraStepTRFCmd: Experienced an error while trying to execute: '
-                                   '%s SIGNAL:%d\n' %(' '.join(cmd), -returncode))
+                                   '%s SIGNAL:%d' %(' '.join(cmd), -returncode))
             else:
                 raise RuntimeError('callEvolverIntraStepTRFCmd: Experienced an error while trying to execute: '
-                                   '%s retcode:%d\n' %(' '.join(cmd), returncode))
+                                   '%s retcode:%d' %(' '.join(cmd), returncode))
         f=open(outname, 'w')
         f.close()
     
@@ -1561,9 +1588,9 @@ def treeStr2Dir(treeStr, simDir):
     import os
     from sonLib.bioio import newickTreeParser
     if not isinstance(treeStr, str):
-        raise TypeError('treeStr should be a string, is %s\n' % treeStr.__class__)
+        raise TypeError('treeStr should be a string, is %s' % treeStr.__class__)
     if not isinstance(simDir, str):
-        raise TypeError('simDir should be a string, is %s\n' % treeStr.__class__)
+        raise TypeError('simDir should be a string, is %s' % treeStr.__class__)
     return os.path.abspath(os.path.join(simDir, 
                                         nameTree(newickTreeParser(treeStr, 0.0))
                                         ))
