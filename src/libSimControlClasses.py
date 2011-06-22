@@ -272,7 +272,7 @@ class CycleStep3(Cycle):
             outname = os.path.join(self.thisDir, 'intra', m.group(1) + 'trfannots.gff')
             if not os.path.exists(outname):
                 # convert the .dat to .gff
-                cmd = [lsc.which('python'), lsc.which('evolver_trf2gff.py'), f]
+                cmd = [lsc.which('evolver_trf2gff.py'), f]
                 cmds.append(cmd)
                 outPipes.append(outname + '.tmp')
                 # atomic files

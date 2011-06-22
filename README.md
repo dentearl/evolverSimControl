@@ -4,7 +4,7 @@
 ##Authors
 [Dent Earl](https://github.com/dentearl/), [Benedict Paten](https://github.com/dentearl/), Mark Diekhans
 
-The evolver team is responsible for items in external/ : George Asimenos, [Robert C. Edgar](http://www.drive5.com/), Serafim Batzoglou and [Arend Sidow](http://mendel.stanford.edu/sidowlab/).
+The evolver team is responsible for items in external/ : George Asimenos and [Robert C. Edgar](http://www.drive5.com/), Serafim Batzoglou and [Arend Sidow](http://mendel.stanford.edu/sidowlab/).
 
 ## Summary
 A [jobTree](https://github.com/benedictpaten/jobTree/) based wrapper for the [Evolver](http://www.drive5.com/evolver/) genome evolution simulation tool suite.
@@ -12,24 +12,10 @@ A [jobTree](https://github.com/benedictpaten/jobTree/) based wrapper for the [Ev
 ##Dependencies
 * sonLib: https://github.com/benedictpaten/sonLib/
 * jobTree: https://github.com/benedictpaten/jobTree/
-* Evolver: http://www.drive5.com/evolver/ Specifically, make sure that the Evolver tools are on your <code>PATH</code> environmental variable and that their names are preceeded with <code>evolver_</code>. Specifically all of the following list of files need to be on your <code>PATH</code>. Depending on how you add these things to your <code>PATH</code>, you may need to edit some of the evolver python scripts to ensure that they can import the evolver <code>evolver_gff.py</code> module.
-    * <code>evolver_codon_report.pl</code> *
+* Evolver: http://www.drive5.com/evolver/ Specifically, make sure that the Evolver tools are on your <code>PATH</code> environmental variable and that their names are preceeded with <code>evolver_</code>. Specifically all of the following list of files need to be on your <code>PATH</code>.
     * <code>evolver_cvt</code>
-    * <code>evolver_drawrev</code> *
     * <code>evolver_evo</code>
-    * <code>evolver_evostats_report.py</code>
-    * <code>evolver_gff_cdsutr2exons.py</code>
-    * <code>evolver_gff_exons2introns.py</code>
-    * <code>evolver_gff_featurestats2.py</code>
-    * <code>evolver_gff_featurestats2.sh</code> *
-    * <code>evolver_gff_fixgeneix.py</code> *
-    * <code>evolver_gene_deactivate.sh</code> *
-    * <code>evolver_handle_mobiles.pl</code> *
-    * <code>evolver_merge_evostats.py</code>
-    * <code>evolver_mobile_report.pl</code> *
     * <code>evolver_transalign</code>
-    * <code>evolver_trf2gff.py</code>
-    * _* indicates this script/bin is included in the <code>external/</code> directory._
 * trf: http://tandem.bu.edu/trf/trf.html Tandem Repeats Finder.
 * mafJoin: https://github.com/dentearl/mafTools Not necessary for simple simulations, mafJoin (part of mafTools) is only needed if you wish to create an maf alignment of all sequences following a simulation.
 * R: http://cran.r-project.org/ Only necessary if you wish to use the <code>simCtrl_postSimAnnotDistExtractor.py</code> script to view annotation size distributions following a simulation.
