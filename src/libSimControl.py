@@ -35,6 +35,7 @@ requiredPrograms = ['cat', 'cp', 'egrep', 'ln', 'mkdir',
                     'evolver_gff_exons2introns.py', 
                     'evolver_gff_featurestats2.py', 
                     'evolver_gff_featurestats2.sh', 
+                    'evolver_gff_fixgeneix.py', 
                     'evolver_handle_mobiles.pl', 
                     'evolver_merge_evostats.py', 
                     'evolver_mobile_report.pl', 
@@ -544,6 +545,9 @@ def handleReturnCode(retcode, cmd):
     if not isinstance(retcode, int):
         raise TypeError('handleReturnCode takes an integer for '
                         'retcode, not a %s.\n' % retcode.__class__)
+    if not isinstance(cmd, list):
+        raise TypeError('handleReturnCode takes a list for '
+                        'cmd, not a %s.\n' % cmd.__class__)
     if retcode:
         if retcode < 0:
             raise RuntimeError('Experienced an error while trying to execute: '
@@ -608,12 +612,12 @@ def createRootXmls(command, options):
     """
     from libSimControl import createSimulationInfoXml
     import os
-    import time
     import xml.etree.ElementTree as ET
 
+    os.mkdir(os.path.join(options.outDir, options.rootName, 'xml'))
     root = ET.Element('info')
     e = ET.SubElement(root, 'cycleIsRoot')
-    e.text = str(True)
+    e.text = 'True'
     info = ET.ElementTree(root)
     info.write(os.path.join(options.outDir, options.rootName, 'xml', 'summary.xml'))
     createSimulationInfoXml(command, options)
@@ -1022,10 +1026,10 @@ def runEvolverInterCmds(thisDir, thisParentDir, theChild, theParent, thisStepLen
             f = open(outname + '.tmp', 'w')
             f.write(p2.communicate()[0])
             f.close()
-            handleReturnCode(p2.returncode, [cmd2])
+            handleReturnCode(p2.returncode, cmd2)
             os.rename(outname + '.tmp', outname)
-        mvCmds= evolverInterStepMobilesMoveCmd(localTempDir, thisDir)
-        runCommands(mvCmds, localTempDir, mode='p')
+        mvCmds = evolverInterStepMobilesMoveCmd(localTempDir, thisDir)
+        runCommands(mvCmds, localTempDir, mode = 'p')
     if p1 is not None:
         p1.wait()
         handleReturnCode(p1.returncode, cmd1)
