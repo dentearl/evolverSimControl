@@ -29,11 +29,13 @@ A [jobTree](https://github.com/benedictpaten/jobTree/) based wrapper for the [Ev
     * <code>evolver_transalign</code>
     * <code>evolver_trf2gff.py</code>
     * _* indicates this script/bin is included in the <code>external/</code> directory._
-* Linux on i86 Intel. This is due to core Evolver executables being distributed as precompiled binaries.
 * trf: http://tandem.bu.edu/trf/trf.html Tandem Repeats Finder.
 * mafJoin: https://github.com/dentearl/mafTools Not necessary for simple simulations, mafJoin (part of mafTools) is only needed if you wish to create an maf alignment of all sequences following a simulation.
 * R: http://cran.r-project.org/ Only necessary if you wish to use the <code>simCtrl_postSimAnnotDistExtractor.py</code> script to view annotation size distributions following a simulation.
 * ggplot2 for R: in R type <code>install.packages("ggplot2')</code> Only necessary if you wish to use the <code>simCtrl_postSimAnnotDistExtractor.py</code> script to view annotation size distributions following a simulation.
+
+##Requirements
+* Linux on i86 Intel. This is due to core Evolver executables being distributed as precompiled binaries.
 
 ##Installation
 1. Download the package. Consider making it a sibling directory to <code>jobTree/</code> and <code>sonLib/</code>.
@@ -41,10 +43,6 @@ A [jobTree](https://github.com/benedictpaten/jobTree/) based wrapper for the [Ev
 3. Type <code>make</code>.
 4. Edit your <code>PYTHONPATH</code> environmental variable to contain the parent directory of the <code>evolverSimControl/</code> directory.
 5. Type <code>make test</code>.
-
-##Use
-1. Write the use section.
-2. Follow the use section instructions. ;)
 
 ##Example
 This example will work you through a small simulation using the toy test example available at http://soe.ucsc.edu/~dearl/software/evolverSimControl/. If you want to create your own infile you can use [evolverInfileGeneration](https://github.com/dentearl/evolverInfileGeneration) to generate your own infile set.
@@ -62,4 +60,8 @@ This example will work you through a small simulation using the toy test example
     * You can check on a running simulation by using <code>simCtrl_checkSimStatus.py</code> , use <code>--help</code> for options.
 3. Post simulation you can run <code>simCtrl_postSimFastaExtractor.py</code> to extract fasta sequence files from the genomes.
 4. You may also wish to run <code>simCtrl_postSimAnnotDistExtractor.py</code> which will use the ggplot2 package for R to display the length distributions of some of the annotations.
-5. You may also wish to construct a single multiple alignment file ([.maf](http://genome.ucsc.edu/FAQ/FAQformat.html#format5)) for the simulation using <code>simCtrl_postSimMafExtractor.py</code> which will use [mafJoin](https://github.com/dentearl/mafTools/) to join the pairwise maf output from Evolver into a single simulation wide maf. This process is extremely memory intensive with the 120Mb Mammal simulation requiring aprroximately 500Gb of memory.
+5. You may also wish to construct a single multiple alignment file ([.maf](http://genome.ucsc.edu/FAQ/FAQformat.html#format5)) for the simulation using <code>simCtrl_postSimMafExtractor.py</code> which will use [mafJoin](https://github.com/dentearl/mafTools/) to join the pairwise maf output from Evolver into a single simulation wide maf. This process is extremely memory intensive with the 120Mb Mammal simulation eventually requiring aprroximately 250Gb of memory.
+
+##Use
+1. Write the use section.
+2. Follow the use section instructions. ;)
