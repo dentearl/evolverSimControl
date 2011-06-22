@@ -172,8 +172,8 @@ class CycleStep1(Cycle):
         Cycle.__init__(self, thisNewickStr, thisParentDir, thisStepLength, options)
     def run(self):
         logger.info('CycleStep1 object running, %s\n' % self.thisDir)
-        lsc.subTypeTimestamp(self.thisDir, 'cycle', 'CycleStep1_start')
         lsc.verifyDirExists(self.thisDir)
+        lsc.subTypeTimestamp(self.thisDir, 'cycle', 'CycleStep1_start')
         
         lsc.runEvolverInterCmds(self.thisDir, self.thisParentDir, self.theChild, self.theParent,
                                 self.thisStepLength, self.options.seed, self.options.paramsDir,
@@ -191,8 +191,8 @@ class CycleStep2(Cycle):
         Cycle.__init__(self, thisNewickStr, thisParentDir, thisStepLength, options)
     def run(self):
         logger.info('CycleStep2 object running, %s\n' % self.thisDir)
-        lsc.subTypeTimestamp(self.thisDir, 'cycle', 'CycleStep2_start')
         lsc.verifyDirExists(self.thisDir)
+        lsc.subTypeTimestamp(self.thisDir, 'cycle', 'CycleStep2_start')
         lsc.verifyDirExists(os.path.join(self.thisDir, 'inter'))
         lsc.verifyFileExists(os.path.join(self.thisDir, 'inter', 'inter.chrnames.txt'))
         f = open(os.path.join(self.thisDir, 'inter', 'inter.chrnames.txt'), 'r')
@@ -213,12 +213,12 @@ class CycleStep2Chromosome(Cycle):
         self.thisChr = thisChr
     def run(self):
         logger.info('CycleStep2Chromosome object running, %s %s\n' % (self.thisDir, self.thisChr))
+        lsc.verifyDirExists(self.thisDir)
         if not os.path.exists(os.path.join(self.thisDir, 'xml', 'cycle.%s.xml' % self.thisChr)):
             lsc.newInfoXml(os.path.join(self.thisDir, 'xml', 'cycle.%s.xml' % self.thisChr))
             lsc.addTimestampsTag(os.path.join(self.thisDir, 'xml', 'cycle.%s.xml' % self.thisChr))
             lsc.subTypeTimestamp(self.thisDir, 'cycleChr', 
                                  'CycleStep2Chr_%s_start' % self.thisChr, self.thisChr)
-        lsc.verifyDirExists(self.thisDir)
 
         # evolver intra on one chromosome
         cmds = lsc.evolverIntraStepCmd(self.thisDir, self.theChild, self.thisStepLength, 
@@ -249,9 +249,9 @@ class CycleStep3(Cycle):
         Cycle.__init__(self, thisNewickStr, thisParentDir, thisStepLength, options)
     def run(self):
         logger.info('CycleStep3 object running, %s\n' % self.thisDir)
+        lsc.verifyDirExists(self.thisDir)
         lsc.subTypeTimestamp(self.thisDir, 'cycle', 'CycleStep2_end')
         lsc.subTypeTimestamp(self.thisDir, 'cycle', 'CycleStep3_start')
-        lsc.verifyDirExists(self.thisDir)
 
         # trfBig
         # lsc.runMergeTrfBedsToGff(self.thisDir)
@@ -299,8 +299,9 @@ class CycleStep4(Cycle):
         Cycle.__init__(self, thisNewickStr, thisParentDir, thisStepLength, options)
     def run(self):
         logger.info('CycleStep4 object running, %s\n' % self.thisDir)
-        lsc.subTypeTimestamp(self.thisDir, 'cycle', 'CycleStep4_start')
         lsc.verifyDirExists(self.thisDir)
+        lsc.subTypeTimestamp(self.thisDir, 'cycle', 'CycleStep4_start')
+
         outname = os.path.join(self.thisDir, 'logs', 'gene_deactivation.log')
         if not os.path.exists(outname):
             if not self.options.noGeneDeactivation:
@@ -338,9 +339,10 @@ class Stats(Target):
         if self.thisParentDir is None:
             # happens when thisParentDir is the root
             return
+        lsc.verifyDirExists(self.thisDir)
         lsc.newInfoXml(os.path.join(self.thisDir, 'xml', 'stats.xml'))
         lsc.typeTimestamp(os.path.join(self.thisDir), 'stats', 'start')
-        lsc.verifyDirExists(self.thisDir)
+
 
         self.addChildTarget(StatsStep1(self.thisDir, self.thisParentDir, self.options))
 
@@ -351,8 +353,8 @@ class StatsStep1(Stats):
         Stats.__init__(self, thisDir, thisParentDir, options)
     def run(self):
         logger.info('StatsStep1 object running, %s\n' % self.thisDir)
-        lsc.subTypeTimestamp(self.thisDir, 'stats', 'StatsStep1_start')
         lsc.verifyDirExists(self.thisDir)
+        lsc.subTypeTimestamp(self.thisDir, 'stats', 'StatsStep1_start')
         
         cmds, followCmds, outPipes = lsc.statsStep1CmdsP(self.thisDir, self.thisParentDir)
         lsc.runCommands(cmds, self.getLocalTempDir(), outPipes = outPipes, mode='p')
@@ -370,8 +372,8 @@ class StatsStep2(Stats):
         Stats.__init__(self, thisDir, thisParentDir, options)
     def run(self):
         logger.info('StatsStep2 object running, %s\n' % self.thisDir)
-        lsc.subTypeTimestamp(self.thisDir, 'stats', 'StatsStep2_start')
         lsc.verifyDirExists(self.thisDir)
+        lsc.subTypeTimestamp(self.thisDir, 'stats', 'StatsStep2_start')
 
         cmds, outPipes = lsc.statsStep2Cmds(self.thisDir, self.thisParentDir, self.options)
         lsc.runCommands(cmds, self.getLocalTempDir(), outPipes = outPipes)
@@ -386,8 +388,8 @@ class StatsStep3(Stats):
         Stats.__init__(self, thisDir, thisParentDir, options)
     def run(self):
         logger.info('StatsStep3 object running, %s\n' % self.thisDir)
-        lsc.subTypeTimestamp(self.thisDir, 'stats', 'StatsStep3_start')
         lsc.verifyDirExists(self.thisDir)
+        lsc.subTypeTimestamp(self.thisDir, 'stats', 'StatsStep3_start')
 
         cmds, pipes = lsc.statsStep3Cmds(self.thisDir, self.thisParentDir, self.options)
         lsc.runCommands(cmds, self.getLocalTempDir(), outPipes = pipes)
@@ -402,8 +404,8 @@ class StatsStep4(Stats):
         Stats.__init__(self, thisDir, thisParentDir, options)
     def run(self):
         logger.info('StatsStep4 object running, %s\n' % self.thisDir)
-        lsc.subTypeTimestamp(self.thisDir, 'stats', 'StatsStep4_start')
         lsc.verifyDirExists(self.thisDir)
+        lsc.subTypeTimestamp(self.thisDir, 'stats', 'StatsStep4_start')
         
         cmds, pipes = lsc.statsStep4Cmds(self.thisDir, self.thisParentDir, self.options)
         lsc.runCommands(cmds, self.getLocalTempDir(), outPipes = pipes)
@@ -430,9 +432,9 @@ class Transalign(Target):
         if self.thisParentDir is None:
             # happens when thisParentDir is the root
             return
+        lsc.verifyDirExists(self.thisDir)
         lsc.newInfoXml(os.path.join(self.thisDir, 'xml', 'transalign.xml'))
         lsc.typeTimestamp(self.thisDir, 'transalign', 'start')
-        lsc.verifyDirExists(self.thisDir)
 
         self.addChildTarget(TransalignStep1(self.thisDir, self.thisParentDir, self.options))
 
@@ -444,8 +446,8 @@ class TransalignStep1(Transalign):
     def run(self):
         logger.info('TransalignStep1 object running, thisDir: %s thisParentDir: %s\n' 
                     % (self.thisDir, self.thisParentDir))
-        lsc.subTypeTimestamp(self.thisDir, 'transalign', 'TransalignStep1_start')
         lsc.verifyDirExists(self.thisDir)
+        lsc.subTypeTimestamp(self.thisDir, 'transalign', 'TransalignStep1_start')
         
         cmds, pipes = lsc.transalignStep1Cmds_1(self.thisDir, self.thisParentDir, self.options)
         lsc.runCommands(cmds, self.getLocalTempDir(), outPipes = pipes)
