@@ -4,7 +4,7 @@
 ##Authors
 [Dent Earl](https://github.com/dentearl/), [Benedict Paten](https://github.com/dentearl/), Mark Diekhans
 
-The evolver team is responsible for items in external/ : George Asimenos, Robert C. Edgar, Serafim Batzoglou and Arend Sidow.
+The evolver team is responsible for items in external/ : George Asimenos, [Robert C. Edgar](http://www.drive5.com/), Serafim Batzoglou and [Arend Sidow](http://mendel.stanford.edu/sidowlab/).
 
 ## Summary
 A [jobTree](https://github.com/benedictpaten/jobTree/) based wrapper for the [Evolver](http://www.drive5.com/evolver/) genome evolution simulation tool suite.
