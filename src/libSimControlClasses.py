@@ -236,7 +236,7 @@ class CycleStep2Chromosome(Cycle):
         
         # move the resulting trf files out of localTempDir
         cmds = lsc.evolverIntraStepMoveTRFCmd(self.thisDir, self.thisChr, self.getLocalTempDir())
-        lsc.runCommands(cmds, self.getLocalTempDir(), mode='p')
+        lsc.runCommands(cmds, self.getLocalTempDir(), mode = 'p')
         
         lsc.subTypeTimestamp(self.thisDir, 'cycleChr', 
                              'CycleStep2Chr_%s_end' % self.thisChr, self.thisChr)
@@ -272,20 +272,20 @@ class CycleStep3(Cycle):
             outname = os.path.join(self.thisDir, 'intra', m.group(1) + 'trfannots.gff')
             if not os.path.exists(outname):
                 # convert the .dat to .gff
-                cmd = [lsc.which('evolver_trf2gff.py'), f]
+                cmd = [lsc.which('python'), lsc.which('evolver_trf2gff.py'), f]
                 cmds.append(cmd)
                 outPipes.append(outname + '.tmp')
                 # atomic files
                 followCmds.append([lsc.which('mv'), outname + '.tmp', outname])
                 followPipes.append(None)
-        lsc.runCommands(cmds, self.getLocalTempDir(), outPipes = outPipes, mode='p')
-        lsc.runCommands(followCmds, self.getLocalTempDir(), outPipes = followPipes, mode='p')
+        lsc.runCommands(cmds, self.getLocalTempDir(), outPipes = outPipes, mode = 'p')
+        lsc.runCommands(followCmds, self.getLocalTempDir(), outPipes = followPipes, mode = 'p')
         
         catCmd, evoCmd, cvtCmd, followCmds = lsc.evolverIntraMergeCmds(self.thisDir, self.theChild)
         
         lsc.runCommands([catCmd, evoCmd, cvtCmd], self.getLocalTempDir(),
                          outPipes = [os.path.join(self.thisDir, 'intra', 'evannots.gff.tmp'), None, None], 
-                         mode='p')
+                         mode = 'p')
         lsc.runCommands(followCmds, self.getLocalTempDir())
                 
         lsc.subTypeTimestamp(self.thisDir, 'cycle', 'CycleStep3_end')
@@ -357,7 +357,7 @@ class StatsStep1(Stats):
         lsc.subTypeTimestamp(self.thisDir, 'stats', 'StatsStep1_start')
         
         cmds, followCmds, outPipes = lsc.statsStep1CmdsP(self.thisDir, self.thisParentDir)
-        lsc.runCommands(cmds, self.getLocalTempDir(), outPipes = outPipes, mode='p')
+        lsc.runCommands(cmds, self.getLocalTempDir(), outPipes = outPipes, mode = 'p')
         lsc.runCommands(followCmds, self.getLocalTempDir())
         cmds, outPipes = lsc.statsStep1CmdsS(self.thisDir, self.thisParentDir)
         lsc.runCommands(cmds, self.getLocalTempDir(), outPipes = outPipes)
