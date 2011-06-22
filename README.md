@@ -22,6 +22,7 @@ A [jobTree](https://github.com/benedictpaten/jobTree/) based wrapper for the [Ev
     * <code>evolver_gff_exons2introns.py</code>
     * <code>evolver_gff_featurestats2.py</code>
     * <code>evolver_gff_featurestats2.sh</code> *
+    * <code>evolver_gff_fixgeneix.py</code> *
     * <code>evolver_gene_deactivate.sh</code> *
     * <code>evolver_handle_mobiles.pl</code> *
     * <code>evolver_merge_evostats.py</code>
@@ -49,11 +50,11 @@ This example will work you through a small simulation using the toy test example
 
 1. Download and expand the toy archive. For simplicity I'll assume that both <code>root/</code> and <code>params/</code> are in the working directory, i.e. <code>./</code> .
 2. Next we run the runSim program:
-    * <code>$ simCtrl_runSim.py --inputNewick '(Knife:0.004, (Fork:0.003, (Ladle:0.002, (Spoon:0.001, Teaspoon:0.001)S-TS:.001)S-TS-L:.001)S-TS-L-F:0.001);' --outDir toyExampleSim --rootDir root/ --rootName hg18 --params params/ --jobTree jobTreeToyExampleSim --maxThreads 32 --seed 3571</code>
+    * <code>$ simCtrl_runSim.py --inputNewick '(Knife:0.004, (Fork:0.003, (Ladle:0.002, (Spoon:0.001, Teaspoon:0.001)S-TS:.001)S-TS-L:.001)S-TS-L-F:0.001);' --outDir toyExampleSim --rootDir root/ --rootName hg18 --paramsDir params/ --jobTree jobTreeToyExampleSim --maxThreads 32 --seed 3571</code>
     * <code>--outDir</code> is where you simulation is going to end up.
     * <code>--rootDir</code> should point to the <code>root/</code> dir you created.
     * <code>--rootName</code> in this case is hg18. It's set in the infile creation step and you can pull this out of a .rev file with <code>evolver_cvt -dumpchrids path/to/seq.rev</code>
-    * <code>--params</code> should point to the <code>params/</code> dir you created.
+    * <code>--paramsDir</code> should point to the <code>params/</code> dir you created.
     * <code>--noMEs</code> turns off mobile element library simulation. If you leave this **out** then the <code>params/</code> dir must contain <code>mes.cfg</code> and <code>model.mes.txt</code>, and the <code>root/</code> dir must contain a directory named <code>mobiles/</code> that contains the files <code>LTR.fa</code>, <code>ME.fa</code>, and <code>ME.gff</code>.
     * <code>--maxThreads</code> is a [jobTree](https://github.com/benedictpaten/jobTree/) option for limiting the maximum number of parallel threads. The default is rather low.
     * <code>--seed</code> allows you to give a random seed (an integer) to the simulation. The default is the string 'stochastic'.
