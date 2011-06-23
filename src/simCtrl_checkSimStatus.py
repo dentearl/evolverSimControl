@@ -670,7 +670,7 @@ def drawScaleBar(numSteps, scale, rootName, isHtml):
                 scaleBar += (int(scale / 2)) * ' ' + str(i) + (scale - int(scale / 2) - 1) * ' ' + '|'
             else:
                 scaleBar += scale * ' ' + '|'
-    print '+ Height %s+' % ('-' * len(scaleBar))
+    print '\n+ Height %s+' % ('-' * len(scaleBar))
     print scaleBar
 
 def drawLegend():
@@ -1023,10 +1023,12 @@ def currentStepInfo(s, simDir):
             curTime = time.time() - s.timeDict[key]
         else:
             break
+    if 'StatsendEpochUTC' in s.timeDict:
+        stats = False
     if 'TransalignstartEpochUTC' in s.timeDict:
-        transStep = 'transStep'
+        transStep = 'TransalignStep'
         if stats:
-            curStep += ' ' + transStep
+            curStep += ' + ' + transStep
         else:
             curStep = transStep
         if 'TransalignendEpochUTC' not in s.timeDict:
