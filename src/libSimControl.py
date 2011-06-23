@@ -487,10 +487,10 @@ def runCommands(cmds, localTempDir, inPipes = [], outPipes = [], mode = 's', deb
     else:
         inPipes = [None] * len(cmds)
     if mode == 's':
-        logger.info('Issuing serial commads %s %s %s.' % (str(cmds), str(inPipes), str(outPipes)))
+        logger.info('Issuing serial commands %s %s %s.' % (str(cmds), str(inPipes), str(outPipes)))
         runCommandsS(cmds, localTempDir, inPipes = inPipes, outPipes = outPipes, debug = debug)
     else:
-        logger.info('Issuing parallel commads %s %s %s.' % (str(cmds), str(inPipes), str(outPipes)))
+        logger.info('Issuing parallel commands %s %s %s.' % (str(cmds), str(inPipes), str(outPipes)))
         runCommandsP(cmds, localTempDir, inPipes = inPipes, outPipes = outPipes, debug = debug)
 
 def runCommandsP(cmds, localTempDir, inPipes = [], outPipes = [], debug = False):
@@ -1082,9 +1082,9 @@ def evolverIntraMergeCmds(thisDir, theChild):
     cvtChrStr = ''
     for chrom in f:
         chrom = chrom.strip()
-        verifyFileExists(os.path.join(thisDir, 'intra', chrom + 'trfannots.gff'))
+        verifyFileExists(os.path.join(thisDir, 'intra', chrom + '.trfannots.gff'))
         verifyFileExists(os.path.join(thisDir, 'intra', chrom + '.outannots.gff'))
-        catCmd.append(os.path.join(thisDir, 'intra', chrom + 'trfannots.gff'))
+        catCmd.append(os.path.join(thisDir, 'intra', chrom + '.trfannots.gff'))
         catCmd.append(os.path.join(thisDir, 'intra', chrom + '.outannots.gff'))
         verifyFileExists(os.path.join(thisDir, 'intra', chrom + '.aln.rev'))
         verifyFileExists(os.path.join(thisDir, 'intra', chrom + '.outseq.rev'))
