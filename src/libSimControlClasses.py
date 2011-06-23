@@ -269,7 +269,7 @@ class CycleStep3(Cycle):
             m = re.match(regex, os.path.basename(f))
             if m is None:
                 raise RuntimeError('Regex "%s" failed on filename %s' % (regex, os.path.basename(f)))
-            outname = os.path.join(self.thisDir, 'intra', m.group(1) + 'trfannots.gff')
+            outname = os.path.join(self.thisDir, 'intra', m.group(1) + '.trfannots.gff')
             if not os.path.exists(outname):
                 # convert the .dat to .gff
                 cmd = [lsc.which('evolver_trf2gff.py'), f]
