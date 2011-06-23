@@ -218,7 +218,7 @@ class CycleStep2Chromosome(Cycle):
             lsc.newInfoXml(os.path.join(self.thisDir, 'xml', 'cycle.%s.xml' % self.thisChr))
             lsc.addTimestampsTag(os.path.join(self.thisDir, 'xml', 'cycle.%s.xml' % self.thisChr))
             lsc.subTypeTimestamp(self.thisDir, 'cycleChr', 
-                                 'CycleStep2Chr_%s_start' % self.thisChr, self.thisChr)
+                                 'CycleStep2Chr_%s_start' % self.thisChr.replace('+', '-'), self.thisChr)
 
         # evolver intra on one chromosome
         cmds = lsc.evolverIntraStepCmd(self.thisDir, self.theChild, self.thisStepLength, 
@@ -239,7 +239,7 @@ class CycleStep2Chromosome(Cycle):
         lsc.runCommands(cmds, self.getLocalTempDir(), mode = 'p')
         
         lsc.subTypeTimestamp(self.thisDir, 'cycleChr', 
-                             'CycleStep2Chr_%s_end' % self.thisChr, self.thisChr)
+                             'CycleStep2Chr_%s_end' % self.thisChr.replace('+', '-'), self.thisChr)
         lsc.addEndTimeAttribute(os.path.join(self.thisDir, 'xml', 'cycle.%s.xml' % self.thisChr))
 
 class CycleStep3(Cycle):
