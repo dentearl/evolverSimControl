@@ -1170,7 +1170,8 @@ def collectData(options, status):
     # longBranchSteps is a Branch() object
     status.longBranchSteps = longestRemainingBranchFinder(status.simNodeTree, options.stepLength,
                                                           status.stepsDict, options) 
-
+    if status.longBranchSteps.name == '':
+        status.longBranchSteps.name = options.rootName
     if not status.longBranchSteps.longestPath:
         status.longBranchSteps.name = ''
     timeHandler(status, options)
