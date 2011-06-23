@@ -870,14 +870,30 @@ def printCycleStats(options, status, pre = 'Cycle', length = 4):
         print('<table cellpadding="5"><thead><tr><th>Name</th><th><span style="font-style:italic">n</span></th>'
               '<th>Mean time (s)</th><th>(pretty)</th></tr></thead>')
         print '<tbody>'
-        
-        print('<tr style="background-color:#F6E8AE"><td>%s</td><td align="center">%d</td>'
-              '<td align="center">%.2f</td><td align="center">%s</td></tr>'
-              % ('Overall', len(times), mean(times), prettyTime(mean(times))))
+        if len(times):
+            lTimes = '%d' % len(times)
+            mTimes = '%.2f' % mean(times)
+            pmTimes = prettyTime(mean(times))
+        else:
+            lTimes = '0'
+            mTimes = '--'
+            pmTimes = '--'
+            
+        print('<tr style="background-color:#F6E8AE"><td>%s</td><td align="center">%s</td>'
+              '<td align="center">%s</td><td align="center">%s</td></tr>'
+              % ('Overall', lTimes, mTimes, pmTimes))
         for u in subList:
-            print('<tr><td>%s</td><td align="center">%d</td>'
-                  '<td align="center">%.2f</td><td align="center">%s</td></tr>'
-              % (u, len(subTimesDict[u]), mean(subTimesDict[u]), prettyTime(mean(subTimesDict[u]))))
+            if len(subTimesDict[u]):
+                ulTimes = '%d' % len(subTimesDict[u])
+                umTimes = '%.2f' % mean(subTimesDict[u])
+                upmTimes = prettyTime(mean(subTimesDict[u]))
+            else:
+                ulTimes = '0'
+                umTimes = '--'
+                upmTimes = '--'
+            print('<tr><td>%s</td><td align="center">%s</td>'
+                  '<td align="center">%s</td><td align="center">%s</td></tr>'
+              % (u, ulTimes, umTimes, upmTimes))
         
     else:
         print('%20s %4s %20s %20s' % ('Name', 'n', 'Mean time (s)', '(pretty)'))
