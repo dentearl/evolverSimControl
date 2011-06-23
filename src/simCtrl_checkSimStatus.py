@@ -172,7 +172,6 @@ def checkOptions(options, parser):
     if nt.distance == 0:
         if nt.iD is None:
             nt.iD = 'root'
-            options.inputNewick = printBinaryTree(nt,1)
     rootNameObj = infoTree.find('rootName')
     options.rootName = rootNameObj.text
     
@@ -234,7 +233,7 @@ def simStepTreeUpdater(snt, stepsDict, options):
     started = False
     if snt.name != options.rootName:
         if snt.name not in stepsDict:
-            raise RuntimeError('Unable to find expected SimNode snt.name = %s' % (snt.name))
+            raise RuntimeError('Unable to find expected SimNode snt.name = %s in stepsDict' % (snt.name))
         if not stepsDict[snt.name].complete:
             started = updateTimingInfo(stepsDict[snt.name], options)
         else:
@@ -465,21 +464,21 @@ def prettyTitle(n, s, done = True):
     else:
         return 'Cycle %s has taken %s.' % (n, t)
 
-def drawText(nt, options, sl, totalTreeDepth, rootName, scale = 4, 
+def drawText(nt, options, sl, totalTreeDepth, scale = 4, 
              stepsDict = {}, isHtml = False, directory = ''):
     """drawText() is in contrast to some other drawFORMAT() function that
     hasn't been written, but maybe one day will. drawText() draws the
     current state of the simulation as a tree using ASCII characters.
     """
     treeDepth = totalTreeDepthStepsFinder(nt, sl)
-    depthFirstWalk(nt, options, stepLength = sl, scale = scale, rootName = rootName, 
-                   stepsDict = stepsDict, isHtml = isHtml, directory = directory)
-    drawScaleBar(treeDepth, scale, rootName, isHtml)
+    depthFirstWalk(nt, options, stepLength = sl, scale = scale, stepsDict = stepsDict, 
+                   isHtml = isHtml, directory = directory)
+    drawScaleBar(treeDepth, scale, options.rootName, isHtml)
     drawLegend()
 
-def depthFirstWalk(nt, options, stepLength = 0.001, depth = 0, branch='root', 
-                   rootName='root', overlaps = {}, scale = 4, stepsDict = {}, 
-                   isHtml = False, directory = ''):
+def depthFirstWalk(nt, options, stepLength = 0.001, depth = 0, branch = 'root', 
+                   overlaps = {}, scale = 4, stepsDict = {}, isHtml = False, 
+                   directory = ''):
     """depthFirstWalk() depthFirstWalk. Walks a binaryTree object and writes
     out an ASCII representation of the tree.
     You need to know which branch you've descended from, in order
@@ -506,7 +505,7 @@ def depthFirstWalk(nt, options, stepLength = 0.001, depth = 0, branch='root',
     if nt is None:
         return 0
     originalBranchLength = nt.distance
-    offset = ' ' * (len(rootName) - scale)
+    offset = ' ' * (len(options.rootName) - scale)
     for i in xrange(1, int(depth)+1):
         if str(i) in overlaps:
             offset += ' ' * scale + ' |'
@@ -517,9 +516,9 @@ def depthFirstWalk(nt, options, stepLength = 0.001, depth = 0, branch='root',
     if branch == 'root':
         depth = 1
         if isHtml:
-            offset = ' ' + str2link(rootName, directory) + rootName + '</a>|'
+            offset = ' ' + str2link(options.rootName, directory) + options.rootName + '</a>|'
         else:
-            offset = ' %s|' % rootName
+            offset = ' %s|' % options.rootName
     else:
         offset += '|'
     if isHtml:
@@ -588,23 +587,23 @@ def depthFirstWalk(nt, options, stepLength = 0.001, depth = 0, branch='root',
         nextOverlapsR[str(int(depth))] = 1
     if branch == 'right':
         nextOverlapsL[str(int(depth))] = 1
-    left = depthFirstWalk(nt.left, options, stepLength = stepLength, rootName = rootName, 
+    left = depthFirstWalk(nt.left, options, stepLength = stepLength,
                           depth = depth + (math.ceil(originalBranchLength / stepLength)), 
                           branch = 'left', overlaps = nextOverlapsL, scale = scale, 
                           stepsDict = stepsDict, isHtml = isHtml, directory = directory)
     ##############################
     # FINALLY, print out the line and the name of the end cycle:
     if left:
-        if nt.iD != rootName:
+        if nt.iD != options.rootName and nt.iD != None:
             print '%s %s' % (offset, nt.iD)
         else:
             print '%s' % offset
-    right = depthFirstWalk(nt.right, options, stepLength = stepLength, rootName = rootName, 
+    right = depthFirstWalk(nt.right, options, stepLength = stepLength,
                            depth = depth + (math.ceil(originalBranchLength / stepLength)), 
                            branch = 'right', overlaps = nextOverlapsR, scale = scale, 
                            stepsDict = stepsDict, isHtml = isHtml, directory = directory)
     if not left and right:
-        if nt.iD != rootName:
+        if nt.iD != options.rootName:
             print '%s %s' % (offset, nt.iD)
         else:
             print '%s' % (offset)
@@ -1195,7 +1194,6 @@ def buildSimNodeTree(nt, options):
             p.left = t
             t.parent = p
             t.name = lsc.nameTree(nt)
-        print t.name, printBinaryTree(nt, True)
     if t is None:
         root.name = lsc.nameTree(nt)
         t = root
@@ -1308,7 +1306,7 @@ def printTree(status, options):
             print '<h3>Simulation Tree Status</h3>'
             print '<pre style="margin-left:2em;">'
         nt = newickTreeParser(options.inputNewick, 0.0)
-        drawText(nt, options, options.stepLength, status.totalTreeDepthSteps, options.rootName,
+        drawText(nt, options, options.stepLength, status.totalTreeDepthSteps,
                   scale = options.scale, stepsDict = status.stepsDict,
                   isHtml = options.isHtml, directory = options.htmlDir)
         if options.isHtml:
