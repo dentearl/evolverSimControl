@@ -25,7 +25,7 @@
 # Designed for interchr evolver where each chr has gene_index's
 # starting from 0 but ice needs unique.
 import sys
-import evolverSimControl.lib.evolver_gff # -dae, modification for evolverSimCtrl
+import evolverSimControl.lib.evolver_gff as gff # -dae, modification for evolverSimCtrl
 import re
 
 def Die(s):
@@ -35,13 +35,13 @@ def Die(s):
 def DoRec():
 	global GeneIndexes
 
-	AttrDict = evolver_gff.GetAttrDict()
-	CurrGeneIndex = evolver_gff.GetIntAttr("gene_index", -1)
+	AttrDict = gff.GetAttrDict()
+	CurrGeneIndex = gff.GetIntAttr("gene_index", -1)
 	if CurrGeneIndex == -1:
-		evolver_gff.WriteRec(sys.stdout)
+		gff.WriteRec(sys.stdout)
 		return
 	
-	Key = evolver_gff.Label + "." + str(CurrGeneIndex)
+	Key = gff.Label + "." + str(CurrGeneIndex)
 	if Key in GeneIndexes.keys():
 		NewGeneIndex = GeneIndexes[Key]
 	else:
@@ -49,13 +49,13 @@ def DoRec():
 		GeneIndexes[Key] = NewGeneIndex
 	
 	AttrDict["gene_index"] = NewGeneIndex
-	evolver_gff.SetAttrsFromDict(AttrDict)
+	gff.SetAttrsFromDict(AttrDict)
 
-	evolver_gff.WriteRec(sys.stdout)	
+	gff.WriteRec(sys.stdout)	
 
 FileName = sys.argv[1]
 GeneIndexes = {}
 
-evolver_gff.GetRecs(FileName, DoRec)
+gff.GetRecs(FileName, DoRec)
 
 print >> sys.stderr, len(GeneIndexes), "genes found"
