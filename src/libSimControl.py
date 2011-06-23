@@ -166,6 +166,7 @@ def addTimestampsTag(filename):
     """
     from libSimControl import lockfile, unlockfile
     import os
+    import sys
     import xml.etree.ElementTree as ET
     import xml.parsers.expat as expat
     import time
@@ -191,9 +192,10 @@ def subTypeTimestamp(dirname, typeTS, timeName, chrName = None):
     from libSimControlClasses import BadInputError
     from libSimControl import lockfile, unlockfile
     import os
+    import sys
+    import time
     import xml.etree.ElementTree as ET
     import xml.parsers.expat as expat
-    import time
     if typeTS not in ('cycle', 'stats', 'transalign', 'cycleChr'):
         raise BadInputError('typeTS must be either "cycle", "stats", '
                              '"transalign", or "cycleChr" not %s.' % typeTS)
@@ -1285,6 +1287,7 @@ def getParentDir(thisDir):
     """
     from libSimControl import verifyDirExists, verifyFileExists, lockfile, unlockfile, dirIsRoot
     import os
+    import sys
     import xml.etree.ElementTree as ET
     import xml.parsers.expat as expat
 
@@ -1325,6 +1328,7 @@ def dirIsRoot(thisDir):
     """
     from libSimControl import verifyDirExists, lockfile, unlockfile
     import os
+    import sys
     import xml.etree.ElementTree as ET
     import xml.parsers.expat as expat
 
@@ -1520,6 +1524,7 @@ def isBranchOrRoot(thisDir):
     """
     from libSimControl import verifyFileExists, verifyDirExists, lockfile, unlockfile, dirIsRoot
     import os
+    import sys
     import xml.etree.ElementTree as ET
     import xml.parsers.expat as expat
     
@@ -1548,6 +1553,7 @@ def isLeaf(thisDir):
     """
     from libSimControl import verifyFileExists, verifyDirExists, lockfile, unlockfile, dirIsRoot
     import os
+    import sys
     import xml.etree.ElementTree as ET
     import xml.parsers.expat as expat
     
@@ -1610,6 +1616,7 @@ def lastOneOutTurnOffTheLightsCycle(thisDir):
 def cycleIsComplete(thisDir):
     from libSimControl import lockfile, unlockfile, dirIsRoot
     import os
+    import sys
     import xml.etree.ElementTree as ET
     import xml.parsers.expat as expat
 
@@ -1632,6 +1639,7 @@ def statsAndTransAreComplete(thisDir):
     """
     from libSimControl import lockfile, unlockfile, dirIsRoot
     import os
+    import sys
     import xml.etree.ElementTree as ET
     import xml.parsers.expat as expat
 
@@ -1662,6 +1670,7 @@ def addEndTimeAttribute(filename):
     """
     from libSimControl import verifyFileExists, lockfile, unlockfile, dirIsRoot
     import os
+    import sys
     import time
     import xml.etree.ElementTree as ET
     import xml.parsers.expat as expat
@@ -1691,6 +1700,7 @@ def lastOneOutTurnOffTheLightsSimulation(thisDir, options):
     """
     from libSimControl import verifyFileExists, verifyDirExists, lockfile, unlockfile, dirIsRoot
     import os
+    import sys
     import time
     import xml.etree.ElementTree as ET
     import xml.parsers.expat as expat
@@ -1824,7 +1834,7 @@ def transalignStep1Cmds_1(thisDir, thisParentDir, options):
     if not os.path.exists(outname):
         cmd = [which('evolver_evo')]
         cmd.append('-cdsalns')
-        cmd.append(os.path.join(thisDir, 'inter', 'inter.aln.rev'))
+        cmd.append(os.path.join(thisDir, 'intra', 'intra.aln.rev'))
         cmd.append('-alns')
         cmd.append(outname + '.tmp')
         cmd.append('-annots1')
