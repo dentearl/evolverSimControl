@@ -926,7 +926,11 @@ def findStalledCycles(runDir, stepsDict, isHtml, htmlDir = ''):
     currently *in progress* and reports in progress cycles that are three
     SDs or more beyond the mean time.
     """
-    if len(stepsDict) < 10:
+    n = 0
+    for s in stepsDict:
+        if stepsDict[s].complete:
+            n += 1
+    if n < 10:
         # if there are fewer than 10 cycles complete then we cant get a decent
         # enough estimate of the mean time nor the stdev to issue warnings.
         return
