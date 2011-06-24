@@ -7,7 +7,9 @@
 The evolver team is responsible for items in external/ : George Asimenos and [Robert C. Edgar](http://www.drive5.com/), Serafim Batzoglou and [Arend Sidow](http://mendel.stanford.edu/sidowlab/).
 
 ## Summary
-A [jobTree](https://github.com/benedictpaten/jobTree/) based wrapper for the [Evolver](http://www.drive5.com/evolver/) genome evolution simulation tool suite.
+A [jobTree](https://github.com/benedictpaten/jobTree/) based wrapper for the [Evolver](http://www.drive5.com/evolver/) genome evolution simulation tool suite. 
+
+A detailed explanation will be placed here.
 
 ##Dependencies
 * sonLib: https://github.com/benedictpaten/sonLib/
@@ -19,7 +21,7 @@ A [jobTree](https://github.com/benedictpaten/jobTree/) based wrapper for the [Ev
 * trf: http://tandem.bu.edu/trf/trf.html Tandem Repeats Finder.
 * mafJoin: https://github.com/dentearl/mafTools Not necessary for simple simulations, mafJoin (part of mafTools) is only needed if you wish to create an maf alignment of all sequences following a simulation.
 * R: http://cran.r-project.org/ Only necessary if you wish to use the <code>simCtrl_postSimAnnotDistExtractor.py</code> script to view annotation size distributions following a simulation.
-* ggplot2 for R: in R type <code>install.packages("ggplot2')</code> Only necessary if you wish to use the <code>simCtrl_postSimAnnotDistExtractor.py</code> script to view annotation size distributions following a simulation.
+* ggplot2 for R: in R type <code>install.packages("ggplot2")</code> Only necessary if you wish to use the <code>simCtrl_postSimAnnotDistExtractor.py</code> script to view annotation size distributions following a simulation.
 
 ##Requirements
 * Linux on i86 Intel. This is due to core Evolver executables being distributed as precompiled binaries.
