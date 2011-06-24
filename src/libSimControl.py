@@ -1868,7 +1868,7 @@ def transalignStep1Cmds_1(thisDir, thisParentDir, options):
         pipes.append(None)
         cmds.append(cmd)
 
-    outname = os.path.join(thisDir, 'stats', 'img.cycle.lmap.pdf')
+    outname = os.path.join(thisDir, 'stats', 'img.cycle.lmap.png')
     if not os.path.exists(outname):
         cmd = [which('evolver_drawrev')]
         cmd.append('-fromrev')
