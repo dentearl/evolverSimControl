@@ -9,7 +9,7 @@ The evolver team is responsible for items in external/ : George Asimenos and [Ro
 ## Summary
 A [jobTree](https://github.com/benedictpaten/jobTree/) based wrapper for the [Evolver](http://www.drive5.com/evolver/) genome evolution simulation tool suite. 
 
-**evolverSimControl** (eSC) can be used to simulate multi-chromosome genome evolution on an arbitrary phylogeny. In addition to simply running evolver, eSC also automatically creates statistical summaries of the simulation as it runs including text and image files. Also included are convience scripts to: check on a running simulation and see detailed status and logging information; extract fasta sequence files from the leaf nodes of a completed simulation; extract pairwise multiple alignment files ([.maf](http://genome.ucsc.edu/FAQ/FAQformat.html#format5)) from leaf and branch nodes from a completed simulation and with the help of [mafJoin](https://github.com/dentearl/mafTools/),join them together into a single maf covering the entire simulation.
+**evolverSimControl** (eSC) can be used to simulate multi-chromosome genome evolution on an arbitrary phylogeny ([Newick format](http://evolution.genetics.washington.edu/phylip/newicktree.html)). In addition to simply running evolver, eSC also automatically creates statistical summaries of the simulation as it runs including text and image files. Also included are convience scripts to: check on a running simulation and see detailed status and logging information; extract fasta sequence files from the leaf nodes of a completed simulation; extract pairwise multiple alignment files ([.maf](http://genome.ucsc.edu/FAQ/FAQformat.html#format5)) from leaf and branch nodes from a completed simulation and with the help of [mafJoin](https://github.com/dentearl/mafTools/),join them together into a single maf covering the entire simulation.
 
 ##Dependencies
 * **sonLib**: https://github.com/benedictpaten/sonLib/
@@ -24,7 +24,7 @@ A [jobTree](https://github.com/benedictpaten/jobTree/) based wrapper for the [Ev
 * **ggplot2** for R: in R type <code>install.packages("ggplot2")</code> Only necessary if you wish to use the <code>simCtrl_postSimAnnotDistExtractor.py</code> script to view annotation size distributions following a simulation.
 
 ##Requirements
-* Linux on i86 Intel. This is due to core Evolver executables being distributed as precompiled binaries.
+* Linux on i86 Intel. This is due to core Evolver executables being distributed as pre-compiled binaries.
 
 ##Installation
 1. Download the package. Consider making it a sibling directory to <code>jobTree/</code> and <code>sonLib/</code>.
@@ -39,18 +39,106 @@ This example will work you through a small simulation using the toy test example
 1. Download and expand the toy archive. For simplicity I'll assume that both <code>root/</code> and <code>params/</code> are in the working directory, i.e. <code>./</code> .
 2. Next we run the runSim program:
     * <code>$ simCtrl_runSim.py --inputNewick '(Knife:0.004, (Fork:0.003, (Ladle:0.002, (Spoon:0.001, Teaspoon:0.001)S-TS:.001)S-TS-L:.001)S-TS-L-F:0.001);' --outDir toyExampleSim --rootDir root/ --rootName hg18 --paramsDir params/ --jobTree jobTreeToyExampleSim --maxThreads 32 --seed 3571</code>
-    * <code>--outDir</code> is where you simulation is going to end up.
-    * <code>--rootDir</code> should point to the <code>root/</code> dir you created.
-    * <code>--rootName</code> in this case is hg18. It's set in the infile creation step and you can pull this out of a .rev file with <code>evolver_cvt -dumpchrids path/to/seq.rev</code>
-    * <code>--paramsDir</code> should point to the <code>params/</code> dir you created.
-    * <code>--noMEs</code> turns off mobile element library simulation. If you leave this **out** then the <code>params/</code> dir must contain <code>mes.cfg</code> and <code>model.mes.txt</code>, and the <code>root/</code> dir must contain a directory named <code>mobiles/</code> that contains the files <code>LTR.fa</code>, <code>ME.fa</code>, and <code>ME.gff</code>.
-    * <code>--maxThreads</code> is a [jobTree](https://github.com/benedictpaten/jobTree/) option for limiting the maximum number of parallel threads. The default is rather low.
-    * <code>--seed</code> allows you to give a random seed (an integer) to the simulation. The default is the string 'stochastic'.
     * You can check on a running simulation by using <code>simCtrl_checkSimStatus.py</code> , use <code>--help</code> for options.
 3. Post simulation you can run <code>simCtrl_postSimFastaExtractor.py</code> to extract fasta sequence files from the genomes.
 4. You may also wish to run <code>simCtrl_postSimAnnotDistExtractor.py</code> which will use the ggplot2 package for R to display the length distributions of some of the annotations.
 5. You may also wish to construct a single maf for the simulation using <code>simCtrl_postSimMafExtractor.py</code> which will use [mafJoin](https://github.com/dentearl/mafTools/) to join the pairwise maf output from Evolver into a single simulation wide maf. This process is extremely memory intensive with the 120Mb Mammal simulation eventually requiring aprroximately 250Gb of memory.
 
 ##Use
-1. Write the use section.
-2. Follow the use section instructions. ;)
+###Initiating a simulation
+In order to run eSC you will need an infile set, a parameter set, a phylogenetic tree and optionally a mobile element library and mobile element parameter set. Infile sets can be created using [evolverInfileGenerator](https://github.com/dentearl/evolverInfileGenerator/) or from scratch. Parameter sets can be generated by reading primary literature and coming up with reasonable values. Phylogenetic trees need to be in Newick format.
+
+Available options for running a simulation are listed below.
+
+<code>$ bin/simCtrl_runSim.py --help
+Usage: simCtrl_runSim.py --rootName=name --rootDir=/path/to/dir --paramsDir=/path/to/dir
+--tree=newickTree --stepLength=stepLength --outDir=/path/to/dir --jobTree=/path/to/dir [options]
+
+simCtrl_runSim.py is used to initiate an evolver simulation using jobTree/scriptTree.
+
+Options:
+  -h, --help            show this help message and exit
+  --rootDir=ROOTINPUTDIR
+                        Input root directory.
+  --rootName=ROOTNAME   name of the root genome, to differentiate it from the input Newick. default=root
+  -t INPUTNEWICK, --inputNewick=INPUTNEWICK
+                        Newick tree. http://evolution.genetics.washington.edu/phylip/newicktree.html
+  --stepLength=STEPLENGTH
+                        stepLength for each cycle. default=0.001
+  --paramsDir=PARAMSDIR
+                        Parameter directory.
+  -o OUTDIR, --outDir=OUTDIR
+                        Out directory.
+  --seed=SEED           Random seed, either an int or "stochastic". default=stochastic
+  --noMEs               Turns off all mobile element and RPG modules in the sim. default=False
+  --noBurninMerge       Turns off checks for an aln.rev file in the root dir. default=False
+  --noGeneDeactivation  Turns off the gene deactivation step. default=False
+  --maxThreads=MAXTHREADS
+                        The maximum number of threads to use when running in single machine mode. default=4
+  ... and all other jobTree standard options.
+</code>
+
+###Simulation Status
+To check on a running simulation you can use the <code>simCtrl_checkSimStatus.py</code> script.
+
+<code>
+$ bin/simCtrl_checkSimStatus.py --help
+Usage: simCtrl_checkSimStatus.py --simDir path/to/dir [options]
+
+simCtrl_checkSimStatus.py can be used to check on the status of a running or completed
+evolverSimControl simulation.
+
+Options:
+  -h, --help         show this help message and exit
+  --simDir=SIMDIR    Parent directory.
+  --drawText         Prints an ASCII representation of the current tree status. default=False
+  --curCycles        prints out the list of currently running cycles. default=False
+  --stats            prints out the statistics for cycle steps. default=False
+  --cycleStem        prints out a stem and leaf plot for completed cycle runtimes, in seconds. default=False
+  --cycleStemHours   prints out a stem and leaf plot for completed cycle runtimes, in hours. default=False
+  --cycleList        prints out a list of all completed cycle runtimes. default=False
+  --html             prints output in HTML format for use as a cgi. default=False
+  --htmlDir=HTMLDIR  prefix for html links.
+</code>
+
+###Sequence Extraction
+To extract fasta sequences from a completed simulation you can use the <code>simCtrl_postSimFastaExtractor.py</code> script.
+
+<code>
+$ bin/simCtrl_postSimFastaExtractor.py --help
+Usage: simCtrl_postSimFastaExtractor.py --simDir path/to/dir [options]
+
+simCtrl_postSimFastaExtractor.py takes in a simulation directory and then extracts the sequences
+of leaf nodes in fasta format and stores them in the respective step's directory.
+
+Options:
+  -h, --help       show this help message and exit
+  --simDir=SIMDIR  The simulation directory.
+  --allCycles      Extract fastas from all cycles, not just leafs. default=False
+</code>
+
+###Simulation maf creation
+To create a single maf reflecting the evolutionary history of the entire simulation <code>simCtrl_postSimFastaExtractor.py</code> script.
+
+<code>
+$ bin/simCtrl_postSimMafExtractor.py --help
+Usage: simCtrl_postSimMafExtractor.py --simDir path/to/dir [options]
+
+simCtrl_postSimMafExtractor.py requires mafJoin which is part of mafTools and is available
+at https://github.com/dentearl/mafTools/ . 
+
+Options:
+  -h, --help            show this help message and exit
+  --simDir=SIMDIR       Simulation directory.
+  --maxBlkWidth=MAXBLKWIDTH
+                        Maximum mafJoin maf block output size. May be reduced towards 250 for complicated
+                        phylogenies. default=10000
+  --maxInputBlkWidth=MAXINPUTBLKWIDTH
+                        Maximum mafJoin maf block input size. mafJoin will cut inputs to size, may result in long
+                        runs for very simple joins. May be reduced towards 250 for complicated phylogenies.
+                        default=1000
+  --noBurninMerge       Will not perform a final merge of simulation to the burnin. default=False
+  --maxThreads=MAXTHREADS
+                        The maximum number of threads to use when running in single machine mode. default=4
+  ... and all other jobTree standard options.
+</code>
