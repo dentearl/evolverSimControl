@@ -9,7 +9,7 @@ The evolver team is responsible for items in external/ : George Asimenos and [Ro
 ## Summary
 A [jobTree](https://github.com/benedictpaten/jobTree/) based wrapper for the [Evolver](http://www.drive5.com/evolver/) genome evolution simulation tool suite. 
 
-A detailed explanation will be placed here.
+**evolverSimControl** (eSC) can be used to simulate multi-chromosome genome evolution on an arbitrary phylogeny. In addition to simply running evolver, eSC also automatically creates statistical summaries of the simulation as it runs including text and image files. Also included are convience scripts to: check on a running simulation and see detailed status and logging information; extract fasta sequence files from the leaf nodes of a completed simulation; extract pairwise mafs from leaf and branch nodes from a completed simulation and with the help of [mafJoin](https://github.com/dentearl/mafTools/),join them together into a single maf covering the entire simulation.
 
 ##Dependencies
 * sonLib: https://github.com/benedictpaten/sonLib/
