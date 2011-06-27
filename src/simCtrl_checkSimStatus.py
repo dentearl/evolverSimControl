@@ -48,6 +48,7 @@ import os
 import re
 from sonLib.bioio import newickTreeParser
 from sonLib.bioio import printBinaryTree
+import subprocess
 import sys
 import time
 import xml.etree.ElementTree as ET
@@ -67,12 +68,6 @@ symbolDict = {'none' : '-',
               8 : '6',
               9 : '3',
               10 : '7'}
-symPreStat  = 'O'
-symStat     = '$'
-symPreCycle = 'o'
-symCycle    = '+'
-symNone     = '-'
-symTrans    = '#'
 
 class Branch:
     """ We use Branch class to keep track of the
@@ -215,7 +210,7 @@ def totalTreeDepthStepsFinder(nt, sl):
     treeLength = math.ceil(nt.distance / sl)
     return treeLength + max(totalTreeDepthStepsFinder(nt.right, sl), totalTreeDepthStepsFinder(nt.left, sl))
 
-def simStepUpdater(nt, sl, stepsDict, simNodeTree, options):
+def simStepUpdater(nt, sl, stepsDict, simNodeTree, status, options):
     """ simStepUpdater goes through the tree and the stepsDict and updates the 
     steps in stepsDict that need updating.
     """
@@ -224,10 +219,10 @@ def simStepUpdater(nt, sl, stepsDict, simNodeTree, options):
         if s not in stepsDict:
             stepsDict[s] = Step()
             stepsDict[s].name = s
-    simStepTreeUpdater(simNodeTree, stepsDict, options)
+    simStepTreeUpdater(simNodeTree, stepsDict, status, options)
     return numCompletedSteps(stepsDict), stepsDict
 
-def simStepTreeUpdater(snt, stepsDict, options):
+def simStepTreeUpdater(snt, stepsDict, status, options):
     if snt is None:
         return
     started = False
@@ -235,7 +230,7 @@ def simStepTreeUpdater(snt, stepsDict, options):
         if snt.name not in stepsDict:
             raise RuntimeError('Unable to find expected SimNode snt.name = %s in stepsDict' % (snt.name))
         if not stepsDict[snt.name].complete:
-            started = updateTimingInfo(stepsDict[snt.name], options)
+            started = updateTimingInfo(stepsDict[snt.name], status, options)
         else:
             started = True
     else:
@@ -243,8 +238,8 @@ def simStepTreeUpdater(snt, stepsDict, options):
     if started:
         # if the current node has not started, there is no 
         # sense in descending the tree
-        simStepTreeUpdater(snt.left, stepsDict, options)
-        simStepTreeUpdater(snt.right, stepsDict, options)
+        simStepTreeUpdater(snt.left, stepsDict, status, options)
+        simStepTreeUpdater(snt.right, stepsDict, status, options)
 
 def numCompletedSteps(stepsDict):
     c = 0
@@ -253,7 +248,7 @@ def numCompletedSteps(stepsDict):
             c += 1
     return c
 
-def updateTimingInfo(s, options):
+def updateTimingInfo(s, status, options):
     """ takes a Step() object and updates all the timing info associated
     with that sim step. If the Step has started running, returns True
     """
@@ -273,6 +268,7 @@ def updateTimingInfo(s, options):
                 s.endTime = float(ts.attrib['endEpochUTC'])
                 s.elapsedTime = s.endTime - s.startTime
                 s.complete = True
+                updateChromLengthDict(s.name, status, options)
     # cycle.xml stats.xml
     for t in ['Cycle', 'Stats']:
         infotree = timeoutParse(os.path.join(options.simDir, s.name, 'xml', '%s.xml' % t.lower()))
@@ -295,7 +291,7 @@ def updateTimingInfo(s, options):
                             continue
                         updated = True
                         s.timeDict[key] = float(elmUtc.text)
-    # chromosomes
+    # chromosome run times
     chrs = glob.glob(os.path.join(options.simDir, s.name, 'xml', 'cycle.*.xml'))
     regex = r'cycle\.(.*)\.xml'
     pat = re.compile(regex)
@@ -330,8 +326,41 @@ def updateTimingInfo(s, options):
                     continue
                 updated = True
                 s.timeDict[key] = float(elmUtc.text)
-            
     return updated
+
+def updateChromLengthDict(name, status, options):
+    """ calls evolver_cvt to get the length in bp for the chromosomes 
+    in the 'name' step.
+    should only be called once per simulation step, right when the step
+    is recorded as 'complete'.
+    """
+    if 'chromosomeLengthsDictList' not in status.variables:
+        status.variables['chromosomeLengthsDictList'] = True
+        status.chromosomeLengthsDictList = {}
+    filename = os.path.join(options.simDir, name, 'seq.rev')
+    cmd = [lsc.which('evolver_cvt')]
+    cmd.append('-dumpchrids')
+    cmd.append(filename)
+    out = subprocess.Popen(cmd, stdout = subprocess.PIPE).communicate()[0]
+    isChroms = False
+    out = out.split('\n')
+    for line in out:
+        data = line.split()
+        if data == []:
+            continue
+        if not isChroms:
+            if len(data) != 4:
+                continue
+            else:
+                if data[0].startswith('='):
+                    isChroms = True
+                    continue
+        if isChroms:
+            l = int(data[2])
+            c = data[3]
+            if c not in status.chromosomeLengthsDictList:
+                status.chromosomeLengthsDictList[c] = []
+            status.chromosomeLengthsDictList[c].append(l)
 
 def timeoutParse(filename, timeout = 0.5, retry = 0.1):
     """ timeoutParse() takes an xml filename and attemps to parse the xml
@@ -417,7 +446,6 @@ def howLongSimulationFinder(simDir, cycles, useNow = True):
     if ts.find('end'):
         return float(ts.find('end').find('epochUTC').text) - startTime
     return time.time() - startTime
-        
 
 def prettyTime(t):
     """ prettyTime(t): input t comes in as seconds. Output is a str
@@ -436,6 +464,17 @@ def prettyTime(t):
         return '%.2f days' % (t)
     t = t / 7.0
     return '%.2f weeks' % (t)
+
+def prettyLength(l):
+    """ takes in an average base pairs (float) and kicks out a string
+    """
+    if not isinstance(l, float):
+        raise RuntimeError('prettyLength is intended for floats, rewrite for %s' % l.__class__)
+    if l > 10**6:
+        return '%.2f Mb' % (l / float(10**6))
+    if l > 10**3:
+        return '%.2f Kb' % (l / float(10**6))
+    return '%.2f' % l
 
 def cycleDirectoriesOnly(aList, options):
     """cycleDirectoriesOnly() takes a list of items from a directory
@@ -528,8 +567,6 @@ def depthFirstWalk(nt, options, stepLength = 0.001, depth = 0, branch = 'root',
     stringCap = '|'
     
     for i in xrange(0, int(math.ceil(originalBranchLength / stepLength))):
-        # print symNone for steps not started, symStat for complete steps, 
-        # symCycle for partially complete steps
         nt.distance -= stepLength
         if nt.distance < 0:
             nt.distance = 0
@@ -783,6 +820,12 @@ pre, .code {
   color: #333333;
   overflow : auto;
 }
+span.chrname {
+  color:blue;
+}
+span.chrname:hover{
+  background-color:#EFE1A1;
+}
 </style>
 </head>
 <body bgcolor="#FFFFFFFF">
@@ -867,8 +910,13 @@ def printCycleStats(options, status, pre = 'Cycle', length = 4):
                                        status.stepsDict[s].timeDict['%s_start' % u])
     
     if options.isHtml:
-        print('<table cellpadding="5"><thead><tr><th>Name</th><th><span style="font-style:italic">n</span></th>'
-              '<th>Mean time (s)</th><th>(pretty)</th></tr></thead>')
+        if pre == 'Cycle':
+            extraColHeader = '<th>&mu; Len (bp)</th>'
+        else:
+            extraColHeader = ''
+        print('<table cellpadding="5"><thead><tr><th>Name</th><th>'
+              '<span style="font-style:italic">n</span></th>%s'
+              '<th>&mu; time (s)</th><th>(pretty)</th></tr></thead>' % extraColHeader)
         print '<tbody>'
         if len(times):
             lTimes = '%d' % len(times)
@@ -878,10 +926,13 @@ def printCycleStats(options, status, pre = 'Cycle', length = 4):
             lTimes = '0'
             mTimes = '--'
             pmTimes = '--'
-            
+        if pre == 'Cycle':
+            extraCol = '<td style="text-align:center">--</td>'
+        else:
+            extraCol = ''
         print('<tr style="background-color:#F6E8AE"><td>%s</td><td align="center">%s</td>'
-              '<td align="center">%s</td><td align="center">%s</td></tr>'
-              % ('Overall', lTimes, mTimes, pmTimes))
+              '%s<td align="center">%s</td><td align="center">%s</td></tr>'
+              % ('Overall', lTimes, extraCol, mTimes, pmTimes))
         for u in subList:
             if len(subTimesDict[u]):
                 ulTimes = '%d' % len(subTimesDict[u])
@@ -892,8 +943,8 @@ def printCycleStats(options, status, pre = 'Cycle', length = 4):
                 umTimes = '--'
                 upmTimes = '--'
             print('<tr><td>%s</td><td align="center">%s</td>'
-                  '<td align="center">%s</td><td align="center">%s</td></tr>'
-              % (u, ulTimes, umTimes, upmTimes))
+                  '%s<td align="center">%s</td><td align="center">%s</td></tr>'
+              % (u, ulTimes, extraCol, umTimes, upmTimes))
         
     else:
         print('%20s %4s %20s %20s' % ('Name', 'n', 'Mean time (s)', '(pretty)'))
@@ -907,7 +958,7 @@ def printCycleStats(options, status, pre = 'Cycle', length = 4):
         if options.isHtml:
             print '</tbody></table>'
         return
-        
+    # print the chromosome times
     chromTimesDict = {}
     for s in status.stepsDict:
         if 'chromosomes' not in status.stepsDict[s].timeDict:
@@ -920,9 +971,21 @@ def printCycleStats(options, status, pre = 'Cycle', length = 4):
     sortedChromTimes = sorted(chromTimesDict, key=lambda c: mean(chromTimesDict[c]), reverse = True)
     if options.isHtml:
         for c in sortedChromTimes:
-            print('<tr><td>%s</td><td align="center">%d</td>'
+            if len(c) > 22:
+                chrom = ('<span title="%s" class="chrname">'
+                         '%s ..(%d).. %s</span>' % (c, c[0:7], len(c) - 12, c[-7:]))
+            else:
+                chrom = '<span title="%s" class="chrname">%s</span>' % (c, c)
+            if c in status.chromosomeLengthsDictList:
+                chromLengthStr = prettyLength(mean(status.chromosomeLengthsDictList[c]))
+            else:
+                chromLengthStr = ''
+            print('<tr><td>%s</td><td align="center">%d</td><td style="text-align:center;">%s</td>'
                   '<td align="center">%.2f</td><td align="center">%s</td></tr>'
-              % (c, len(chromTimesDict[c]), mean(chromTimesDict[c]), prettyTime(mean(chromTimesDict[c]))))
+                  % (chrom, len(chromTimesDict[c]),
+                     chromLengthStr,
+                     mean(chromTimesDict[c]), 
+                     prettyTime(mean(chromTimesDict[c]))))
         print '</tbody></table>'
     else:
         for c in sortedChromTimes:
@@ -1179,7 +1242,8 @@ def collectData(options, status):
             newickTree.iD = options.rootName
     status.numCompletedSteps, status.stepsDict = simStepUpdater(newickTree, options.stepLength,
                                                                 status.stepsDict, 
-                                                                status.simNodeTree, options)
+                                                                status.simNodeTree, status, 
+                                                                options)
     #####
     # now we find the longest continuous branch yet to be simulated
     # longBranchSteps is a Branch() object
