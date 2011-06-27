@@ -9,19 +9,19 @@ The evolver team is responsible for items in external/ : George Asimenos and [Ro
 ## Summary
 A [jobTree](https://github.com/benedictpaten/jobTree/) based wrapper for the [Evolver](http://www.drive5.com/evolver/) genome evolution simulation tool suite. 
 
-**evolverSimControl** (eSC) can be used to simulate multi-chromosome genome evolution on an arbitrary phylogeny. In addition to simply running evolver, eSC also automatically creates statistical summaries of the simulation as it runs including text and image files. Also included are convience scripts to: check on a running simulation and see detailed status and logging information; extract fasta sequence files from the leaf nodes of a completed simulation; extract pairwise mafs from leaf and branch nodes from a completed simulation and with the help of [mafJoin](https://github.com/dentearl/mafTools/),join them together into a single maf covering the entire simulation.
+**evolverSimControl** (eSC) can be used to simulate multi-chromosome genome evolution on an arbitrary phylogeny. In addition to simply running evolver, eSC also automatically creates statistical summaries of the simulation as it runs including text and image files. Also included are convience scripts to: check on a running simulation and see detailed status and logging information; extract fasta sequence files from the leaf nodes of a completed simulation; extract pairwise multiple alignment files ([.maf](http://genome.ucsc.edu/FAQ/FAQformat.html#format5)) from leaf and branch nodes from a completed simulation and with the help of [mafJoin](https://github.com/dentearl/mafTools/),join them together into a single maf covering the entire simulation.
 
 ##Dependencies
-* sonLib: https://github.com/benedictpaten/sonLib/
-* jobTree: https://github.com/benedictpaten/jobTree/
-* Evolver: http://www.drive5.com/evolver/ Specifically, make sure that the Evolver tools are on your <code>PATH</code> environmental variable and that their names are preceeded with <code>evolver_</code>. Specifically all of the following list of files need to be on your <code>PATH</code>.
+* **sonLib**: https://github.com/benedictpaten/sonLib/
+* **jobTree**: https://github.com/benedictpaten/jobTree/
+* **evolver**: http://www.drive5.com/evolver/ Specifically, make sure that the Evolver tools are on your <code>PATH</code> environmental variable and that their names are preceeded with <code>evolver_</code>. Specifically all of the following list of files need to be on your <code>PATH</code>.
     * <code>evolver_cvt</code>
     * <code>evolver_evo</code>
     * <code>evolver_transalign</code>
-* trf: http://tandem.bu.edu/trf/trf.html Tandem Repeats Finder.
-* mafJoin: https://github.com/dentearl/mafTools Not necessary for simple simulations, mafJoin (part of mafTools) is only needed if you wish to create an maf alignment of all sequences following a simulation.
-* R: http://cran.r-project.org/ Only necessary if you wish to use the <code>simCtrl_postSimAnnotDistExtractor.py</code> script to view annotation size distributions following a simulation.
-* ggplot2 for R: in R type <code>install.packages("ggplot2")</code> Only necessary if you wish to use the <code>simCtrl_postSimAnnotDistExtractor.py</code> script to view annotation size distributions following a simulation.
+* **trf**: http://tandem.bu.edu/trf/trf.html Tandem Repeats Finder.
+* **mafJoin**: https://github.com/dentearl/mafTools Not necessary for simple simulations, mafJoin (part of mafTools) is only needed if you wish to create a maf alignment of all sequences following a simulation.
+* **R**: http://cran.r-project.org/ Only necessary if you wish to use the <code>simCtrl_postSimAnnotDistExtractor.py</code> script to view annotation size distributions following a simulation.
+* **ggplot2** for R: in R type <code>install.packages("ggplot2")</code> Only necessary if you wish to use the <code>simCtrl_postSimAnnotDistExtractor.py</code> script to view annotation size distributions following a simulation.
 
 ##Requirements
 * Linux on i86 Intel. This is due to core Evolver executables being distributed as precompiled binaries.
@@ -49,7 +49,7 @@ This example will work you through a small simulation using the toy test example
     * You can check on a running simulation by using <code>simCtrl_checkSimStatus.py</code> , use <code>--help</code> for options.
 3. Post simulation you can run <code>simCtrl_postSimFastaExtractor.py</code> to extract fasta sequence files from the genomes.
 4. You may also wish to run <code>simCtrl_postSimAnnotDistExtractor.py</code> which will use the ggplot2 package for R to display the length distributions of some of the annotations.
-5. You may also wish to construct a single multiple alignment file ([.maf](http://genome.ucsc.edu/FAQ/FAQformat.html#format5)) for the simulation using <code>simCtrl_postSimMafExtractor.py</code> which will use [mafJoin](https://github.com/dentearl/mafTools/) to join the pairwise maf output from Evolver into a single simulation wide maf. This process is extremely memory intensive with the 120Mb Mammal simulation eventually requiring aprroximately 250Gb of memory.
+5. You may also wish to construct a single maf for the simulation using <code>simCtrl_postSimMafExtractor.py</code> which will use [mafJoin](https://github.com/dentearl/mafTools/) to join the pairwise maf output from Evolver into a single simulation wide maf. This process is extremely memory intensive with the 120Mb Mammal simulation eventually requiring aprroximately 250Gb of memory.
 
 ##Use
 1. Write the use section.
