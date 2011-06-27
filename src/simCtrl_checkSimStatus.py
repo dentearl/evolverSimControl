@@ -142,10 +142,10 @@ def initOptions(parser):
                               'runtimes. default=%default'))
     parser.add_option('--html', dest = 'isHtml', action = 'store_true',
                       default = False,
-                      help=('prints output in an HTML friendly way, maybe '
-                            'for a cgi, hmmmmmmm? default=%default'))
+                      help=('prints output in HTML format for use as a cgi. '
+                            'default=%default'))
     parser.add_option('--htmlDir', dest = 'htmlDir', default = '',
-                      help = 'prefix for html links. default=%default')
+                      help = 'prefix for html links.')
 
 def checkOptions(options, parser):
     if options.simDir is None:
@@ -1382,12 +1382,11 @@ def printInfoTable(status, options):
     if options.isHtml:
         print '</td></tr></table>'
         print '</div>'
-        print '<br>'
 
 def printTree(status, options):
     #####
     # Draw the Tree!
-    if options.drawText is not None:
+    if options.drawText:
         if options.isHtml:
             print '<h3>Simulation Tree Status</h3>'
             print '<pre style="margin-left:2em;">'
@@ -1413,7 +1412,9 @@ def printStats(status, options):
         printSortedStepTimes(status.stepsDict, options.isHtml, options.htmlDir)
 
 def main():
-    usage = ('usage: %prog --simDir path/to/dir\n\n')
+    usage = ('usage: %prog --simDir path/to/dir [options]\n\n'
+             '%prog can be used to check on the status of a running or completed\n'
+             'evolverSimControl simulation.')
     parser = OptionParser(usage = usage)
     initOptions(parser)
     options, args = parser.parse_args()
