@@ -146,9 +146,6 @@ def initOptions(parser):
                             'for a cgi, hmmmmmmm? default=%default'))
     parser.add_option('--htmlDir', dest = 'htmlDir', default = '',
                       help = 'prefix for html links. default=%default')
-    parser.add_option('--barimg', dest = 'barimg', default = '',
-                      help = ('URL to image file to be stretched '
-                              'to make barplots for html output. default=%default'))
 
 def checkOptions(options, parser):
     if options.simDir is None:
