@@ -2,4 +2,3 @@ bin/*
 lib/*
 *pyc
 __init__.py
-*o
