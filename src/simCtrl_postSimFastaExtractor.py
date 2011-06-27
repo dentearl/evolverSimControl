@@ -7,7 +7,7 @@ A script that will take the path to a simulation
 out directory and makes repeated calls to cvt
 (in fabulous PARALLEL-vision!) in order
 to extract FASTA files from either all cycles, or
-only the leaves.
+only the leafs.
 """
 ##################################################
 # Copyright (C) 2009-2011 by
@@ -45,10 +45,10 @@ import xml.etree.ElementTree as ET
 import evolverSimControl.lib.libSimControl as lsc
 
 def initOptions(parser):
-    parser.add_option('--simDir',dest='simDir',
-                      help='Out directory from simTree.py.')
-    parser.add_option('--allCycles', action='store_true', dest='allCycles',
-                      default=False, help='Will extract fastas from all cycles, not just leafs. '
+    parser.add_option('--simDir', dest = 'simDir',
+                      help = 'The simulation directory.')
+    parser.add_option('--allCycles', action = 'store_true', dest = 'allCycles',
+                      default = False, help = 'Extract fastas from all cycles, not just leafs. '
                       'default=%default')
 
 def checkOptions(options, parser):
@@ -75,7 +75,7 @@ def directoriesOnly(aList):
             bList.append(i)
     return bList
 
-def extractLeaves(nt, leafDict):
+def extractLeafs(nt, leafDict):
     """Given a newick tree object, it returns a dict of
     leaf objects. Operates recursively.
     """
@@ -85,13 +85,14 @@ def extractLeaves(nt, leafDict):
     if nt.right is None and nt.left is None:
         leafDict[nt.iD] = True
     else:
-        extractLeaves(nt.right, leafDict = leafDict)
-        extractLeaves(nt.left , leafDict = leafDict)    
+        extractLeafs(nt.right, leafDict = leafDict)
+        extractLeafs(nt.left , leafDict = leafDict)    
     
 def main():
     usage = ('usage: %prog --simDir path/to/dir [options]\n\n'
-             '%prog takes in a simulation directory and then extracts the sequences\n'
-             'of some of the cycles to their directories in fasta format.')
+             '%prog takes in a simulation directory and then extracts\n'
+             'the sequence of each leaf node in fasta format and stores them\n'
+             'in the respective step\'s directory.')
     parser = OptionParser(usage = usage)
     initOptions(parser)
     options, args = parser.parse_args()
@@ -99,11 +100,11 @@ def main():
     
     cycles = glob.glob(os.path.join(options.simDir, '*'))
     cycles = directoriesOnly(cycles)
-    leaves = {}
+    leafs = {}
     nt = newickTreeParser(options.inputNewick, 0.0)
-    extractLeaves(nt, leaves)
+    extractLeafs(nt, leafs)
     for d in cycles:
-        if not options.allCycles and not os.path.basename(d) in leaves:
+        if not options.allCycles and not os.path.basename(d) in leafs:
             continue
 
         cmds = []

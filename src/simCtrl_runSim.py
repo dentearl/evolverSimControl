@@ -46,20 +46,21 @@ import sys
 lsc.verifyPrograms(lsc.requiredPrograms)
 
 def initOptions(parser):
-    parser.add_option('-o', '--outDir', dest = 'outDir',
-                      help = 'Out directory.')
-    parser.add_option('-t', '--inputNewick', dest = 'inputNewick',
-                      help = 'Newick tree.')
-    parser.add_option('--stepLength', dest = 'stepLength', action = "store",
-                      type  = 'float', default = 0.001,
-                      help = 'stepLength for each cycle. default=%default')
     parser.add_option('--rootDir', dest = 'rootInputDir',
                       help = 'Input root directory.')
     parser.add_option('--rootName', dest = 'rootName', default = 'root',
                       help = ('name of the root genome, to differentiate it from '
-                            'the input newick. default=%default'))
+                            'the input Newick. default=%default'))
+    parser.add_option('-t', '--inputNewick', dest = 'inputNewick',
+                      help = ('Newick tree. http://evolution.genetics.washington.edu/'
+                              'phylip/newicktree.html'))
+    parser.add_option('--stepLength', dest = 'stepLength', action = "store",
+                      type  = 'float', default = 0.001,
+                      help = 'stepLength for each cycle. default=%default')
     parser.add_option('--paramsDir', dest = 'paramsDir',
                       help = 'Parameter directory.')
+    parser.add_option('-o', '--outDir', dest = 'outDir',
+                      help = 'Out directory.')
     parser.add_option('--seed', dest = 'seed', default = 'stochastic',
                       type = 'string', 
                       help = 'Random seed, either an int or "stochastic". default=%default')
@@ -75,9 +76,6 @@ def initOptions(parser):
                       dest = 'noGeneDeactivation', default = False, 
                       help = ('Turns off the gene deactivation step. '
                             'default=%default'))
-    parser.add_option('--testTree', action = 'store_true', 
-                      default = False, dest = 'testTree',
-                      help = 'Instead of performing a simulation, does dry run with empty dirs. default=%default')
 
 def checkOptions(options, parser):
     if options.inputNewick is None:
@@ -194,9 +192,9 @@ def launchSimTree(options):
         raise RuntimeError('The jobTree contained %d failed jobs!\n' % jobResult)
 
 def main():
-    usage = ('usage: %prog --rootName=name --parent=/path/to/dir --params=/path/to/dir\n'
-             '--tree=newickTree --stepLength=stepLength --out=/path/to/dir'
-             '--jobTree=/path/to/dir\n\n'
+    usage = ('usage: %prog --rootName=name --rootDir=/path/to/dir --paramsDir=/path/to/dir\n'
+             '--tree=newickTree --stepLength=stepLength --outDir=/path/to/dir '
+             '--jobTree=/path/to/dir [options]\n\n'
              '%prog is used to initiate an evolver simulation using jobTree/scriptTree.')
     parser = OptionParser(usage = usage)
     initOptions(parser)

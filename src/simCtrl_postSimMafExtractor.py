@@ -97,8 +97,10 @@ def launchJobTree(options):
         raise RuntimeError('The jobTree contained %d failed jobs!\n' % jobResult)
 
 def main():
-    usage=('usage: %prog --simDir path/to/dir [options]')
-    parser=OptionParser(usage=usage)
+    usage=('usage: %prog --simDir path/to/dir [options]\n\n'
+           '%prog requires mafJoin which is part of mafTools and is available\n'
+           'at https://github.com/dentearl/mafTools/ . ')
+    parser = OptionParser(usage = usage)
     initOptions(parser)
     Stack.addJobTreeOptions(parser)
     options, args = parser.parse_args()

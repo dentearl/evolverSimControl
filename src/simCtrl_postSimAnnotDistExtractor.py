@@ -5,7 +5,7 @@ dent earl, dearl (a) soe ucsc edu
 29 June 2010
 a script to be run following the completion of a
 simulation. The script will check the simulationInfo.xml
-file and then open the leaves' and roots'
+file and then open the leafs' and roots'
 stats/annotstats.txt file and extract the distributions of
 annotations, printing them out in an R readable format for
 plotting and analysis.
@@ -50,7 +50,7 @@ def initOptions(parser):
                       help='Simulation directory.')
     parser.add_option('-i', '--internalBranches',dest='internalBranches',
                       action='store_true', default='false',
-                      help='Turns on output of the internal braches. Otherwise it is just root and leaves.')
+                      help='Turns on output of the internal braches. Otherwise it is just root and leafs.')
 
 def checkOptions(options, parser):
     if (options.simDir is None):
@@ -65,7 +65,7 @@ def checkOptions(options, parser):
     options.rootDir = treeObj.text
     options.rootName = os.path.basename( options.rootDir )
 
-def extractLeaves(nt, leafDict):
+def extractLeafs(nt, leafDict):
     """Given a newick tree object, it returns a dict of
     leaf objects. Operates recursively.
     """
@@ -75,10 +75,10 @@ def extractLeaves(nt, leafDict):
     if nt.right is None and nt.left is None:
         leafDict[nt.iD] = True
     else:
-        extractLeaves(nt.right, leafDict=leafDict)
-        extractLeaves(nt.left , leafDict=leafDict)
+        extractLeafs(nt.right, leafDict=leafDict)
+        extractLeafs(nt.left , leafDict=leafDict)
 
-def extractLeavesAndIntBranches( nt, options, leafDict ):
+def extractLeafsAndIntBranches( nt, options, leafDict ):
     """Given a newick tree object, it returns a dict of
     leaf and internal branch objects. Operates recursively.
     """
@@ -93,12 +93,12 @@ def extractLeavesAndIntBranches( nt, options, leafDict ):
             if nt.right is not None and nt.left is not None and nt.iD != options.rootName:
                 # internal branch
                 leafDict[ nt.iD ] = True
-        extractLeavesAndIntBranches( nt.right, options, leafDict = leafDict )
-        extractLeavesAndIntBranches( nt.left , options, leafDict = leafDict )
+        extractLeafsAndIntBranches( nt.right, options, leafDict = leafDict )
+        extractLeafsAndIntBranches( nt.left , options, leafDict = leafDict )
 
-def parseStats(options, leaves):
+def parseStats(options, leafs):
     results={}
-    for l in leaves:
+    for l in leafs:
         results[l] = extractDist( options, l )
     return results
 
@@ -326,10 +326,10 @@ def main():
     if nt.iD is None:
         nt.iD = options.rootName
         
-    leaves={}
-    extractLeavesAndIntBranches(nt, options, leaves)
-    leaves[options.rootName] = True
-    results = parseStats(options, leaves)
+    leafs = {}
+    extractLeafsAndIntBranches(nt, options, leafs)
+    leafs[options.rootName] = True
+    results = parseStats(options, leafs)
     standardizeResults(options, results)
     printStats(options, results)
     printScript(options, results)

@@ -547,7 +547,7 @@ class MergeManager(Target):
     The MergeManager class runs the merge process. 
     
     MergeManager takes the nodesList and goes through the
-    steps of progressively merging the MAFs, starting from the leaves
+    steps of progressively merging the MAFs, starting from the leafs
     and working its way up the tree.
     ((a, b)E,(c,d)F)root;
     which was earlier decomposed into the:
