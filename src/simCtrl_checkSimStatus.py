@@ -911,8 +911,10 @@ def printCycleStats(options, status, pre = 'Cycle', length = 4):
     
     if options.isHtml:
         if pre == 'Cycle':
-            extraColHeader = '<th>&mu; Len (bp)</th>'
+            extraCol = '<td style="text-align:center">--</td>'
+            extraColHeader = '<th>&mu; Len.</th>'
         else:
+            extraCol = ''
             extraColHeader = ''
         print('<table cellpadding="5"><thead><tr><th>Name</th><th>'
               '<span style="font-style:italic">n</span></th>%s'
@@ -926,10 +928,6 @@ def printCycleStats(options, status, pre = 'Cycle', length = 4):
             lTimes = '0'
             mTimes = '--'
             pmTimes = '--'
-        if pre == 'Cycle':
-            extraCol = '<td style="text-align:center">--</td>'
-        else:
-            extraCol = ''
         print('<tr style="background-color:#F6E8AE"><td>%s</td><td align="center">%s</td>'
               '%s<td align="center">%s</td><td align="center">%s</td></tr>'
               % ('Overall', lTimes, extraCol, mTimes, pmTimes))
@@ -947,12 +945,18 @@ def printCycleStats(options, status, pre = 'Cycle', length = 4):
               % (u, ulTimes, extraCol, umTimes, upmTimes))
         
     else:
-        print('%20s %4s %20s %20s' % ('Name', 'n', 'Mean time (s)', '(pretty)'))
-        print('%20s %4d %20.2f %20s'
-              % ('Overall', len(times), mean(times), prettyTime(mean(times))))
+        if pre == 'Cycle':
+            extraCol = '%20s' % '-- '
+            extraColHeader = '%20s' % 'Mean Len. '
+        else:
+            extraCol = ' '
+            extraColHeader = ' '
+        print('%20s %4s %s%20s %20s' % ('Name', 'n', extraColHeader, 'Mean time (s)', '(pretty)'))
+        print('%20s %4d %s%20.2f %20s'
+              % ('Overall', len(times), extraCol, mean(times), prettyTime(mean(times))))
         for u in subList:
-            print('%20s %4d %20.2f %20s'
-              % (u, len(subTimesDict[u]), mean(subTimesDict[u]), prettyTime(mean(subTimesDict[u]))))
+            print('%20s %4d %s%20.2f %20s'
+              % (u, len(subTimesDict[u]), extraCol, mean(subTimesDict[u]), prettyTime(mean(subTimesDict[u]))))
 
     if pre != 'Cycle':
         if options.isHtml:
@@ -989,8 +993,13 @@ def printCycleStats(options, status, pre = 'Cycle', length = 4):
         print '</tbody></table>'
     else:
         for c in sortedChromTimes:
-            print('%20s %4d %20.2f %20s'
-              % (c, len(chromTimesDict[c]), mean(chromTimesDict[c]), prettyTime(mean(chromTimesDict[c]))))
+            if c in status.chromosomeLengthsDictList:
+                chromLengthStr = '%20s ' % prettyLength(mean(status.chromosomeLengthsDictList[c]))
+            else:
+                chromLengthStr = ' '
+            print('%20s %4d %s%20.2f %20s'
+              % (c, len(chromTimesDict[c]), chromLengthStr, 
+                 mean(chromTimesDict[c]), prettyTime(mean(chromTimesDict[c]))))
 
 def findStalledCycles(runDir, stepsDict, isHtml, htmlDir = ''):
     """findStalledCycles() calculates the average time cycles take and the
