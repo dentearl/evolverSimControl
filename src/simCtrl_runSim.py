@@ -51,7 +51,7 @@ def initOptions(parser):
     parser.add_option('--rootName', dest = 'rootName', default = 'root',
                       help = ('name of the root genome, to differentiate it from '
                             'the input Newick. default=%default'))
-    parser.add_option('-t', '--inputNewick', dest = 'inputNewick',
+    parser.add_option('--inputNewick', dest = 'inputNewick',
                       help = ('Newick tree. http://evolution.genetics.washington.edu/'
                               'phylip/newicktree.html'))
     parser.add_option('--stepLength', dest = 'stepLength', action = "store",
@@ -59,7 +59,7 @@ def initOptions(parser):
                       help = 'stepLength for each cycle. default=%default')
     parser.add_option('--paramsDir', dest = 'paramsDir',
                       help = 'Parameter directory.')
-    parser.add_option('-o', '--outDir', dest = 'outDir',
+    parser.add_option('--outDir', dest = 'outDir',
                       help = 'Out directory.')
     parser.add_option('--seed', dest = 'seed', default = 'stochastic',
                       type = 'string', 
