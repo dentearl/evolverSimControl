@@ -336,9 +336,9 @@ def updateChromLengthDict(name, status, options):
     should only be called once per simulation step, right when the step
     is recorded as 'complete'.
     """
-    if 'chromosomeLengthsDictList' not in status.variables:
-        status.variables['chromosomeLengthsDictList'] = True
-        status.chromosomeLengthsDictList = {}
+    if 'chromosomeLengthsDict' not in status.variables:
+        status.variables['chromosomeLengthsDict'] = True
+        status.chromosomeLengthsDict = {}
     filename = os.path.join(options.simDir, name, 'seq.rev')
     cmd = [lsc.which('evolver_cvt')]
     cmd.append('-dumpchrids')
@@ -360,9 +360,13 @@ def updateChromLengthDict(name, status, options):
         if isChroms:
             l = int(data[2])
             c = data[3]
-            if c not in status.chromosomeLengthsDictList:
-                status.chromosomeLengthsDictList[c] = []
-            status.chromosomeLengthsDictList[c].append(l)
+            if c not in status.chromosomeLengthsDict:
+                status.chromosomeLengthsDict[c] = {}
+            if name not in status.chromosomeLengthsDict[c]:
+                status.chromosomeLengthsDict[c][name] = l
+            else:
+                raise RuntimeError('sim step %s has identically named chromosomes "%s"' 
+                                   % (name, c))
 
 def timeoutParse(filename, timeout = 0.5, retry = 0.1):
     """ timeoutParse() takes an xml filename and attemps to parse the xml
@@ -936,8 +940,8 @@ def printCycleStats(options, status, pre = 'Cycle', length = 4):
             lTimes = '0'
             mTimes = '--'
             pmTimes = '--'
-        print('<tr style="background-color:#F6E8AE"><td>%s</td><td align="center">%s</td>'
-              '%s<td align="center">%s</td><td align="center">%s</td></tr>'
+        print('<tr style="background-color:#F6E8AE"><td>%s</td><td style="text-align:center;">%s</td>'
+              '%s<td style="text-align:center;">%s</td><td style="text-align:center;">%s</td></tr>'
               % ('Overall', lTimes, extraCol, mTimes, pmTimes))
         for u in subList:
             if len(subTimesDict[u]):
@@ -948,8 +952,8 @@ def printCycleStats(options, status, pre = 'Cycle', length = 4):
                 ulTimes = '0'
                 umTimes = '--'
                 upmTimes = '--'
-            print('<tr><td>%s</td><td align="center">%s</td>'
-                  '%s<td align="center">%s</td><td align="center">%s</td></tr>'
+            print('<tr><td>%s</td><td style="text-align:center;">%s</td>'
+                  '%s<td style="text-align:center;">%s</td><td style="text-align:center;">%s</td></tr>'
               % (u, ulTimes, extraCol, umTimes, upmTimes))
         
     else:
@@ -971,16 +975,7 @@ def printCycleStats(options, status, pre = 'Cycle', length = 4):
             print '</tbody></table>'
         return
     # print the chromosome times
-    chromTimesDict = {}
-    for s in status.stepsDict:
-        if 'chromosomes' not in status.stepsDict[s].timeDict:
-            continue
-        for c in status.stepsDict[s].timeDict['chromosomes']:
-            if c in chromTimesDict:
-                chromTimesDict[c].append(status.stepsDict[s].timeDict['chromosomes'][c])
-            else:
-                chromTimesDict[c] = [status.stepsDict[s].timeDict['chromosomes'][c]]
-    sortedChromTimes = sorted(chromTimesDict, key=lambda c: mean(chromTimesDict[c]), reverse = True)
+    sortedChromTimes, chromTimesDict = getSortedChromTimesList(status)
     if options.isHtml:
         for c in sortedChromTimes:
             if len(c) > 22:
@@ -988,12 +983,12 @@ def printCycleStats(options, status, pre = 'Cycle', length = 4):
                          '%s ..(%d).. %s</span>' % (c, c[0:7], len(c) - 12, c[-7:]))
             else:
                 chrom = '<span title="%s" class="chrname">%s</span>' % (c, c)
-            if c in status.chromosomeLengthsDictList:
-                chromLengthStr = prettyLength(mean(status.chromosomeLengthsDictList[c]))
+            if c in status.chromosomeLengthsDict:
+                chromLengthStr = prettyLength(mean(getChrLenList(status.chromosomeLengthsDict, c)))
             else:
                 chromLengthStr = ''
-            print('<tr><td>%s</td><td align="center">%d</td><td style="text-align:center;">%s</td>'
-                  '<td align="center">%.2f</td><td align="center">%s</td></tr>'
+            print('<tr><td>%s</td><td style="text-align:center;">%d</td><td style="text-align:center;">%s</td>'
+                  '<td style="text-align:center;">%.2f</td><td style="text-align:center;">%s</td></tr>'
                   % (chrom, len(chromTimesDict[c]),
                      chromLengthStr,
                      mean(chromTimesDict[c]), 
@@ -1001,8 +996,8 @@ def printCycleStats(options, status, pre = 'Cycle', length = 4):
         print '</tbody></table>'
     else:
         for c in sortedChromTimes:
-            if c in status.chromosomeLengthsDictList:
-                chromLengthStr = '%20s ' % prettyLength(mean(status.chromosomeLengthsDictList[c]))
+            if c in status.chromosomeLengthsDict:
+                chromLengthStr = '%20s ' % prettyLength(mean(getChrLenList(status.chromosomeLengthsDict, c)))
             else:
                 chromLengthStr = ' '
             print('%20s %4d %s%20.2f %20s'
@@ -1075,7 +1070,7 @@ def listCurrentCycles(runDir, stepsDict, isHtml, options, htmlDir=''):
             print '<h3>Currently running cycles</h3>'
             print '<div style="margin-left:2em;">'
             print '<table cellpadding="5"><thead>'
-            print ('<tr><th align="left">%s</th><th>%s</th>'
+            print ('<tr><th style="text-align:left;">%s</th><th>%s</th>'
                    '<th>%s</th><th>%s</th></tr></thead>' % ('Cycle', 'Total Time', 'Step', 'Step Time'))
             print '<tbody>'
         else:
@@ -1171,7 +1166,8 @@ def printSortedStepTimes(stepsDict, isHtml, htmlDir):
         print '%12s %12s %30s' % ('-' * 10, '-' * 10, '-' * 20)
     for k, v in returnItems:
         if isHtml:
-            print('<tr><td align="right">%10.2f</td><td>%s</td><td>%s%s</a></td></tr>' 
+            print('<tr><td style="text-align:right;">%10.2f</td>'
+                  '<td style="text-align:center">%s</td><td>%s%s</a></td></tr>' 
                   % (float(k), prettyTime(k), str2link(v, htmlDir), v))
         else:
             print '%12.2f %12s %30s' % (float(k), prettyTime(k), v)
@@ -1420,20 +1416,46 @@ def printStats(status, options):
     if options.cycleList or options.isHtml:
         printSortedStepTimes(status.stepsDict, options.isHtml, options.htmlDir)
 
-def printChrTimes(status, options):
-    if not options.printChrTimes:
-        return
+def getSortedChromTimesList(status):
     # print the chromosome times
     chromTimesDict = {}
     for s in status.stepsDict:
         if 'chromosomes' not in status.stepsDict[s].timeDict:
             continue
         for c in status.stepsDict[s].timeDict['chromosomes']:
-            if c in chromTimesDict:
-                chromTimesDict[c].append(status.stepsDict[s].timeDict['chromosomes'][c])
+            if c not in chromTimesDict:
+                chromTimesDict[c] = []
+            chromTimesDict[c].append(status.stepsDict[s].timeDict['chromosomes'][c])
+    return sorted(chromTimesDict, key = lambda c: mean(chromTimesDict[c]), reverse = True), chromTimesDict
+
+def getChromTimesDictStep(status):
+    chromTimesDictStep = {}
+    for s in status.stepsDict:
+        if 'chromosomes' not in status.stepsDict[s].timeDict:
+            continue
+        for c in status.stepsDict[s].timeDict['chromosomes']:
+            if c not in chromTimesDictStep:
+                chromTimesDictStep[c] = {}
+            if not status.stepsDict[s].name in chromTimesDictStep[c]:
+                chromTimesDictStep[c][status.stepsDict[s].name] = status.stepsDict[s].timeDict['chromosomes'][c]
             else:
-                chromTimesDict[c] = [status.stepsDict[s].timeDict['chromosomes'][c]]
-    sortedChromTimes = sorted(chromTimesDict, key = lambda c: mean(chromTimesDict[c]), reverse = True)
+                raise RuntimeError('sim step %s has identically named chromosomes "%s"' 
+                                   % (name, c))
+    return chromTimesDictStep
+
+def getChrLenList(chrLenDict, c):
+    l = []
+    if c not in chrLenDict:
+        return l
+    for n in chrLenDict[c]:
+        l.append(chrLenDict[c][n])
+    return l
+
+def printChrTimes(status, options):
+    if not options.printChrTimes:
+        return
+    sortedChromTimes = getSortedChromTimesList(status)
+    chromTimesDictStep = getChromTimesDictStep(status)
     if options.isHtml:
         print '<h3>Chromosome Lengths and Times</h3>'
         print '<table cellpadding="5" border="1" bordercolor="#cccccc"><thead>'
@@ -1443,14 +1465,14 @@ def printChrTimes(status, options):
         print 'Chromosome Lengths and Times'
         print '#Length (bp)\tTime (s)'
     for c in sortedChromTimes:
-        for i in xrange(0, len(status.chromosomeLengthsDictList[c])):
+        for n in status.chromosomeLengthsDict[c]:
             if options.isHtml:
                 print ('<tr><td style="text-align:center;">%d</td>'
                        '<td style="text-align:center;">%d</td></tr>'
-                       % (status.chromosomeLengthsDictList[c][i], chromTimesDict[c][i]))
+                       % (status.chromosomeLengthsDict[c][n], chromTimesDictStep[c][n]))
             else:
-                print '%d\t%d' % (status.chromosomeLengthsDictList[c][i], 
-                                  chromTimesDict[c][i])
+                print '%d\t%d' % (status.chromosomeLengthsDict[c][n], 
+                                  chromTimesDictStep[c][n])
     if options.isHtml:
         print '</tbody></table>'
 
