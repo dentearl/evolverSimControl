@@ -86,11 +86,12 @@ Options:
 
 * <code>-h, --help</code> show this help message and exit
 * <code>--simDir=SIMDIR</code> Parent directory.
-* <code>--drawText</code> prints an ASCII representation of the current tree status. default=False
+* <code>--drawText, --drawTree</code> prints an ASCII representation of the current tree status. default=False
 * <code>--curCycles</code> prints out the list of currently running cycles. default=False
 * <code>--stats</code> prints out the statistics for cycle steps. default=False
 * <code>--cycleStem</code> prints out a stem and leaf plot for completed cycle runtimes, in seconds. default=False
 * <code>--cycleStemHours</code> prints out a stem and leaf plot for completed cycle runtimes, in hours. default=False
+* <code>--printChrTimes</code> prints a table of chromosome lengths (bp) and times (sec) for intra chromosome evolution step (CycleStep2).
 * <code>--cycleList</code> prints out a list of all completed cycle runtimes. default=False
 * <code>--html</code> prints output in HTML format for use as a cgi. default=False
 * <code>--htmlDir=HTMLDIR</code> prefix for html links.

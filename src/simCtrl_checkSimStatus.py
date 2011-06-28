@@ -116,10 +116,10 @@ class Step:
 
 def initOptions(parser):
     parser.add_option('--simDir', dest = 'simDir',
-                      help='Parent directory.')
-    parser.add_option('--drawText', dest = 'drawText', action = 'store_true',
+                      help = 'parent directory.')
+    parser.add_option('--drawTree', '--drawText', dest = 'drawText', action = 'store_true',
                       default = False,
-                      help = ('Prints an ASCII representation of the current '
+                      help = ('prints an ASCII representation of the current '
                               'tree status. default=%default'))
     parser.add_option( '--curCycles', dest = 'curCycles', action = 'store_true',
                       default = False,
@@ -130,20 +130,25 @@ def initOptions(parser):
                       help = ('prints out the statistics for cycle steps. default=%default'))
     parser.add_option( '--cycleStem', dest = 'cycleStem', action = 'store_true',
                       default = False,
-                      help=('prints out a stem and leaf plot for completed '
-                            'cycle runtimes, in seconds. default=%default'))
+                      help = ('prints out a stem and leaf plot for completed '
+                              'cycle runtimes, in seconds. default=%default'))
     parser.add_option('--cycleStemHours', dest = 'cycleStemHours', action = 'store_true',
                       default = False,
-                      help=('prints out a stem and leaf plot for completed '
-                            'cycle runtimes, in hours. default=%default'))
+                      help = ('prints out a stem and leaf plot for completed '
+                              'cycle runtimes, in hours. default=%default'))
+    parser.add_option('--printChrTimes', dest = 'printChrTimes', action = 'store_true',
+                      default = False,
+                      help = ('prints a table of chromosome lengths (bp) and times '
+                              '(sec) for intra chromosome evolution step (CycleStep2). '
+                              'default=%default'))
     parser.add_option('--cycleList', dest = 'cycleList', action = 'store_true',
                       default = False,
                       help = ('prints out a list of all completed cycle '
                               'runtimes. default=%default'))
     parser.add_option('--html', dest = 'isHtml', action = 'store_true',
                       default = False,
-                      help=('prints output in HTML format for use as a cgi. '
-                            'default=%default'))
+                      help = ('prints output in HTML format for use as a cgi. '
+                              'default=%default'))
     parser.add_option('--htmlDir', dest = 'htmlDir', default = '',
                       help = 'prefix for html links.')
 
@@ -1415,6 +1420,40 @@ def printStats(status, options):
     if options.cycleList or options.isHtml:
         printSortedStepTimes(status.stepsDict, options.isHtml, options.htmlDir)
 
+def printChrTimes(status, options):
+    if not options.printChrTimes:
+        return
+    # print the chromosome times
+    chromTimesDict = {}
+    for s in status.stepsDict:
+        if 'chromosomes' not in status.stepsDict[s].timeDict:
+            continue
+        for c in status.stepsDict[s].timeDict['chromosomes']:
+            if c in chromTimesDict:
+                chromTimesDict[c].append(status.stepsDict[s].timeDict['chromosomes'][c])
+            else:
+                chromTimesDict[c] = [status.stepsDict[s].timeDict['chromosomes'][c]]
+    sortedChromTimes = sorted(chromTimesDict, key = lambda c: mean(chromTimesDict[c]), reverse = True)
+    if options.isHtml:
+        print '<h3>Chromosome Lengths and Times</h3>'
+        print '<table cellpadding="5" border="1" bordercolor="#cccccc"><thead>'
+        print '<tr><th>Length (bp)</th><th>Time (s)</th></tr></thead>'
+        print '<tbody>'
+    else:
+        print 'Chromosome Lengths and Times'
+        print '#Length (bp)\tTime (s)'
+    for c in sortedChromTimes:
+        for i in xrange(0, len(status.chromosomeLengthsDictList[c])):
+            if options.isHtml:
+                print ('<tr><td style="text-align:center;">%d</td>'
+                       '<td style="text-align:center;">%d</td></tr>'
+                       % (status.chromosomeLengthsDictList[c][i], chromTimesDict[c][i]))
+            else:
+                print '%d\t%d' % (status.chromosomeLengthsDictList[c][i], 
+                                  chromTimesDict[c][i])
+    if options.isHtml:
+        print '</tbody></table>'
+
 def main():
     usage = ('usage: %prog --simDir path/to/dir [options]\n\n'
              '%prog can be used to check on the status of a running or completed\n'
@@ -1436,6 +1475,8 @@ def main():
     printInfoTable(status, options)
     printTree(status, options)
     printStats(status, options)
+    
+    printChrTimes(status, options)
     
     if options.isHtml:
         finishHtml()
