@@ -106,6 +106,7 @@ simCtrl_postSimFastaExtractor.py takes in a simulation directory and then extrac
 of leaf nodes in fasta format and stores them in the respective step's directory.
 
 Options:
+
 * <code>-h, --help</code> show this help message and exit
 * <code>--simDir=SIMDIR</code> the simulation directory.
 * <code>--allCycles</code> extract fastas from all cycles, not just leafs. default=False
@@ -121,6 +122,7 @@ simCtrl_postSimMafExtractor.py requires mafJoin which is part of mafTools and is
 at https://github.com/dentearl/mafTools/ . 
 
 Options:
+
 * <code>-h, --help</code> show this help message and exit
 * <code>--simDir=SIMDIR</code> Simulation directory.
 * <code>--maxBlkWidth=MAXBLKWIDTH</code> Maximum mafJoin maf block output size. May be reduced towards 250 for complicated phylogenies. default=10000
@@ -129,5 +131,4 @@ runs for very simple joins. May be reduced towards 250 for complicated phylogeni
 default=1000                        
 * <code>--noBurninMerge</code> Will not perform a final merge of simulation to the burnin. default=False
 * <code>--maxThreads=MAXTHREADS</code> The maximum number of threads to use when running in single machine mode. default=4
-                        
 * ... and all other jobTree standard options.
