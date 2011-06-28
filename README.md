@@ -57,26 +57,25 @@ Usage: simCtrl_runSim.py --rootName=name --rootDir=/path/to/dir --paramsDir=/pat
 simCtrl_runSim.py is used to initiate an evolver simulation using jobTree/scriptTree.
 
 Options:
-  -h, --help            show this help message and exit
-  --rootDir=ROOTINPUTDIR
-                        Input root directory.
-  --rootName=ROOTNAME   name of the root genome, to differentiate it from the input Newick. default=root
-  -t INPUTNEWICK, --inputNewick=INPUTNEWICK
-                        Newick tree. http://evolution.genetics.washington.edu/phylip/newicktree.html
-  --stepLength=STEPLENGTH
-                        stepLength for each cycle. default=0.001
-  --paramsDir=PARAMSDIR
-                        Parameter directory.
-  -o OUTDIR, --outDir=OUTDIR
-                        Out directory.
-  --seed=SEED           Random seed, either an int or "stochastic". default=stochastic
-  --noMEs               Turns off all mobile element and RPG modules in the sim. default=False
-  --noBurninMerge       Turns off checks for an aln.rev file in the root dir. default=False
-  --noGeneDeactivation  Turns off the gene deactivation step. default=False
-  --maxThreads=MAXTHREADS
-                        The maximum number of threads to use when running in single machine mode. default=4
-  ... and all other jobTree standard options.
-</code>
+   <code>-h, --help</code>            show this help message and exit
+   <code>--rootDir=ROOTINPUTDIR</code>
+                         Input root directory.
+   <code>--rootName=ROOTNAME</code>   name of the root genome, to differentiate it from the input Newick. default=root
+   <code>--inputNewick=INPUTNEWICK</code>
+                         Newick tree. http://evolution.genetics.washington.edu/phylip/newicktree.html
+   <code>--stepLength=STEPLENGTH</code>
+                         stepLength for each cycle. default=0.001
+   <code>--paramsDir=PARAMSDIR</code>
+                         Parameter directory.
+   <code>--outDir=OUTDIR</code>
+                         Out directory.
+   <code>--seed=SEED</code>           Random seed, either an int or "stochastic". default=stochastic
+   <code>--noMEs</code>               Turns off all mobile element and RPG modules in the sim. default=False
+   <code>--noBurninMerge</code>       Turns off checks for an aln.rev file in the root dir. default=False
+   <code>--noGeneDeactivation</code>  Turns off the gene deactivation step. default=False
+   <code>--maxThreads=MAXTHREADS</code>
+                         The maximum number of threads to use when running in single machine mode. default=4
+   ... and all other jobTree standard options.
 
 ###Simulation Status
 To check on a running simulation you can use the <code>simCtrl_checkSimStatus.py</code> script.
