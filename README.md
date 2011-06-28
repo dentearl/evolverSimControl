@@ -50,13 +50,14 @@ In order to run eSC you will need an infile set, a parameter set, a phylogenetic
 
 Available options for running a simulation are listed below.
 
-<code>$ bin/simCtrl_runSim.py --help
-Usage: simCtrl_runSim.py --rootName=name --rootDir=/path/to/dir --paramsDir=/path/to/dir
---tree=newickTree --stepLength=stepLength --outDir=/path/to/dir --jobTree=/path/to/dir [options]
+<code>$ bin/simCtrl_runSim.py --help</code>
+
+<code>Usage: simCtrl_runSim.py --rootName=name --rootDir=/path/to/dir --paramsDir=/path/to/dir --tree=newickTree --stepLength=stepLength --outDir=/path/to/dir --jobTree=/path/to/dir [options]</code>
 
 simCtrl_runSim.py is used to initiate an evolver simulation using jobTree/scriptTree.
 
 Options:
+
 * <code>-h, --help</code> show this help message and exit
 * <code>--rootDir=ROOTINPUTDIR</code> Input root directory.
 * <code>--rootName=ROOTNAME</code> name of the root genome, to differentiate it from the input Newick. default=root
