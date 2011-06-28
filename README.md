@@ -75,64 +75,59 @@ Options:
 ###Simulation Status
 To check on a running simulation you can use the <code>simCtrl_checkSimStatus.py</code> script.
 
-<code>
-$ bin/simCtrl_checkSimStatus.py --help
-Usage: simCtrl_checkSimStatus.py --simDir path/to/dir [options]
+<code>$ bin/simCtrl_checkSimStatus.py --help</code>
+
+<code>Usage: simCtrl_checkSimStatus.py --simDir path/to/dir [options]</code>
 
 simCtrl_checkSimStatus.py can be used to check on the status of a running or completed
 evolverSimControl simulation.
 
 Options:
-  -h, --help         show this help message and exit
-  --simDir=SIMDIR    Parent directory.
-  --drawText         Prints an ASCII representation of the current tree status. default=False
-  --curCycles        prints out the list of currently running cycles. default=False
-  --stats            prints out the statistics for cycle steps. default=False
-  --cycleStem        prints out a stem and leaf plot for completed cycle runtimes, in seconds. default=False
-  --cycleStemHours   prints out a stem and leaf plot for completed cycle runtimes, in hours. default=False
-  --cycleList        prints out a list of all completed cycle runtimes. default=False
-  --html             prints output in HTML format for use as a cgi. default=False
-  --htmlDir=HTMLDIR  prefix for html links.
-</code>
+
+* <code>-h, --help</code> show this help message and exit
+* <code>--simDir=SIMDIR</code> Parent directory.
+* <code>--drawText</code> prints an ASCII representation of the current tree status. default=False
+* <code>--curCycles</code> prints out the list of currently running cycles. default=False
+* <code>--stats</code> prints out the statistics for cycle steps. default=False
+* <code>--cycleStem</code> prints out a stem and leaf plot for completed cycle runtimes, in seconds. default=False
+* <code>--cycleStemHours</code> prints out a stem and leaf plot for completed cycle runtimes, in hours. default=False
+* <code>--cycleList</code> prints out a list of all completed cycle runtimes. default=False
+* <code>--html</code> prints output in HTML format for use as a cgi. default=False
+* <code>--htmlDir=HTMLDIR</code> prefix for html links.
 
 ###Sequence Extraction
 To extract fasta sequences from a completed simulation you can use the <code>simCtrl_postSimFastaExtractor.py</code> script.
 
-<code>
-$ bin/simCtrl_postSimFastaExtractor.py --help
-Usage: simCtrl_postSimFastaExtractor.py --simDir path/to/dir [options]
+<code>$ bin/simCtrl_postSimFastaExtractor.py --help</code>
+
+<code>Usage: simCtrl_postSimFastaExtractor.py --simDir path/to/dir [options]</code>
 
 simCtrl_postSimFastaExtractor.py takes in a simulation directory and then extracts the sequences
 of leaf nodes in fasta format and stores them in the respective step's directory.
 
 Options:
-  -h, --help       show this help message and exit
-  --simDir=SIMDIR  The simulation directory.
-  --allCycles      Extract fastas from all cycles, not just leafs. default=False
-</code>
+* <code>-h, --help</code> show this help message and exit
+* <code>--simDir=SIMDIR</code> the simulation directory.
+* <code>--allCycles</code> extract fastas from all cycles, not just leafs. default=False
 
 ###Simulation maf creation
 To create a single maf reflecting the evolutionary history of the entire simulation <code>simCtrl_postSimFastaExtractor.py</code> script.
 
-<code>
-$ bin/simCtrl_postSimMafExtractor.py --help
-Usage: simCtrl_postSimMafExtractor.py --simDir path/to/dir [options]
+<code>$ bin/simCtrl_postSimMafExtractor.py --help</code>
+
+<code>Usage: simCtrl_postSimMafExtractor.py --simDir path/to/dir [options]</code>
 
 simCtrl_postSimMafExtractor.py requires mafJoin which is part of mafTools and is available
 at https://github.com/dentearl/mafTools/ . 
 
 Options:
-  -h, --help            show this help message and exit
-  --simDir=SIMDIR       Simulation directory.
-  --maxBlkWidth=MAXBLKWIDTH
-                        Maximum mafJoin maf block output size. May be reduced towards 250 for complicated
-                        phylogenies. default=10000
-  --maxInputBlkWidth=MAXINPUTBLKWIDTH
-                        Maximum mafJoin maf block input size. mafJoin will cut inputs to size, may result in long
-                        runs for very simple joins. May be reduced towards 250 for complicated phylogenies.
-                        default=1000
-  --noBurninMerge       Will not perform a final merge of simulation to the burnin. default=False
-  --maxThreads=MAXTHREADS
-                        The maximum number of threads to use when running in single machine mode. default=4
-  ... and all other jobTree standard options.
-</code>
+* <code>-h, --help</code> show this help message and exit
+* <code>--simDir=SIMDIR</code> Simulation directory.
+* <code>--maxBlkWidth=MAXBLKWIDTH</code> Maximum mafJoin maf block output size. May be reduced towards 250 for complicated phylogenies. default=10000
+* <code>--maxInputBlkWidth=MAXINPUTBLKWIDTH</code> Maximum mafJoin maf block input size. mafJoin will cut inputs to size, may result in long
+runs for very simple joins. May be reduced towards 250 for complicated phylogenies.
+default=1000                        
+* <code>--noBurninMerge</code> Will not perform a final merge of simulation to the burnin. default=False
+* <code>--maxThreads=MAXTHREADS</code> The maximum number of threads to use when running in single machine mode. default=4
+                        
+* ... and all other jobTree standard options.
