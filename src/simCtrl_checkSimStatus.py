@@ -510,7 +510,9 @@ def drawText(nt, options, sl, totalTreeDepth, scale = 4,
     depthFirstWalk(nt, options, stepLength = sl, scale = scale, stepsDict = stepsDict, 
                    isHtml = isHtml, directory = directory)
     drawScaleBar(treeDepth, scale, options.rootName, isHtml)
-    drawLegend()
+    if isHtml:
+        print '</pre>'
+    drawLegend(isHtml)
 
 def depthFirstWalk(nt, options, stepLength = 0.001, depth = 0, branch = 'root', 
                    overlaps = {}, scale = 4, stepsDict = {}, isHtml = False, 
@@ -707,7 +709,9 @@ def drawScaleBar(numSteps, scale, rootName, isHtml):
     print '\n+ Height %s+' % ('-' * len(scaleBar))
     print scaleBar
 
-def drawLegend():
+def drawLegend(isHtml):
+    if isHtml:
+        print '<pre style="margin-left:2em;">'
     print '+ Legend %s+' % ('-' * 97)
     print ('| %3s %21s %3s %21s %3s %21s%26s |\n'
            '| %3s %21s %3s %21s %3s %21s %3s %21s |\n'
@@ -721,6 +725,8 @@ def drawLegend():
               '#', 'step complete',
               ))
     print '+%s+' % ('-' * 105)
+    if isHtml:
+        print '</pre>'
 
 def timeHandler(status, options):
     curCycleElapsedTime = 0.0
@@ -1394,8 +1400,6 @@ def printTree(status, options):
         drawText(nt, options, options.stepLength, status.totalTreeDepthSteps,
                   scale = options.scale, stepsDict = status.stepsDict,
                   isHtml = options.isHtml, directory = options.htmlDir)
-        if options.isHtml:
-            print '</pre>'
     
 def printStats(status, options):
     findStalledCycles(options.simDir, status.stepsDict,
