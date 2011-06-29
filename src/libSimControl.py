@@ -2168,7 +2168,7 @@ def buildNodeParentDict(nl):
             npd[c] = n.name
     return npd
 
-def buildMergeCommand(maf1, maf2, out, treelessRootCmd, name, options, drop=None):
+def buildMergeCommand(maf1, maf2, out, treelessRootCmd, name, options, drop = None):
     """
     """
     from libSimControl import which, verifyDirExists, verifyFileExists
