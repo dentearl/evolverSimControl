@@ -970,7 +970,7 @@ def printCycleStats(options, status, pre = 'Cycle', length = 4):
             print('%20s %4d %s%20.2f %20s'
               % (u, len(subTimesDict[u]), extraCol, mean(subTimesDict[u]), prettyTime(mean(subTimesDict[u]))))
 
-    if pre != 'Cycle':
+    if pre != 'Cycle' or 'chromosomeLengthsDict' not in status.variables:
         if options.isHtml:
             print '</tbody></table>'
         return
