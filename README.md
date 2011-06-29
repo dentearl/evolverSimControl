@@ -7,9 +7,11 @@
 The evolver team is responsible for items in external/ : George Asimenos and [Robert C. Edgar](http://www.drive5.com/), Serafim Batzoglou and [Arend Sidow](http://mendel.stanford.edu/sidowlab/).
 
 ## Summary
-A [jobTree](https://github.com/benedictpaten/jobTree/) based wrapper for the [Evolver](http://www.drive5.com/evolver/) genome evolution simulation tool suite. 
+A [jobTree](https://github.com/benedictpaten/jobTree/) based simulation manager for the [Evolver](http://www.drive5.com/evolver/) genome evolution simulation tool suite. 
 
-**evolverSimControl** (eSC) can be used to simulate multi-chromosome genome evolution on an arbitrary phylogeny ([Newick format](http://evolution.genetics.washington.edu/phylip/newicktree.html)). In addition to simply running evolver, eSC also automatically creates statistical summaries of the simulation as it runs including text and image files. Also included are convience scripts to: check on a running simulation and see detailed status and logging information; extract fasta sequence files from the leaf nodes of a completed simulation; extract pairwise multiple alignment files ([.maf](http://genome.ucsc.edu/FAQ/FAQformat.html#format5)) from leaf and branch nodes from a completed simulation and with the help of [mafJoin](https://github.com/dentearl/mafTools/),join them together into a single maf covering the entire simulation.
+**evolverSimControl** (eSC) can be used to simulate multi-chromosome genome evolution on an arbitrary phylogeny ([Newick format](http://evolution.genetics.washington.edu/phylip/newicktree.html)). In addition to simply running evolver, **eSC** also automatically creates statistical summaries of the simulation as it runs including text and image files. Also included are convenience scripts to: check on a running simulation and see detailed status and logging information; extract fasta sequence files from the leaf nodes of a completed simulation; extract pairwise multiple alignment files ([.maf](http://genome.ucsc.edu/FAQ/FAQformat.html#format5)) from leaf and branch nodes from a completed simulation and with the help of [mafJoin](https://github.com/dentearl/mafTools/), join them together into a single maf covering the entire simulation.
+
+The use of jobTree means that you can run **eSC** on a cluster running a jobTree supported batch system, on a multi-cored server or on your laptop.
 
 ##Dependencies
 * **sonLib**: https://github.com/benedictpaten/sonLib/
