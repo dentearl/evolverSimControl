@@ -225,6 +225,10 @@ def simStepUpdater(nt, sl, stepsDict, simNodeTree, status, options):
     return numCompletedSteps(stepsDict), stepsDict
 
 def simStepTreeUpdater(snt, stepsDict, status, options):
+    """ simStepTreeUpdater() takes a SimNode and checks to see if that 
+    node is complete. If it is not complete it updates its timing 
+    information by calling updateTimingInfo().
+    """
     if snt is None:
         return
     started = False
@@ -244,6 +248,9 @@ def simStepTreeUpdater(snt, stepsDict, status, options):
         simStepTreeUpdater(snt.right, stepsDict, status, options)
 
 def numCompletedSteps(stepsDict):
+    """ Takes the stepsDict, walk through counting up the number
+    of steps that are complete.
+    """
     c = 0
     for s in stepsDict:
         if stepsDict[s].complete:
@@ -252,7 +259,8 @@ def numCompletedSteps(stepsDict):
 
 def updateTimingInfo(s, status, options):
     """ takes a Step() object and updates all the timing info associated
-    with that sim step. If the Step has started running, returns True
+    with that sim step. If the Step has started running, and information
+    was actually updated then it returns True. Otherwise it returns False.
     """
     updated = False
     if not os.path.exists(os.path.join(options.simDir, s.name, 'xml')):
@@ -494,6 +502,9 @@ def cycleDirectoriesOnly(aList, options):
     return out
 
 def str2link(s, directory, title=''):
+    """ Used by the --html options, this takes a string and makes it into
+    an html <a href...> link without a closing </a>.
+    """
     if directory == '':
         return ''
     else:
@@ -693,6 +704,8 @@ def combineTernaryValues(statsValue, transValue):
     return statsValue + (3 * transValue + 3)
 
 def drawScaleBar(numSteps, scale, rootName, isHtml):
+    """ This draws the scale bar that goes beneath the ASCII tree.
+    """
     scaleBar=' ' * (len(rootName) - scale + 1)
     for i in xrange(int(numSteps+1), 0, -1):
         if i >= 100:
@@ -719,6 +732,8 @@ def drawScaleBar(numSteps, scale, rootName, isHtml):
     print scaleBar
 
 def drawLegend(isHtml):
+    """ This draws the legend box that goes beneath the scale bar and ASCII tree.
+    """ 
     if isHtml:
         print '<pre style="margin-left:2em;">'
     print '+ Legend %s+' % ('-' * 97)
@@ -738,6 +753,10 @@ def drawLegend(isHtml):
         print '</pre>'
 
 def timeHandler(status, options):
+    """ timeHandler goes through a simulation and updates the timing information for
+    the simulation. This includes a lot of the information printed in the top "Information"
+    section.
+    """
     curCycleElapsedTime = 0.0
     if status.longBranchSteps.name in status.stepsDict:
         if status.stepsDict[status.longBranchSteps.name].startTime != -1:
@@ -851,18 +870,18 @@ def finishHtml():
 
 def stepsDictToTimeList(stepsDict):
     """stepsDictToTimeList() takes a dict of steps [stepsDict] and
-    their common parent directory [runDir] and returns a list of all of
-    their runtimes in seconds.
+    returns a list of all the runtimes of completed steps in seconds.
     """
     cycleTimes = []
     for c in stepsDict:
         if stepsDict[c].complete:
             cycleTimes.append(stepsDict[c].elapsedTime)
     return cycleTimes
+
 def stepsDictToTimeDict(stepsDict):
-    """stepsDictToTimeDict() takes a dict of completed steps [cs_dict] and
-    their common parent directory [runDir] and returns a dict with cycle
-    names as keys and their runtimes in seconds as values.
+    """stepsDictToTimeDict() takes a dict of completed steps [stepsDict] and
+    returns a dict with step names as keys and their runtimes in seconds as values.
+    Used to output paired values of chromosome times and bp lengths.
     """
     cycleTimes = {}
     for c in stepsDict:
@@ -1093,6 +1112,11 @@ def listCurrentCycles(runDir, stepsDict, isHtml, options, htmlDir=''):
         print '</tbody></table></div>'
 
 def currentStepInfo(s, simDir):
+    """ currentStepInfo takes a simulation Step() object and determines how long 
+    that step has been running. It returns a tuple of the step name and the elapsed 
+    time for the step. Step here is the step within the cycle, e.g. CycleStep4 or
+    TransalignStep.
+    """
     curStep = 'CycleStep'
     curTime = s.startTime
     for i in xrange(1, 5):
@@ -1176,6 +1200,10 @@ def printSortedStepTimes(stepsDict, isHtml, htmlDir):
     
     
 def mean(a):
+    """ takes the mean of a list
+    """
+    if not isinstance(a, list):
+        raise TypeError('Function mean() takes a list, not a %s' % a.__class__)
     if len(a) > 0:
         return float(sum(a) / len(a))
     else:
@@ -1184,6 +1212,8 @@ def mean(a):
 def variance(a):
     """variance() calculates a variance from a list, 'a'
     """
+    if not isinstance(a, list):
+        raise TypeError('Function mean() takes a list, not a %s' % a.__class__)
     meanA = mean(a)
     tot = 0.0
     for i in a:
@@ -1269,6 +1299,9 @@ def collectData(options, status):
     timeHandler(status, options)
 
 def buildSimNodeTree(nt, options):
+    """ buildSimNodeTree takes in a newickTree object and builds
+    a SimNode() tree object.
+    """
     if nt is None:
         return None
     root = SimNode()
@@ -1299,6 +1332,8 @@ def buildSimNodeTree(nt, options):
     return root
 
 def printSimNodeTree(sn):
+    """ printSimNodeTree is a debugging function.
+    """
     if sn is None:
         return
     if sn.parent is None:
@@ -1339,6 +1374,8 @@ def packData(status, filename):
     f.close()
     
 def printInfoTable(status, options):
+    """ prints the Information table.
+    """
     if options.isHtml:
         if 'isDone' not in status.variables:
             print '<form name="Reload">'
@@ -1391,8 +1428,8 @@ def printInfoTable(status, options):
         print '</div>'
 
 def printTree(status, options):
-    #####
-    # Draw the Tree!
+    """ Draws the ASCII tree!
+    """
     if options.drawText:
         if options.isHtml:
             print '<h3>Simulation Tree Status</h3>'
@@ -1403,6 +1440,8 @@ def printTree(status, options):
                   isHtml = options.isHtml, directory = options.htmlDir)
     
 def printStats(status, options):
+    """ prints the Step Stats section
+    """
     findStalledCycles(options.simDir, status.stepsDict,
                        options.isHtml, options.htmlDir)
     if options.curCycles or options.isHtml:
@@ -1417,6 +1456,10 @@ def printStats(status, options):
         printSortedStepTimes(status.stepsDict, options.isHtml, options.htmlDir)
 
 def getSortedChromTimesList(status):
+    """ given the status object this function returns a tuple of a list of chromosome
+    names sorted by their mean runtimes and the chromosome times dict which is keyed
+    on chromosome names and valued with a list containing runtimes.
+    """
     # print the chromosome times
     chromTimesDict = {}
     for s in status.stepsDict:
@@ -1429,6 +1472,11 @@ def getSortedChromTimesList(status):
     return sorted(chromTimesDict, key = lambda c: mean(chromTimesDict[c]), reverse = True), chromTimesDict
 
 def getChromTimesDictStep(status):
+    """ given the status object this function returns a dictionary of chromosome 
+    run times keyed on chromosome names and valued with another dict keyed on
+    simulation step names which is valued with runtimes. This is used to pair up
+    specific chromosome runtimes with specific chromosome lengths.
+    """
     chromTimesDictStep = {}
     for s in status.stepsDict:
         if 'chromosomes' not in status.stepsDict[s].timeDict:
@@ -1444,6 +1492,10 @@ def getChromTimesDictStep(status):
     return chromTimesDictStep
 
 def getChrLenList(chrLenDict, c):
+    """ Given a chromosome length dictionary keyed on chromosome names and 
+    a chromosome name (c) this returns a list of all the runtimes for a given
+    chromosome across all Step names.
+    """
     l = []
     if c not in chrLenDict:
         return l
@@ -1452,6 +1504,8 @@ def getChrLenList(chrLenDict, c):
     return l
 
 def printChrTimes(status, options):
+    """ prints the table of chromosome runtimes and bp lengths.
+    """
     if not options.printChrTimes:
         return
     sortedChromTimes = getSortedChromTimesList(status)
