@@ -1057,8 +1057,8 @@ def runEvolverInterCmds(thisDir, thisParentDir, theChild, theParent, thisStepLen
             f.close()
             handleReturnCode(p2.returncode, cmd2)
             os.rename(outname + '.tmp', outname)
-        mvCmds = evolverInterStepMobilesMoveCmd(localTempDir, thisDir)
-        runCommands(mvCmds, localTempDir, mode = 'p')
+            mvCmds = evolverInterStepMobilesMoveCmd(localTempDir, thisDir)
+            runCommands(mvCmds, localTempDir, mode = 'p')
     if p1 is not None:
         p1.wait()
         handleReturnCode(p1.returncode, cmd1)
