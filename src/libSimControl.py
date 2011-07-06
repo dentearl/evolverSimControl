@@ -2205,7 +2205,7 @@ def buildNodeParentDict(nl):
             npd[c] = n.name
     return npd
 
-def buildMergeCommand(maf1, maf2, out, treelessRootCmd, name, options, drop = None):
+def buildMergeCommand(maf1, maf2, out, treelessRootCmd, name, options):
     """
     """
     from libSimControl import which, verifyDirExists, verifyFileExists
@@ -2223,8 +2223,8 @@ def buildMergeCommand(maf1, maf2, out, treelessRootCmd, name, options, drop = No
     cmd.append('-maxInputBlkWidth=%d' % options.maxInputBlkWidth)
     # ' -maxInputBlkWidth=500'  avg120 mammal mouse-rat mouse-rat-human-tmp merge 
     # ' -maxInputBlkWidth=1000'
-    if drop:
-        cmd.append('-multiParentDropped=%s' % drop)
+    # if drop:
+    #     cmd.append('-multiParentDropped=%s' % drop)
     cmd.append(maf1)
     cmd.append(maf2)
     cmd.append(out + '.tmp')

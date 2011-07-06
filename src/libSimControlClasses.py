@@ -664,9 +664,9 @@ class MergeTreeFollow(Target):
             treelessRootCmd = ['-treelessRoot2=%s' % lsc.burninRootName(self.options)]
             maf1 = os.path.join(self.options.rootDir, self.options.rootName + '.maf')
             maf2 = os.path.join(self.options.rootDir, 'burnin.tmp.maf')
-            drop = os.path.join(self.options.rootDir, 'burnin.dropped.maf')
+            # drop = os.path.join(self.options.rootDir, 'burnin.dropped.maf')
             cmds = lsc.buildMergeCommand(maf1, maf2, outname, treelessRootCmd, 
-                                         self.name, self.options, drop)
+                                         self.name, self.options)
             lsc.runCommands(cmds, self.getLocalTempDir())
 
 class MergeMafsDown(MergeTree):
@@ -693,9 +693,9 @@ class MergeMafsDown(MergeTree):
                                 self.name + '.maf')
             maf2 = os.path.join(self.options.simDir, self.nodeDict[self.name].children[1], 
                                 self.name + '.maf')
-            drop = os.path.join(self.options.simDir, self.name, self.name + '.dropped.tab')
+            # drop = os.path.join(self.options.simDir, self.name, self.name + '.dropped.tab')
             cmds = lsc.buildMergeCommand(maf1, maf2, outname, treelessRootCmd, self.name, 
-                                         self.options, drop)
+                                         self.options)
             lsc.runCommands(cmds, self.getLocalTempDir())
         self.setFollowOnTarget(MergeMafsUp(self.nt, self.nodeDict, self.nodeParentDict, 
                                            self.leafsDict, self.nodeParent, self.options))
@@ -725,8 +725,8 @@ class MergeMafsUp(MergeTree):
             treelessRootCmd = ['-treelessRoot2=%s' % self.nodeParent]
             maf1 = os.path.join(self.options.simDir, self.name, self.name + '.maf')
             maf2 = os.path.join(self.options.simDir, self.name, self.nodeParent + '.tmp.maf')
-            drop = os.path.join(self.options.simDir, self.name, self.nodeParent + '.dropped.tab')
+            # drop = os.path.join(self.options.simDir, self.name, self.nodeParent + '.dropped.tab')
             cmds = lsc.buildMergeCommand(maf1, maf2, outname, treelessRootCmd, 
-                                         self.name, self.options, drop)
+                                         self.name, self.options)
             lsc.runCommands(cmds, self.getLocalTempDir())
     
