@@ -1312,7 +1312,7 @@ def getParentDir(thisDir):
     return None
 
 def getBranchDir(thisDir):
-    """ Returns the first ancestor that is either the root or a branch point
+    """ Returns the first ancestor that is either the root or a branch point.
     """
     from libSimControl import verifyDirExists, isBranchOrRoot, getParentDir
     verifyDirExists(thisDir)
@@ -1516,6 +1516,43 @@ def statsStep4Cmds(thisDir, thisParentDir, options):
         pipes.append(None)
         cmds.append(cmd)
     
+    outname = os.path.join(thisDir, 'stats', 'merged_branch.stats.txt')
+    if not os.path.exists(outname):
+        if isBranchOrRoot(thisParentDir):
+            cmd = [which('cp')]
+            cmd.append(os.path.join(thisDir, 'stats', 'merged_cycle.stats.txt'))
+            cmd.append(outname + '.tmp')
+            cmds.append(cmd)
+            pipes.append(None)
+            cmd = [which('mv')]
+            cmd.append(outname + '.tmp')
+            cmd.append(outname)
+            cmds.append(cmd)
+            pipes.append(None)
+        else:
+            cmd = [which('evolver_merge_evostats.py')]
+            cmd.append(os.path.join(thisDir, 'stats', 'merged_cycle.stats.txt'))
+            cmd.append(os.path.join(thisParentDir, 'stats', 'merged_branch.stats.txt'))
+            cmds.append(cmd)
+            pipes.append(outname + '.tmp')
+            cmd = [which('mv')]
+            cmd.append(outname + '.tmp')
+            cmd.append(outname)
+            cmds.append(cmd)
+            pipes.append(None)
+
+    outname = os.path.join(thisDir, 'stats', 'events_branch.txt')
+    if not os.path.exists(outname):
+        cmd = [which('evolver_evostats_report.py')]
+        cmd.append(os.path.join(thisDir, 'stats', 'merged_branch.stats.txt'))
+        cmds.append(cmd)
+        pipes.append(outname + '.tmp')
+        cmd = [which('mv')]
+        cmd.append(outname + '.tmp')
+        cmd.append(outname)
+        pipes.append(None)
+        cmds.append(cmd)
+
     return cmds, pipes
 
 def isBranchOrRoot(thisDir):
