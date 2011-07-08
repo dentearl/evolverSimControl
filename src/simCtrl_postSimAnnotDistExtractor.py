@@ -42,8 +42,7 @@ from sonLib.bioio import newickTreeParser
 from sonLib.bioio import printBinaryTree
 from optparse import OptionParser
 import xml.etree.ElementTree as ET
-import evolverSimControl.lib.libSimControl as LSC
-import evolverSimControl.lib.libSimTree as LST
+import evolverSimControl.lib.libSimControl as lsc
 
 def initOptions(parser):
     parser.add_option('-d', '--simDir',dest='simDir',
@@ -333,7 +332,7 @@ def main():
     standardizeResults(options, results)
     printStats(options, results)
     printScript(options, results)
-    printScriptGG(options, results)
+    # printScriptGG(options, results)
 
 if __name__ == "__main__":
     main()
