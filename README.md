@@ -23,7 +23,6 @@ The use of jobTree means that you can run **eSC** on a cluster running a jobTree
 * **trf**: http://tandem.bu.edu/trf/trf.html Tandem Repeats Finder.
 * **mafJoin**: https://github.com/dentearl/mafTools Not necessary for simple simulations, mafJoin (part of mafTools) is only needed if you wish to create a maf alignment of all sequences following a simulation.
 * **R**: http://cran.r-project.org/ Only necessary if you wish to use the <code>simCtrl_postSimAnnotDistExtractor.py</code> script to view annotation size distributions following a simulation.
-* **ggplot2** for R: in R type <code>install.packages("ggplot2")</code> Only necessary if you wish to use the <code>simCtrl_postSimAnnotDistExtractor.py</code> script to view annotation size distributions following a simulation.
 
 ##Requirements
 * Linux on i86 Intel. This is due to core Evolver executables being distributed as pre-compiled binaries.
