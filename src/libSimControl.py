@@ -641,8 +641,14 @@ def createRootXmls(command, options):
     """
     from libSimControl import createSimulationInfoXml
     import os
+    import shutil
     import xml.etree.ElementTree as ET
 
+    if os.path.exists(os.path.join(options.outDir, options.rootName, 'xml')):
+        # if the root is from another eSC simulation, this dir will already exist
+        # so lets move it out of the way
+        shutil.move(os.path.join(options.outDir, options.rootName, 'xml'),
+                    os.path.join(options.outDir, options.rootName, 'xmlPrevious'))
     os.mkdir(os.path.join(options.outDir, options.rootName, 'xml'))
     root = ET.Element('info')
     e = ET.SubElement(root, 'cycleIsRoot')
