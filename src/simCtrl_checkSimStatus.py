@@ -1418,8 +1418,8 @@ def printInfoTable(status, options):
     else:
         status.remainingTimeStr = status.remainingTimeStr
     info1 = 'ETtC: %31s ' % status.remainingTimeStr
-    info2 = '%sEToC: %12s ' % (' ' * 4, status.estTimeOfCompStr)
-    info3 = 'Elapsed wall-clock: %17s ' % prettyTime(status.elapsedTime)
+    info2 = 'Elapsed wall-clock: %17s ' % prettyTime(status.elapsedTime)
+    info3 = '%sEToC: %12s ' % (' ' * 4, status.estTimeOfCompStr)
     info4 = '%sETRL: %12s' % (' ' * 4, status.estTotalRunLength)
     print('%s%s%s%s\n%s%s%s\n' 
           % (info1, elmDiv, info2, rowDiv, info3, elmDiv, info4))
