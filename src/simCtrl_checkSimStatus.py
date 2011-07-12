@@ -763,8 +763,9 @@ def timeHandler(status, options):
             curCycleElapsedTime = time.time() - status.stepsDict[status.longBranchSteps.name].startTime
     (status.elapsedTreeTimeDict, prgTimeDict) = elapsedTreeTimeExtractor(status.elapsedTreeTimeDict, 
                                                                          status.stepsDict)
-    elapsedTreeTime = sum(status.elapsedTreeTimeDict.values()) + sum(prgTimeDict.values())
-    status.elapsedTreeTimeStr = prettyTime(elapsedTreeTime)
+    completedElapsedTreeTime = sum(status.elapsedTreeTimeDict.values())
+    totalElapsedTreeTime = sum(status.elapsedTreeTimeDict.values()) + sum(prgTimeDict.values())
+    status.totalElapsedTreeTimeStr = prettyTime(totalElapsedTreeTime)
     
     if status.numCompletedSteps == status.numTotalSteps:
         # the simulation is complete
@@ -774,8 +775,7 @@ def timeHandler(status, options):
         # simulation is in progress
         status.elapsedTime = howLongSimulationFinder(options.simDir, status.cycleDirs)
     if status.numCompletedSteps and status.numTotalSteps:
-        # check to make sure these values are not 0
-        status.aveBranchTime = elapsedTreeTime / float(status.numCompletedSteps)
+        status.aveBranchTime = completedElapsedTreeTime / float(status.numCompletedSteps)
         status.aveBranchTimeStr = prettyTime(status.aveBranchTime)
         if status.numCompletedSteps != status.numTotalSteps:
             if curCycleElapsedTime > status.aveBranchTime:
@@ -1389,7 +1389,7 @@ def printInfoTable(status, options):
         print '<div style="margin-left:2em;">'
         print '<table cellpadding="5"><tr><td>\n'
         elmDiv = '</td><td>'
-        rowDiv = '<td></tr><tr><td>'
+        rowDiv = '</td></tr><tr><td>'
     else:
         print 'Information'
         print 'Generated at %s, %s' % (time.strftime("%a, %d %b %Y %H:%M:%S (%Z)", time.localtime()),
@@ -1409,20 +1409,21 @@ def printInfoTable(status, options):
     info1 = ('Tot. stps taken: %d of %d (%2.2f%% complete)' 
              % (status.numCompletedSteps, status.numTotalSteps,
                 100 * (float(status.numCompletedSteps) / float(status.numTotalSteps))))
-    info2 = '%sElapsed CPU time: %s (ave: %s / step)' % (' ' * 5, status.elapsedTreeTimeStr, 
-                                                         status.aveBranchTimeStr)
+    info2 = '%sElapsed CPU time: %s' % (' ' * 5, status.elapsedTreeTimeStr)
     print '%s%s%s%s' % (info1, elmDiv, info2, rowDiv)
                                                                                               
     if options.isHtml:
         status.remainingTimeStr = '<b>' + status.remainingTimeStr + '</b>'
     else:
         status.remainingTimeStr = status.remainingTimeStr
-    info1 = 'ETtC: %31s ' % status.remainingTimeStr
-    info2 = 'Elapsed wall-clock: %17s ' % prettyTime(status.elapsedTime)
-    info3 = '%sEToC: %12s ' % (' ' * 4, status.estTimeOfCompStr)
-    info4 = '%sETRL: %12s' % (' ' * 4, status.estTotalRunLength)
-    print('%s%s%s%s\n%s%s%s\n' 
-          % (info1, elmDiv, info2, rowDiv, info3, elmDiv, info4))
+    info1 = 'Ave time / step: %12s' % status.aveBranchTimeStr
+    info2 = 'ETtC: %31s ' % status.remainingTimeStr
+    info3 = 'Elapsed wall-clock: %17s ' % prettyTime(status.elapsedTime)
+    info4 = '%sEToC: %12s ' % (' ' * 4, status.estTimeOfCompStr)
+    info5 = '%sETRL: %12s' % (' ' * 4, status.estTotalRunLength)
+    
+    print('%s\n%s%s%s%s%s\n%s%s%s\n' 
+          % (info1, rowDiv, info2, elmDiv, info3, rowDiv, info4, elmDiv, info5))
     if options.isHtml:
         print '</td></tr></table>'
         print '</div>'
