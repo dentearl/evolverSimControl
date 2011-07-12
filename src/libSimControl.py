@@ -1809,7 +1809,7 @@ def transalignStep1Cmds_1(thisDir, thisParentDir, options):
     """ Produces a list of commands to run a stats step,
     called by StatsStep4
     """
-    from libSimControl import which, verifyDirExists, verifyFileExists
+    from libSimControl import which, getBranchDir, verifyDirExists, verifyFileExists
     import os
     for d in [thisDir, thisParentDir]:
         verifyDirExists(d)
@@ -1885,7 +1885,7 @@ def transalignStep1Cmds_1(thisDir, thisParentDir, options):
         cmd.append('-annots2')
         cmd.append(os.path.join(thisDir, 'annots.gff'))
         cmd.append('-log')
-        cmd.append(os.path.join(thisDir, 'logs', 'cds_alns.cycle.log'))
+        cmd.append(os.path.join(thisDir, 'logs', 'cds_aln.cycle.log'))
         pipes.append(None)
         cmds.append(cmd)
         cmd = [which('mv')]
@@ -1994,7 +1994,7 @@ def transalignStep1Cmds_1(thisDir, thisParentDir, options):
         pipes.append(None)
         cmds.append(cmd)
     
-    outname = os.path.join(thisDir, 'stats', 'cds_aln.root.rev')
+    outname = os.path.join(thisDir, 'stats', 'cds_aln.branch.rev')
     if not os.path.exists(outname):
         cmd = [which('evolver_evo')]
         cmd.append('-cdsalns')
@@ -2002,11 +2002,11 @@ def transalignStep1Cmds_1(thisDir, thisParentDir, options):
         cmd.append('-alns')
         cmd.append(outname + '.tmp')
         cmd.append('-annots1')
-        cmd.append(os.path.join(options.rootDir, 'stats', 'cds_annots.gff'))
+        cmd.append(os.path.join(getBranchDir(thisDir), 'stats', 'cds_annots.gff'))
         cmd.append('-annots2')
         cmd.append(os.path.join(thisDir, 'annots.gff'))
         cmd.append('-log')
-        cmd.append(os.path.join(thisDir, 'logs', 'cds_alns.root.log'))
+        cmd.append(os.path.join(thisDir, 'logs', 'cds_aln.branch.log'))
         pipes.append(None)
         cmds.append(cmd)
         cmd = [which('mv')]
@@ -2032,15 +2032,15 @@ def transalignStep1Cmds_1(thisDir, thisParentDir, options):
         pipes.append(None)
         cmds.append(cmd)
         
-    outname = os.path.join(thisDir, 'stats', 'codonSubs.root.txt')
+    outname = os.path.join(thisDir, 'stats', 'codonSubs.branch.txt')
     if not os.path.exists(outname):
         cmd = [which('evolver_evo')]
         cmd.append('-getcodonsubs')
-        cmd.append(os.path.join(thisDir, 'stats', 'cds_aln.root.rev'))
+        cmd.append(os.path.join(thisDir, 'stats', 'cds_aln.branch.rev'))
         cmd.append('-out')
         cmd.append(outname + '.tmp')
         cmd.append('-log')
-        cmd.append(os.path.join(thisDir, 'logs', 'getCodonSubs.root.log'))
+        cmd.append(os.path.join(thisDir, 'logs', 'getCodonSubs.branch.log'))
         pipes.append(None)
         cmds.append(cmd)
         cmd = [which('mv')]
