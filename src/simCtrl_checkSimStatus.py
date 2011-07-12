@@ -1409,7 +1409,7 @@ def printInfoTable(status, options):
     info1 = ('Tot. stps taken: %d of %d (%2.2f%% complete)' 
              % (status.numCompletedSteps, status.numTotalSteps,
                 100 * (float(status.numCompletedSteps) / float(status.numTotalSteps))))
-    info2 = '%sElapsed CPU time: %s' % (' ' * 5, status.elapsedTreeTimeStr)
+    info2 = '%sElapsed CPU time: %s' % (' ' * 5, status.totalElapsedTreeTimeStr)
     print '%s%s%s%s' % (info1, elmDiv, info2, rowDiv)
                                                                                               
     if options.isHtml:
