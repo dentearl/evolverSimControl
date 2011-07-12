@@ -2078,13 +2078,13 @@ def runTransalignStep1Cmds_2(thisDir, thisParentDir, localTempDir, options):
         outPipes.append(outname + '.tmp')
         outnames.append(outname)
     
-    outname = os.path.join(thisDir, 'stats', 'protStats.root.txt')
+    outname = os.path.join(thisDir, 'stats', 'protStats.branch.txt')
     if not os.path.exists(outname):
         cmd = [which('evolver_codon_report.pl')]
         cmd.append(os.path.basename(options.rootDir))
         cmd.append(os.path.basename(thisParentDir))
         cmds.append(cmd)
-        inPipes.append(os.path.join(thisDir, 'stats', 'codonSubs.root.txt'))
+        inPipes.append(os.path.join(thisDir, 'stats', 'codonSubs.branch.txt'))
         outPipes.append(outname + '.tmp')
         outnames.append(outname)
     
