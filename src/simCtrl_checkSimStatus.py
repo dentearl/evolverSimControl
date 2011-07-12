@@ -806,8 +806,8 @@ def timeHandler(status, options):
         status.estTimeOfCompStr = '--'
         status.estTotalRunLength = '--'
     if status.longBranchSteps.longestPath != '':
-        status.workingCycleString = '(%s --> %s)' % (status.longBranchSteps.name, 
-                                                     status.longBranchSteps.longestChild)
+        status.workingCycleString = '(%s -> %s)' % (status.longBranchSteps.name, 
+                                                    status.longBranchSteps.longestChild)
     else:
         status.workingCycleString = ''
 
