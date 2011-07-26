@@ -91,6 +91,22 @@ def verifyUnixLineEndings(prog, verbose = False):
             if verbose:
                 print '   unix line endings %s %s OK' % (p, (90 - len(p)) * '.')
 
+def verifyDirExists(directory):
+    """ Convenience function to verify the existence of a directory
+    """
+    import os
+    if not os.path.exists(directory):
+        raise RuntimeError('Error, unable to locate directory %s.' % directory)
+    if not os.path.isdir(directory):
+        raise RuntimeError('Error, directory %s is not a directory.' % directory)
+
+def verifyFileExists(filename):
+    """ Convenience function to verify the existence of a file
+    """
+    import os
+    if not os.path.exists(filename):
+        raise RuntimeError('Error, unable to locate file %s.' % filename)
+
 def which(program):
     """which() acts like the unix utility which, but is portable between os.
     If the program does not exist in the PATH then 'None' is returned. 
@@ -129,10 +145,12 @@ def typeTimestamp(dirname, typeTS, value):
     from libSimControlClasses import BadInputError
     from libSimControl import lockfile, unlockfile, addTimestampsTag
     import os
+    imort shutil
     import sys
     import time
     import xml.etree.ElementTree as ET
     import xml.parsers.expat as expat
+
     value = value.lower()
     if typeTS not in ('cycle', 'stats', 'transalign'):
         raise BadInputError('typeTS must be either "cycle", "stats", or "transalign" not %s.' % typeTS)
@@ -158,67 +176,80 @@ def typeTimestamp(dirname, typeTS, value):
     timeEpoch = ET.SubElement(timeStart, 'epochUTC')
     timeEpoch.text = str(time.time())
     info = ET.ElementTree(root)
-    info.write(lockname)
+    info.write(lockname + '.tmp')
+    shutil.move(lockname + '.tmp', lockname)
     unlockfile(lockname)
 
 def addTimestampsTag(filename):
     """
     """
     from libSimControl import lockfile, unlockfile
-    import os
-    import sys
+    import shutil
+    import time
     import xml.etree.ElementTree as ET
     import xml.parsers.expat as expat
-    import time
+    
     lockname = lockfile(filename)
     try:
         infoTree = ET.parse(lockname)
     except expat.ExpatError: # broken xml file
-        sys.stderr.write('Bad xml: %s\n' % lockname)
-        raise
+        raise expat.ExpatError('Bad xml: %s\n' % lockname)
     root = infoTree.getroot()
     if len(root.findall('timestamps')) > 0:
         raise RuntimeError('There should be no timestamps tag in %s.' % filename)
     timeTag = ET.SubElement(root, 'timestamps')
     timeTag.attrib['startEpochUTC'] = str(time.time())
     info = ET.ElementTree(root)
-    info.write(lockname)
+    info.write(lockname + '.tmp')
+    shutil.move(lockname + '.tmp', lockname)
     unlockfile(lockname)
 
-def subTypeTimestamp(dirname, typeTS, timeName, chrName = None):
-    """dirname is the cycle directory, type is in {cycle, stats, transalign}, timeName is something
-    like 'CycleStep1_start' or 'cycleStep1_end'
+def createTimestamp(filename, extra = {}):
+    """ only args should be a dict keyed tag name valued tag-text
     """
-    from libSimControlClasses import BadInputError
-    from libSimControl import lockfile, unlockfile
-    import os
-    import sys
+    import shutil
     import time
     import xml.etree.ElementTree as ET
-    import xml.parsers.expat as expat
-    if typeTS not in ('cycle', 'stats', 'transalign', 'cycleChr'):
-        raise BadInputError('typeTS must be either "cycle", "stats", '
-                             '"transalign", or "cycleChr" not %s.' % typeTS)
-    if chrName is not None:
-        filename = os.path.join(dirname, 'xml', 'cycle.%s.xml' % chrName)
-    else:
-        filename = os.path.join(dirname, 'xml', typeTS + '.xml')
-    lockname = lockfile(filename)
-    try:
-        infoTree = ET.parse(lockname)
-    except expat.ExpatError: # broken xml file
-        sys.stderr.write('Bad xml: %s\n' % lockname)
-        raise
-    root = infoTree.getroot()
-    timeTag = root.find('timestamps')
-    timeObj = ET.SubElement(timeTag, timeName)
-    timeHuman = ET.SubElement(timeObj, 'humanUTC')
-    timeHuman.text = str(time.strftime("%a, %d %b %Y %H:%M:%S (UTC) ", time.gmtime()))
-    timeEpoch = ET.SubElement(timeObj, 'epochUTC')
-    timeEpoch.text = str(time.time())
+
+    if not isinstance(extra, dict):
+        raise RuntimeError('extra needs to be a dict, not a %s' % extra.__class__)
+    
+    root = ET.Element('info')
     info = ET.ElementTree(root)
-    info.write(lockname)
-    unlockfile(lockname)
+
+    # names, etc
+    if extra != {}:
+        for k, v in extra.items():
+            tag = ET.SubElement(root, k)
+            tag.text = v
+    
+    # time
+    tag = ET.SubElement(root, 'timestamps')
+    now = time.time()
+    tag.attrib['epochUTC'] = str(now)
+    tag.attrib['humanLocal'] = str(time.strftime("%a, %d %b %Y %H:%M:%S (%Z)", time.localtime(now)))
+    tag.attrib['humanUTC'] = str(time.strftime("%a, %d %b %Y %H:%M:%S (UTC)", time.gmtime(now)))
+    
+    info.write(filename + '.tmp')
+    shutil.move(filename + '.tmp', filename)
+
+def extractChrNamesDict(cycleDir):
+    """ this dict is used to take the excessively long names evolver
+    uses internally for chromosomes and maps it to a shorter set of names.
+    """
+    import os
+    
+    chrNameDict = {}
+    revChrNameDict = {}
+    if os.path.exists(os.path.join(cycleDir, 'inter', 'inter.chrnames.txt')):
+        f = open(os.path.join(cycleDir, 'inter', 'inter.chrnames.txt'), 'r')
+        i = 0
+        for line in f:
+            line = line.strip()
+            chrNameDict[line] = 'chrS%d' % i # for chromosome Sim 
+            revChrNameDict['chrS%d' % i] = line # might as well build this too.
+            i += 1
+    return (chrNameDict, revChrNameDict)
 
 def lockfile(filename):
     """ This is a fragile attempt at avoiding too many collisions on the xml info files
@@ -226,7 +257,8 @@ def lockfile(filename):
     """
     import os
     import time
-    timeout = 60
+    timeout = 240
+    delay = 0.5
     for numFails in xrange(0, timeout):
         try:
             # shutil.move:
@@ -240,9 +272,9 @@ def lockfile(filename):
             os.rename(filename, filename + '.lock')
             break
         except:
-            time.sleep(1)
+            time.sleep(delay)
     if not os.path.exists(filename + '.lock'):
-        raise RuntimeError('Unable to lock file %s after %d seconds.' % (filename, timeout))
+        raise RuntimeError('Unable to lock file %s after %.1f seconds.' % (filename, float(timeout)/delay))
     return filename + '.lock'
 
 def unlockfile(filename):
@@ -588,8 +620,9 @@ def handleReturnCode(retcode, cmd):
 def createNewCycleXmls(directory, parentDir, stepLength, newickStr, options):
     """
     """
-    from libSimControl import typeTimestamp, subTypeTimestamp, newInfoXml, tree2str, takeNewickStep
+    from libSimControl import newInfoXml, tree2str, takeNewickStep
     import os
+    import shutil
     from sonLib.bioio import newickTreeParser
     import xml.etree.ElementTree as ET
     if not os.path.exists(directory):
@@ -622,19 +655,24 @@ def createNewCycleXmls(directory, parentDir, stepLength, newickStr, options):
             e.attrib['type'] = c # left, right, stem
 
         info = ET.ElementTree(root)
-        info.write(os.path.join(directory, 'xml', 'summary.xml'))
+        info.write(os.path.join(directory, 'xml', 'summary.xml.tmp'))
+        shutil.move(os.path.join(directory, 'xml', 'summary.xml.tmp'), 
+                    os.path.join(directory, 'xml', 'summary.xml'))
         addTimestampsTag(os.path.join(directory, 'xml', 'summary.xml'))
-    if not os.path.exists(os.path.join(directory, 'xml', 'cycle.xml')):
-        newInfoXml(os.path.join(directory, 'xml', 'cycle.xml'))
-        typeTimestamp(directory, 'cycle', 'start')
+    # if not os.path.exists(os.path.join(directory, 'xml', 'cycle.xml')):
+        # newInfoXml(os.path.join(directory, 'xml', 'cycle.xml'))
+        # typeTimestamp(directory, 'cycle', 'start')
 
 def newInfoXml(filename):
     """
     """
+    import shutil
     import xml.etree.ElementTree as ET
-    root=ET.Element('info')
-    info=ET.ElementTree(root)
-    info.write(filename)
+    
+    root = ET.Element('info')
+    info = ET.ElementTree(root)
+    info.write(filename + '.tmp')
+    shutil.move(filename + '.tmp', filename)
 
 def createRootXmls(command, options):
     """
@@ -654,13 +692,16 @@ def createRootXmls(command, options):
     e = ET.SubElement(root, 'cycleIsRoot')
     e.text = 'True'
     info = ET.ElementTree(root)
-    info.write(os.path.join(options.outDir, options.rootName, 'xml', 'summary.xml'))
+    info.write(os.path.join(options.outDir, options.rootName, 'xml', 'summary.xml.tmp'))
+    shutil.move(os.path.join(options.outDir, options.rootName, 'xml', 'summary.xml.tmp'),
+                os.path.join(options.outDir, options.rootName, 'xml', 'summary.xml'))
     createSimulationInfoXml(command, options)
 
 def createSimulationInfoXml(command, options):
     """
     """
     import os
+    import shutil
     import time
     import xml.etree.ElementTree as ET
     if(os.path.exists(os.path.join(options.outDir, 'simulationInfo.xml'))):
@@ -692,23 +733,9 @@ def createSimulationInfoXml(command, options):
     cmd = ET.SubElement(root, 'command')
     cmd.text = ' '.join(command)
     info = ET.ElementTree(root)
-    info.write(os.path.join(options.outDir,'simulationInfo.xml'))
-
-def verifyDirExists(directory):
-    """ Convenience function to verify the existence of a directory
-    """
-    import os
-    if not os.path.exists(directory):
-        raise RuntimeError('Error, unable to locate directory %s.' % directory)
-    if not os.path.isdir(directory):
-        raise RuntimeError('Error, directory %s is not a directory.' % directory)
-
-def verifyFileExists(filename):
-    """ Convenience function to verify the existence of a file
-    """
-    import os
-    if not os.path.exists(filename):
-        raise RuntimeError('Error, unable to locate file %s.' % filename)
+    info.write(os.path.join(options.outDir,'simulationInfo.xml.tmp'))
+    shutil.move(os.path.join(options.outDir,'simulationInfo.xml.tmp'),
+                os.path.join(options.outDir,'simulationInfo.xml'))
 
 def evolverInterStepCmd(thisDir, thisParentDir, theChild, thisStepLength, seed, paramsDir):
     """ produces the command argument list needed to run an evolver inter step.
@@ -1651,36 +1678,15 @@ def lastOneOutTurnOffTheLightsCycle(thisDir):
     xml file.
     This is called by both StatsStep4 and TransalignStep2
     """
+    from libSimControl import statsAndTransAreComplete, addEndTimeAttribute
     import os
     if statsAndTransAreComplete(thisDir):
         # this is the end of the cycle
         addEndTimeAttribute(os.path.join(thisDir, 'xml', 'summary.xml'))
 
-def cycleIsComplete(thisDir):
-    from libSimControl import lockfile, unlockfile, dirIsRoot
-    import os
-    import sys
-    import xml.etree.ElementTree as ET
-    import xml.parsers.expat as expat
-
-    if not os.path.exists(thisDir):
-        return False
-    lockname = lockfile(os.path.join(thisDir, 'xml', 'summary.xml'))
-    try:
-        infoTree = ET.parse(lockname)
-    except expat.ExpatError: # broken xml file
-        sys.stderr.write('Bad xml: %s\n' % lockname)
-        raise
-    unlockfile(lockname)
-    root = infoTree.getroot()
-    stamps = root.find('timestamps')
-    if stamps is not None:
-        return 'endEpochUTC' in stamps.attrib
-
 def statsAndTransAreComplete(thisDir):
     """ Is the cycle done with both Stats and Transalign?
     """
-    from libSimControl import lockfile, unlockfile, dirIsRoot
     import os
     import sys
     import xml.etree.ElementTree as ET
@@ -1688,23 +1694,8 @@ def statsAndTransAreComplete(thisDir):
 
     if not os.path.exists(thisDir):
         return False
-    endings = { 'transalign': False, 'stats': False }
-    for f in endings:
-        lockname = lockfile(os.path.join(thisDir, 'xml', f+'.xml'))
-        try:
-            infoTree = ET.parse(lockname)
-        except expat.ExpatError: # broken xml file
-            sys.stderr.write('Bad xml: %s\n' % lockname)
-            raise
-        unlockfile(lockname)
-        root = infoTree.getroot()
-        stamps = root.find('timestamps')
-        if stamps is not None:
-            s = stamps.find('%sEnd' % f)
-            if s:
-                endings[f] = True
-    
-    return endings['transalign'] and endings['stats']
+    return (os.path.exists(os.path.join(thisDir, 'xml', 'transalign.end.xml')) and 
+            os.path.exists(os.path.join(thisDir, 'xml', 'stats.step4.end.xml')))
 
 def addEndTimeAttribute(filename):
     """ opens the filename xml file, finds the timestamps tag, and adds an
@@ -1713,6 +1704,7 @@ def addEndTimeAttribute(filename):
     """
     from libSimControl import verifyFileExists, lockfile, unlockfile, dirIsRoot
     import os
+    import shutil
     import sys
     import time
     import xml.etree.ElementTree as ET
@@ -1732,7 +1724,8 @@ def addEndTimeAttribute(filename):
     t.attrib['endEpochUTC'] = str(now)
     t.attrib['elapsedTime'] = str(now - float(t.attrib['startEpochUTC']))
     info = ET.ElementTree(root)
-    info.write(lockname)
+    info.write(lockname + '.tmp')
+    shutil.move(lockname + '.tmp', lockname)
     unlockfile(lockname)
 
 def lastOneOutTurnOffTheLightsSimulation(thisDir, options):
@@ -1743,10 +1736,12 @@ def lastOneOutTurnOffTheLightsSimulation(thisDir, options):
     """
     from libSimControl import verifyFileExists, verifyDirExists, lockfile, unlockfile, dirIsRoot
     import os
+    import shutil
     import sys
     import time
     import xml.etree.ElementTree as ET
     import xml.parsers.expat as expat
+    
     for d in [thisDir]:
         verifyDirExists(d)
     for f in [os.path.join(thisDir, 'simulationInfo.xml')]:
@@ -1776,8 +1771,9 @@ def lastOneOutTurnOffTheLightsSimulation(thisDir, options):
         timeHuman.text = str(time.strftime("%a, %d %b %Y %H:%M:%S (UTC) ", time.gmtime()))
         timeEpoch      = ET.SubElement(timeEnd, 'epochUTC')
         timeEpoch.text = str(time.time())
-        info=ET.ElementTree(root)
-        info.write(lockname)
+        info = ET.ElementTree(root)
+        info.write(lockname + '.tmp')
+        shutil.move(lockname + '.tmp', lockname)
         unlockfile(lockname)
 
 def allLeafsComplete(options):
@@ -1788,7 +1784,7 @@ def allLeafsComplete(options):
     from sonLib.bioio import newickTreeParser
     leafs = extractLeafNames(newickTreeParser(options.inputNewick, 0.0))
     for l in leafs:
-        if not cycleIsComplete(os.path.join(options.simDir, l)):
+        if not statsAndTransAreComplete(os.path.join(options.simDir, l)):
             return False
     return True
 
