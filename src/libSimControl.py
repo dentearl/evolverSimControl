@@ -145,7 +145,7 @@ def typeTimestamp(dirname, typeTS, value):
     from libSimControlClasses import BadInputError
     from libSimControl import lockfile, unlockfile, addTimestampsTag
     import os
-    imort shutil
+    import shutil
     import sys
     import time
     import xml.etree.ElementTree as ET
