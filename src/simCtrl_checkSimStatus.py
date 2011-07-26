@@ -1410,7 +1410,8 @@ def printInfoTable(status, options):
             print '</form>'
         print '<h3>Information</h3>'
         print '<div style="margin-left:2em;">'
-        print '%ssimulationInfo.xml</a>' % str2link('simulationInfo.xml', options.htmlDir)
+        print '%ssimulationInfo.xml</a> ' % str2link('simulationInfo.xml', options.htmlDir)
+        print '&nbsp;&nbsp;%sparameters</a>' % str2link('parameters', options.htmlDir)
         print('<p>Generated at %s, %s</p>' 
               % (time.strftime("%a, %d %b %Y %H:%M:%S (%Z)", time.localtime()),
                  time.strftime("%a, %d %b %Y %H:%M:%S (UTC)", time.gmtime())))
