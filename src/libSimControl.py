@@ -698,7 +698,8 @@ def createRootXmls(command, options):
     createSimulationInfoXml(command, options)
 
 def createSimulationInfoXml(command, options):
-    """
+    """ creates simulationInfo.xml, a file that stores basic information 
+    about a simulation. 
     """
     import os
     import shutil
