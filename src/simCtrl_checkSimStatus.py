@@ -151,6 +151,8 @@ def initOptions(parser):
                               'default=%default'))
     parser.add_option('--htmlDir', dest = 'htmlDir', default = '',
                       help = 'prefix for html links.')
+    parser.add_option('--debug', dest = 'debug', default = False,
+                      action = 'store_true', help = 'turns debug mode on.')
 
 def checkOptions(options, parser):
     if options.simDir is None:
@@ -279,63 +281,82 @@ def updateTimingInfo(s, status, options):
                 s.elapsedTime = s.endTime - s.startTime
                 s.complete = True
                 updateChromLengthDict(s.name, status, options)
-    # cycle.xml stats.xml
-    for t in ['Cycle', 'Stats']:
-        infotree = timeoutParse(os.path.join(options.simDir, s.name, 'xml', '%s.xml' % t.lower()))
+
+    # cycle.step%d.xml AND stats.step%d.xml
+    for t in ['cycle', 'stats']:
+        for i in xrange(1,5):
+            for elm in ['start', 'end']:
+                filename = os.path.join(options.simDir, s.name, 'xml', 
+                                        '%s.step%d.%s.xml' % (t, i, elm))
+                if os.path.exists(filename):
+                    infotree = timeoutParse(filename)
+                    if infotree is None:
+                        continue
+                    ts = infotree.find('timestamps')
+                    if ts is None:
+                        continue
+                    updated = True
+                    s.timeDict['%sStep%d%sEpochUTC' % (t, i, elm)] = float(ts.attrib['epochUTC'])
+                    # create overall times in the time dict
+                    if i == 1 and elm == 'start':
+                        s.timeDict['%sstartEpochUTC' % t] = float(ts.attrib['epochUTC'])
+                    elif i == 4 and elm == 'end':
+                        s.timeDict['%sendEpochUTC' % t] = float(ts.attrib['epochUTC'])
+                        
+    # chromosome run times
+    chrNamesDict, revChrNamesDict = lsc.extractChrNamesDict(os.path.join(options.simDir, s.name))
+    s.timeDict['chromosomes'] = {}
+    for c in revChrNamesDict:
+        if revChrNamesDict[c] in s.timeDict['chromosomes']:
+            # its already done
+            continue
+        filenameStart = os.path.join(options.simDir, s.name, 'xml', 'cycle.step2.%s.start.xml' % c)
+        filenameEnd = os.path.join(options.simDir, s.name, 'xml', 'cycle.step2.%s.end.xml' % c)
+        if os.path.exists(filenameStart) and os.path.exists(filenameEnd):
+            updated = True
+            infotree = timeoutParse(filenameStart)
+            if infotree is None:
+                continue
+            if infotree.find('name') is None:
+                continue
+            if infotree.find('name').text != revChrNamesDict[c]:
+                raise RuntimeError('chromosome names dont match %s %s' 
+                                   % (infotree.find('name').text, revChrNamesDict[c]))
+            timeStart = float(infotree.find('timestamps').attrib['epochUTC'])
+            infotree = timeoutParse(filenameEnd)
+            if infotree is None:
+                continue
+            if infotree.find('name') is None:
+                continue
+            if infotree.find('name').text != revChrNamesDict[c]:
+                raise RuntimeError('chromosome names dont match %s %s' 
+                                   % (infotree.find('name').text, revChrNamesDict[c]))
+            timeEnd = float(infotree.find('timestamps').attrib['epochUTC'])
+            s.timeDict['chromosomes'][revChrNamesDict[c]] = timeEnd - timeStart
+    
+    # trans.xml
+    filenameStart = os.path.join(options.simDir, s.name, 'xml', 'transalign.start.xml')
+    if os.path.exists(filenameStart):
+        updated = True
+        infotree = timeoutParse(filenameStart)
         if infotree is not None:
             ts = infotree.find('timestamps')
             if ts is not None:
-                for elm in ['start', 'end']:
-                    key = '%sEpochUTC' % elm
-                    if key in ts.attrib:
-                        updated = True
-                        s.timeDict[t + key] = float(ts.attrib[key])
-                for i in xrange(1, 5):
-                    for p in ['_start', '_end']:
-                        key = '%sStep%d%s' % (t, i, p)
-                        elm = ts.find(key)
-                        if elm is None:
-                            continue
-                        elmUtc = elm.find('epochUTC')
-                        if elmUtc is None:
-                            continue
-                        updated = True
-                        s.timeDict[key] = float(elmUtc.text)
-    # chromosome run times
-    chrs = glob.glob(os.path.join(options.simDir, s.name, 'xml', 'cycle.*.xml'))
-    regex = r'cycle\.(.*)\.xml'
-    pat = re.compile(regex)
-    s.timeDict['chromosomes'] = {}
-    for c in chrs:
-        m = re.search(pat, os.path.basename(c))
-        if m is None:
-            raise RuntimeError('Regular expression %s failed to match chr xml file %s' % (regex, c))
-        infotree = timeoutParse(c)
+                timeStart = float(ts.attrib['epochUTC'])
+                s.timeDict['transalignstartEpochUTC'] = timeStart
+                s.timeDict['transalignStep1startEpochUTC'] = timeStart
+        
+    filenameEnd = os.path.join(options.simDir, s.name, 'xml', 'transalign.end.xml')
+    if os.path.exists(filenameEnd):
+        updated = True
+        infotree = timeoutParse(filenameEnd)
         if infotree is not None:
             ts = infotree.find('timestamps')
-            if 'endEpochUTC' in ts.attrib:
-                updated = True
-                s.timeDict['chromosomes'][m.group(1)] = (float(ts.attrib['endEpochUTC']) - 
-                                                         float(ts.attrib['startEpochUTC']))
-    # trans.xml
-    infotree = timeoutParse(os.path.join(options.simDir, s.name, 'xml', 'transalign.xml'))
-    if infotree is not None:
-        ts = infotree.find('timestamps')
-        if ts is not None:
-            for elm in ['start', 'end']:
-                key = '%sEpochUTC' % elm
-                if key in ts.attrib:
-                    updated = True
-                    s.timeDict['Transalign' + key] = float(ts.attrib[key])
-                key = 'TransalignStep1_%s' % elm
-                elm = ts.find(key)
-                if elm is None:
-                    continue
-                elmUtc = elm.find('epochUTC')
-                if elmUtc is None:
-                    continue
-                updated = True
-                s.timeDict[key] = float(elmUtc.text)
+            if ts is not None:
+                timeEnd = float(ts.attrib['epochUTC'])
+                s.timeDict['transalignendEpochUTC'] = timeEnd
+                s.timeDict['transalignStep1endEpochUTC'] = timeEnd
+
     return updated
 
 def updateChromLengthDict(name, status, options):
@@ -509,9 +530,9 @@ def str2link(s, directory, title=''):
         return ''
     else:
         if title:
-            return '<a href="%s/%s/" title="%s">' % (directory, s, title)
+            return '<a href="%s/%s" title="%s">' % (directory, s, title)
         else:
-            return '<a href="%s/%s/">' % (directory, s)
+            return '<a href="%s/%s">' % (directory, s)
 
 def prettyTitle(n, s, done = True):
     t = prettyTime(s)
@@ -672,7 +693,7 @@ def getCycleStep(s):
     """
     step = 1
     for i in xrange(1, 5):
-        if 'CycleStep%d_start' % i in s.timeDict:
+        if 'cycleStep%dstartEpochUTC' % i in s.timeDict:
             step = i
     return step
 
@@ -684,14 +705,14 @@ def getTernaryValue(s, t, options):
         raise RuntimeError('Unanticipated value %s' % t)
     value = 0
     if t == 'stats':
-        if 'StatsStep1_start' in s.timeDict:
+        if 'statsStep1startEpochUTC' in s.timeDict:
             value = 1
     if t == 'trans':
-        if 'TransalignstartEpochUTC' in s.timeDict:
+        if 'transalignStep1startEpochUTC' in s.timeDict:
             value = 1
-    if t == 'stats' and 'StatsStep4_end' in s.timeDict:
+    if t == 'stats' and 'statsStep4endEpochUTC' in s.timeDict:
         value = 2
-    if t == 'transalign' and 'TransalignendEpochUTC' in s.timeDict:
+    if t == 'trans' and 'transalignStep1endEpochUTC' in s.timeDict:
         value = 2
 
     return value
@@ -920,11 +941,11 @@ def printStatsSection(s, options, status):
     if s == 'cycle':
         printCycleStats(options, status)
     elif s == 'stats':
-        printCycleStats(options, status, 'Stats')
+        printCycleStats(options, status, 'stats')
     elif s == 'trans':
-        printCycleStats(options, status, 'Transalign', 1)
+        printCycleStats(options, status, 'transalign', 1)
 
-def printCycleStats(options, status, pre = 'Cycle', length = 4):
+def printCycleStats(options, status, pre = 'cycle', length = 4):
     subList = []
     subTimesDict = {}
     for i in xrange(1, length + 1):
@@ -936,12 +957,12 @@ def printCycleStats(options, status, pre = 'Cycle', length = 4):
             times.append(status.stepsDict[s].timeDict['%sendEpochUTC' % pre] -
                          status.stepsDict[s].timeDict['%sstartEpochUTC' % pre])
         for u in subList:
-            if '%s_end' % u in status.stepsDict[s].timeDict:
-                subTimesDict[u].append(status.stepsDict[s].timeDict['%s_end' % u] - 
-                                       status.stepsDict[s].timeDict['%s_start' % u])
-    
+            if '%sendEpochUTC' % u in status.stepsDict[s].timeDict:
+                subTimesDict[u].append(status.stepsDict[s].timeDict['%sendEpochUTC' % u] - 
+                                       status.stepsDict[s].timeDict['%sstartEpochUTC' % u])
+
     if options.isHtml:
-        if pre == 'Cycle':
+        if pre == 'cycle':
             extraCol = '<td style="text-align:center">--</td>'
             extraColHeader = '<th>&mu; Len.</th>'
         else:
@@ -976,12 +997,17 @@ def printCycleStats(options, status, pre = 'Cycle', length = 4):
               % (u, ulTimes, extraCol, umTimes, upmTimes))
         
     else:
-        if pre == 'Cycle':
+        if pre == 'cycle':
             extraCol = '%20s' % '-- '
             extraColHeader = '%20s' % 'Mean Len. '
         else:
             extraCol = ' '
             extraColHeader = ' '
+        if options.debug:
+            if pre == 'transalign':
+                print len(times), mean(times), times, subTimesDict
+            else:
+                print pre
         print('%20s %4s %s%20s %20s' % ('Name', 'n', extraColHeader, 'Mean time (s)', '(pretty)'))
         print('%20s %4d %s%20.2f %20s'
               % ('Overall', len(times), extraCol, mean(times), prettyTime(mean(times))))
@@ -989,7 +1015,7 @@ def printCycleStats(options, status, pre = 'Cycle', length = 4):
             print('%20s %4d %s%20.2f %20s'
               % (u, len(subTimesDict[u]), extraCol, mean(subTimesDict[u]), prettyTime(mean(subTimesDict[u]))))
 
-    if pre != 'Cycle' or 'chromosomeLengthsDict' not in status.variables:
+    if pre != 'cycle' or 'chromosomeLengthsDict' not in status.variables:
         if options.isHtml:
             print '</tbody></table>'
         return
@@ -1078,10 +1104,10 @@ def listCurrentCycles(runDir, stepsDict, isHtml, options, htmlDir=''):
     step, current step runtime and current cycle runtime.
     """
     stepArray = [None]
-    for c in ['Cycle', 'Stats']:
+    for c in ['cycle', 'stats']:
         for i in xrange(1,4):
-            stepArray.append('%sStep%d_start' % (c, i))
-            stepArray.append('%sStep%d_end' % (c, i))
+            stepArray.append('%sStep%dstart' % (c, i))
+            stepArray.append('%sStep%dend' % (c, i))
     running = False
     if numRunningSteps(stepsDict):
         running = True
@@ -1120,31 +1146,31 @@ def currentStepInfo(s, simDir):
     curStep = 'CycleStep'
     curTime = s.startTime
     for i in xrange(1, 5):
-        key = 'CycleStep%d_start' % i
+        key = 'cycleStep%dstart' % i
         if key in s.timeDict:
-            curStep = 'CycleStep%d' % i
+            curStep = 'cycleStep%d' % i
             curTime = time.time() - s.timeDict[key]
         else:
             break
     stats = False
     for i in xrange(1, 5):
-        key = 'StatsStep%d_start' % i
+        key = 'statsStep%dstart' % i
         if key in s.timeDict:
             stats = True
-            curStep = 'StatsStep%d' % i
+            curStep = 'statsStep%d' % i
             curTime = time.time() - s.timeDict[key]
         else:
             break
-    if 'StatsendEpochUTC' in s.timeDict:
+    if 'statsendEpochUTC' in s.timeDict:
         stats = False
-    if 'TransalignstartEpochUTC' in s.timeDict:
-        transStep = 'TransalignStep'
+    if 'transalignStep1startEpochUTC' in s.timeDict:
+        transStep = 'transalignStep'
         if stats:
             curStep += ' + ' + transStep
         else:
             curStep = transStep
-        if 'TransalignendEpochUTC' not in s.timeDict:
-            transTime = time.time() - s.timeDict['TransalignstartEpochUTC']
+        if 'transalignStep1endEpochUTC' not in s.timeDict:
+            transTime = time.time() - s.timeDict['transalignStep1startEpochUTC']
             if curTime < transTime:
                 curTime = transTime
     return curStep, curTime
@@ -1274,7 +1300,7 @@ def collectData(options, status):
     
     if 'timeDict' not in status.variables:
         status.timeDict = {}
-        for c in ['Cycle', 'Stats']:
+        for c in ['cycle', 'stats']:
             for i in xrange(1,5):
                 status.timeDict[c + 'Step' + str(i)] = []
         status.timeDict['TransalignStep1'] = []
@@ -1383,10 +1409,12 @@ def printInfoTable(status, options):
                   % 'Autoreload (30s)')
             print '</form>'
         print '<h3>Information</h3>'
-        print('<p style="margin-left:2em;">Generated at %s, %s</p>' 
+        print '<div style="margin-left:2em;">'
+        print '%ssimulationInfo.xml</a>' % str2link('simulationInfo.xml', options.htmlDir)
+        print('<p>Generated at %s, %s</p>' 
               % (time.strftime("%a, %d %b %Y %H:%M:%S (%Z)", time.localtime()),
                  time.strftime("%a, %d %b %Y %H:%M:%S (UTC)", time.gmtime())))
-        print '<div style="margin-left:2em;">'
+        
         print '<table cellpadding="5"><tr><td>\n'
         elmDiv = '</td><td>'
         rowDiv = '</td></tr><tr><td>'
@@ -1531,6 +1559,10 @@ def printChrTimes(status, options):
     if options.isHtml:
         print '</tbody></table>'
 
+def dumpTimeDict(status):
+    for s in status.stepsDict:
+        print s, status.stepsDict[s].timeDict
+
 def main():
     usage = ('usage: %prog --simDir path/to/dir [options]\n\n'
              '%prog can be used to check on the status of a running or completed\n'
@@ -1560,6 +1592,9 @@ def main():
 
     if 'dontUpdate' not in status.variables:
         packData(status, os.path.join(options.simDir, '.simulationStatus.pickle'))
+        
+    if not options.isHtml and options.debug:
+        dumpTimeDict(status)
 
 if __name__ == "__main__":
     main()
