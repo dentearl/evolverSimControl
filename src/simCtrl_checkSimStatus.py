@@ -1121,19 +1121,19 @@ def listCurrentCycles(runDir, stepsDict, isHtml, options, htmlDir=''):
         else:
             print 'Currently running cycles:'
             print '%30s %15s %25s %15s' % ('Cycle', 'Total Time', 'Step', 'Step Time')
-    for p in stepsDict:
-        if stepsDict[p].complete:
+    for s in stepsDict:
+        if stepsDict[s].complete:
             continue
-        if stepsDict[p].startTime == -1:
+        if stepsDict[s].startTime == -1:
             continue
-        runTime = time.time() - stepsDict[p].startTime
-        stepName, stepTime = currentStepInfo(stepsDict[p], options.simDir)
+        runTime = time.time() - stepsDict[s].startTime
+        stepName, stepTime = currentStepInfo(stepsDict[s], options.simDir)
         if isHtml:
             print('<tr><td>%s%s</a></td><td>%s</td><td>%25s</td>'
                   '<td>%s</td></tr>' 
-                  % (str2link(p, htmlDir), p, prettyTime(runTime), stepName, prettyTime(stepTime)))
+                  % (str2link(s, htmlDir), s, prettyTime(runTime), stepName, prettyTime(stepTime)))
         else:
-            print '%30s %15s %25s %15s' % (p, prettyTime(runTime), stepName, prettyTime(stepTime))
+            print '%30s %15s %25s %15s' % (s, prettyTime(runTime), stepName, prettyTime(stepTime))
     if isHtml and running:
         print '</tbody></table></div>'
 
@@ -1146,7 +1146,7 @@ def currentStepInfo(s, simDir):
     curStep = 'CycleStep'
     curTime = s.startTime
     for i in xrange(1, 5):
-        key = 'cycleStep%dstart' % i
+        key = 'cycleStep%dstartEpochUTC' % i
         if key in s.timeDict:
             curStep = 'cycleStep%d' % i
             curTime = time.time() - s.timeDict[key]
@@ -1154,7 +1154,7 @@ def currentStepInfo(s, simDir):
             break
     stats = False
     for i in xrange(1, 5):
-        key = 'statsStep%dstart' % i
+        key = 'statsStep%dstartEpochUTC' % i
         if key in s.timeDict:
             stats = True
             curStep = 'statsStep%d' % i
