@@ -1565,6 +1565,10 @@ def dumpTimeDict(status):
     for s in status.stepsDict:
         print s, status.stepsDict[s].timeDict
 
+def dumpChromosomeLengthsDict(status):
+    for chrom, lens in status.chromosomeLengthsDict.items():
+        print '%s %s' % (chrom, lens)
+
 def main():
     usage = ('usage: %prog --simDir path/to/dir [options]\n\n'
              '%prog can be used to check on the status of a running or completed\n'
@@ -1597,6 +1601,7 @@ def main():
         
     if not options.isHtml and options.debug:
         dumpTimeDict(status)
+        dumpChromosomeLengthsDict(status)
 
 if __name__ == "__main__":
     main()
