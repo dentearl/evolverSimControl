@@ -843,10 +843,11 @@ def initHtml(status):
         refresh = ''
     else:
         # refresh = '<meta http-equiv="refresh" content="30;">'
+        status.refreshInterval = int(max(30 * 1000, status.aveBranchTime / 10.0 * 1000))
         refresh = '''
 <script type="text/javascript">
   function StartTime(){
-    setTimeout("RefreshPage()", 30000);
+    setTimeout("RefreshPage()", %d);
   }
   function RefreshPage(){
     if(document.Reload.checkboxReload.checked){
@@ -855,7 +856,7 @@ def initHtml(status):
   }
   window.onload = StartTime();
 </script>
-'''
+''' % status.refreshInterval
     print '''
 <head>
 <title>Simulation Status</title>
@@ -1405,8 +1406,8 @@ def printInfoTable(status, options):
     if options.isHtml:
         if 'isDone' not in status.variables:
             print '<form name="Reload">'
-            print('<input type="checkbox" name="checkboxReload" onclick="StartTime()" checked="checked">%s'
-                  % 'Autoreload (30s)')
+            print('<input type="checkbox" name="checkboxReload" onclick="StartTime()" checked="checked">'
+                  'Autoreload (%s)' % prettyTime(int(status.refreshInterval / 1000.0)))
             print '</form>'
         print '<h3>Information</h3>'
         print '<div style="margin-left:2em;">'
