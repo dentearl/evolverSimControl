@@ -260,7 +260,6 @@ class CycleStep2Chromosome(Cycle):
         # lsc.subTypeTimestamp(self.thisDir, 'cycleChr', 
         #                      'CycleStep2Chr_%s_end' % self.thisChr.replace('+', '-'), self.thisChr)
         # lsc.addEndTimeAttribute(os.path.join(self.thisDir, 'xml', 'cycle.%s.xml' % self.thisChr))
-        
 
 class CycleStep3(Cycle):
     """ CycleStep3 

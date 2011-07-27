@@ -205,7 +205,8 @@ def addTimestampsTag(filename):
     unlockfile(lockname)
 
 def createTimestamp(filename, extra = {}):
-    """ only args should be a dict keyed tag name valued tag-text
+    """ Creates a new timestamp xml ifle. only args should be a dict keyed 
+    tag name valued tag-text
     """
     import shutil
     import time
@@ -249,6 +250,7 @@ def extractChrNamesDict(cycleDir):
             chrNameDict[line] = 'chrS%d' % i # for chromosome Sim 
             revChrNameDict['chrS%d' % i] = line # might as well build this too.
             i += 1
+        f.close()
     return (chrNameDict, revChrNameDict)
 
 def lockfile(filename):
@@ -856,7 +858,7 @@ def evolverIntraStepCmd(thisDir, theChild, thisStepLength, thisChr,
     """ produces the command argument list needed to run an evolver intra step.
     Called by CycleStep2Chromosome.
     """
-    from libSimControl import which, verifyDirExists, verifyFileExists
+    from libSimControl import which, verifyDirExists, verifyFileExists, extractChrNamesDict
     import os
     for d in [thisDir, paramsDir, os.path.join(thisDir, 'intra'),
               os.path.join(thisDir, 'stats'), os.path.join(thisDir, 'logs'), localTempDir]:
@@ -867,7 +869,8 @@ def evolverIntraStepCmd(thisDir, theChild, thisStepLength, thisChr,
 
     cmd = []
     cmds = []
-    outname = os.path.join(localTempDir, thisChr+'.outseq.rev')
+    chrNameDict, revChrNameDict = extractChrNamesDict(thisDir)
+    outname = os.path.join(localTempDir, chrNameDict[thisChr] + '.outseq.rev')
     if not os.path.exists(outname):
         cmd.append(which('evolver_evo'))
         cmd.append('-inseq')
@@ -884,21 +887,21 @@ def evolverIntraStepCmd(thisDir, theChild, thisStepLength, thisChr,
         cmd.append('-inannots')
         cmd.append(os.path.join(thisDir, 'inter', 'inter.outannots.gff'))
         cmd.append('-statsfile')
-        cmd.append(os.path.join(thisDir, 'stats', thisChr+'.stats.txt'))
+        cmd.append(os.path.join(thisDir, 'stats', chrNameDict[thisChr] + '.stats.txt'))
         cmd.append('-codonsubs')
-        cmd.append(os.path.join(thisDir, 'intra', thisChr+'.codonsubs.txt'))
+        cmd.append(os.path.join(thisDir, 'intra', chrNameDict[thisChr] + '.codonsubs.txt'))
         cmd.append('-outannots')
-        cmd.append(os.path.join(thisDir, 'intra', thisChr+'.outannots.gff'))
+        cmd.append(os.path.join(thisDir, 'intra', chrNameDict[thisChr] + '.outannots.gff'))
         cmd.append('-outgenome')
         cmd.append(theChild)
         cmd.append('-model')
         cmd.append(os.path.join(paramsDir, 'model.txt'))
         cmd.append('-aln')
-        cmd.append(os.path.join(localTempDir, thisChr+'.aln.rev'))
+        cmd.append(os.path.join(localTempDir, chrNameDict[thisChr]+'.aln.rev'))
         cmd.append('-outseq')
         cmd.append(outname + '.tmp')
         cmd.append('-log')
-        cmd.append(os.path.join(thisDir, 'logs', 'intra.'+thisChr+'.log'))
+        cmd.append(os.path.join(thisDir, 'logs', 'intra.'+chrNameDict[thisChr]+'.log'))
         cmds.append(cmd)
         cmd = [which('mv')]
         cmd.append(outname + '.tmp')
@@ -910,23 +913,24 @@ def evolverIntraStepToFastaCmd(thisDir, thisStepLength, thisChr, paramsDir, loca
     """ produces the command argument list needed to convert the .rev files into .fa files
     Called by CycleStep2Chromosome.
     """
-    from libSimControl import which, verifyDirExists, verifyFileExists
+    from libSimControl import which, verifyDirExists, verifyFileExists, extractChrNamesDict
     import os
+    chrNameDict, revChrNameDict = extractChrNamesDict(thisDir)
     for d in [thisDir, paramsDir, os.path.join(thisDir, 'intra'), localTempDir,
               os.path.join(thisDir, 'stats'), os.path.join(thisDir, 'logs')]:
         verifyDirExists(d)
-    for f in [os.path.join(localTempDir, thisChr+'.outseq.rev')]:
+    for f in [os.path.join(localTempDir, chrNameDict[thisChr] + '.outseq.rev')]:
         verifyFileExists(f)
     cmd = []
-    outname = os.path.join(localTempDir, thisChr+'.outseq.fa')
+    outname = os.path.join(localTempDir, chrNameDict[thisChr] + '.outseq.fa')
     if not os.path.exists(outname):
         cmd.append(which('evolver_cvt'))
         cmd.append('-fromrev')
-        cmd.append(os.path.join(localTempDir, thisChr+'.outseq.rev'))
+        cmd.append(os.path.join(localTempDir, chrNameDict[thisChr] + '.outseq.rev'))
         cmd.append('-tofasta')
         cmd.append(outname + '.tmp')
         cmd.append('-log')
-        cmd.append(os.path.join(thisDir, 'intra', 'intra.'+thisChr+'.tofasta.log'))
+        cmd.append(os.path.join(thisDir, 'intra', 'intra.' + chrNameDict[thisChr] + '.tofasta.log'))
         cmds = [cmd]
         cmd = [which('mv')]
         cmd.append(outname + '.tmp')
@@ -938,12 +942,13 @@ def callEvolverIntraStepTRFCmd(thisDir, thisChr, localTempDir):
     """ calls tandem repeats finder (trf) on the per chromosome .fa files.
     Called by CycleStep2Chromosome.
     """
-    from libSimControl import which, verifyDirExists, verifyFileExists, runCommands
+    from libSimControl import which, verifyDirExists, verifyFileExists, runCommands, extractChrNamesDict
     import os
     import subprocess
+    chrNameDict, revChrNameDict = extractChrNamesDict(thisDir)
     for d in [thisDir, localTempDir]:
         verifyDirExists(d)
-    for f in [os.path.join(localTempDir, thisChr+'.outseq.fa')]:
+    for f in [os.path.join(localTempDir, chrNameDict[thisChr] + '.outseq.fa')]:
         verifyFileExists(f)
     MAX_PERIOD_SIZE = 2000
     
@@ -965,10 +970,10 @@ def callEvolverIntraStepTRFCmd(thisDir, thisChr, localTempDir):
     # runCommands(cmds, localTempDir)
     
     # trf
-    outname = os.path.join(thisDir, 'logs', 'trf.' + thisChr + '.log')
+    outname = os.path.join(thisDir, 'logs', 'trf.' + chrNameDict[thisChr] + '.log')
     if not os.path.exists(outname):
         cmd = [which('trf')]
-        cmd.append(os.path.join(localTempDir, thisChr+'.outseq.fa'))
+        cmd.append(os.path.join(localTempDir, chrNameDict[thisChr] + '.outseq.fa'))
         cmd += ['2', '7', '7', '80', '10', '50', str(MAX_PERIOD_SIZE), '-d', '-h']
         returncode = subprocess.call(cmd, cwd = localTempDir)
         # note that TRF's returncode is the number of successfully processed
@@ -982,29 +987,30 @@ def callEvolverIntraStepTRFCmd(thisDir, thisChr, localTempDir):
                                    '%s retcode:%d' %(' '.join(cmd), returncode))
         f=open(outname, 'w')
         f.close()
-    
 
 def evolverIntraStepMoveTRFCmd(thisDir, thisChr, localTempDir):
     """ calls tandem repeats finder (trf) on the per chromosome .fa files.
     Called by CycleStep2Chromosome.
     """
     import glob
-    from libSimControl import which, verifyDirExists, verifyFileExists
+    from libSimControl import which, verifyDirExists, verifyFileExists, extractChrNamesDict
     import os
+    chrNameDict, revChrNameDict = extractChrNamesDict(thisDir)
+    
     for d in [thisDir, os.path.join(thisDir, 'intra'), localTempDir]:
         verifyDirExists(d)
-    for f in [os.path.join(localTempDir, thisChr + '.outseq.rev'),
-               os.path.join(localTempDir, thisChr + '.aln.rev')]:
+    for f in [os.path.join(localTempDir, chrNameDict[thisChr] + '.outseq.rev'),
+               os.path.join(localTempDir, chrNameDict[thisChr] + '.aln.rev')]:
         verifyFileExists(f)
     
     cmds = []
     cmd = [which('mv')]
-    cmd.append(os.path.join(localTempDir, thisChr + '.outseq.rev'))
-    cmd.append(os.path.join(thisDir, 'intra', thisChr + '.outseq.rev'))
+    cmd.append(os.path.join(localTempDir, chrNameDict[thisChr] + '.outseq.rev'))
+    cmd.append(os.path.join(thisDir, 'intra', chrNameDict[thisChr] + '.outseq.rev'))
     cmds.append(cmd)
     cmd = [which('mv')]
-    cmd.append(os.path.join(localTempDir, thisChr + '.aln.rev'))
-    cmd.append(os.path.join(thisDir, 'intra', thisChr + '.aln.rev'))
+    cmd.append(os.path.join(localTempDir, chrNameDict[thisChr] + '.aln.rev'))
+    cmd.append(os.path.join(thisDir, 'intra', chrNameDict[thisChr] + '.aln.rev'))
     cmds.append(cmd)
     # trfBig
     # cmd = [which('mv')]
@@ -1013,7 +1019,7 @@ def evolverIntraStepMoveTRFCmd(thisDir, thisChr, localTempDir):
     # cmds.append(cmd)
 
     # trf
-    files = glob.glob(os.path.join(localTempDir, thisChr + '.*.dat'))
+    files = glob.glob(os.path.join(localTempDir, chrNameDict[thisChr] + '.*.dat'))
     for f in files:
         cmd = [which('mv')]
         cmd.append(f)
@@ -1066,6 +1072,8 @@ def runMergeTrfBedsToGff(thisDir):
 
 def runEvolverInterCmds(thisDir, thisParentDir, theChild, theParent, thisStepLength, 
                         seed, paramsDir, localTempDir, options):
+    """ called by objects of CycleStep1 class.
+    """
     from libSimControl import (which, evolverInterStepMobilesCmd, evolverInterStepMobilesMoveCmd, 
                                runCommands, handleReturnCode)
     import os
@@ -1097,12 +1105,30 @@ def runEvolverInterCmds(thisDir, thisParentDir, theChild, theParent, thisStepLen
         p1.wait()
         handleReturnCode(p1.returncode, cmd1)
         runCommands([followCmd1], localTempDir)
+        createChrNameMapXml(thisDir)
+
+def createChrNameMapXml(thisDir):
+    """ reads thisDir/inter/inter.chrnames.txt to produce thisDir/xml/chrNameMap.xml
+    """
+    from libSimControl import extractChrNamesDict
+    import os
+    import xml.etree.ElementTree as ET
+    
+    chrNameDict, revChrNameDict = extractChrNamesDict(thisDir)
+    root = ET.Element('info')
+    info = ET.ElementTree(root)
+    
+    for k, v in revChrNameDict.items():
+        tag = ET.SubElement(root, 'nameMap')
+        tag.attrib['a'] = k
+        tag.attrib['b'] = v
+    info.write(os.path.join(thisDir, 'xml', 'chrNameMap.xml'))
 
 def evolverIntraMergeCmds(thisDir, theChild):
     """ Produces three lists of commands to be run in parallel
     by CycleStep3
     """
-    from libSimControl import which, verifyDirExists, verifyFileExists
+    from libSimControl import which, verifyDirExists, verifyFileExists, extractChrNamesDict
     import os
     for d in [thisDir, os.path.join(thisDir, 'intra')]:
         verifyDirExists(d)
@@ -1116,21 +1142,22 @@ def evolverIntraMergeCmds(thisDir, theChild):
     f = open(os.path.join(thisDir, 'inter', 'inter.chrnames.txt'), 'r')
     evoChrStr = ''
     cvtChrStr = ''
+    chrNameDict, revChrNameDict = extractChrNamesDict(thisDir)
     for chrom in f:
         chrom = chrom.strip()
-        verifyFileExists(os.path.join(thisDir, 'intra', chrom + '.trfannots.gff'))
-        verifyFileExists(os.path.join(thisDir, 'intra', chrom + '.outannots.gff'))
-        catCmd.append(os.path.join(thisDir, 'intra', chrom + '.trfannots.gff'))
-        catCmd.append(os.path.join(thisDir, 'intra', chrom + '.outannots.gff'))
-        verifyFileExists(os.path.join(thisDir, 'intra', chrom + '.aln.rev'))
-        verifyFileExists(os.path.join(thisDir, 'intra', chrom + '.outseq.rev'))
+        verifyFileExists(os.path.join(thisDir, 'intra', chrNameDict[chrom] + '.trfannots.gff'))
+        verifyFileExists(os.path.join(thisDir, 'intra', chrNameDict[chrom] + '.outannots.gff'))
+        catCmd.append(os.path.join(thisDir, 'intra', chrNameDict[chrom] + '.trfannots.gff'))
+        catCmd.append(os.path.join(thisDir, 'intra', chrNameDict[chrom] + '.outannots.gff'))
+        verifyFileExists(os.path.join(thisDir, 'intra', chrNameDict[chrom] + '.aln.rev'))
+        verifyFileExists(os.path.join(thisDir, 'intra', chrNameDict[chrom] + '.outseq.rev'))
         if not firstLine:
             # these commands require comma separated values
-            evoChrStr += ','+os.path.join(thisDir, 'intra', chrom + '.aln.rev')
-            cvtChrStr += ','+os.path.join(thisDir, 'intra', chrom + '.outseq.rev')
+            evoChrStr += ','+os.path.join(thisDir, 'intra', chrNameDict[chrom] + '.aln.rev')
+            cvtChrStr += ','+os.path.join(thisDir, 'intra', chrNameDict[chrom] + '.outseq.rev')
         else:
-            evoChrStr += os.path.join(thisDir, 'intra', chrom + '.aln.rev')
-            cvtChrStr += os.path.join(thisDir, 'intra', chrom + '.outseq.rev')
+            evoChrStr += os.path.join(thisDir, 'intra', chrNameDict[chrom] + '.aln.rev')
+            cvtChrStr += os.path.join(thisDir, 'intra', chrNameDict[chrom] + '.outseq.rev')
             firstLine = False
     f.close()
     
