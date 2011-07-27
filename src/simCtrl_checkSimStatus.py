@@ -797,7 +797,9 @@ def timeHandler(status, options):
         status.elapsedTime = howLongSimulationFinder(options.simDir, status.cycleDirs)
     if status.numCompletedSteps and status.numTotalSteps:
         status.aveBranchTime = completedElapsedTreeTime / float(status.numCompletedSteps)
+        status.variables['aveBranchTime'] = True
         status.aveBranchTimeStr = prettyTime(status.aveBranchTime)
+        status.variables['aveBranchTimeStr'] = True
         if status.numCompletedSteps != status.numTotalSteps:
             if curCycleElapsedTime > status.aveBranchTime:
                 # don't subtract off more than one cycle, it makes the estimates come out weird.
@@ -843,7 +845,10 @@ def initHtml(status):
         refresh = ''
     else:
         # refresh = '<meta http-equiv="refresh" content="30;">'
-        status.refreshInterval = int(max(30 * 1000, status.aveBranchTime / 10.0 * 1000))
+        if 'aveBranchTime' in status.variables:
+            status.refreshInterval = int(max(30 * 1000, status.aveBranchTime / 10.0 * 1000))
+        else:
+            status.refreshInterval = 30 * 1000
         refresh = '''
 <script type="text/javascript">
   function StartTime(){
@@ -1539,8 +1544,15 @@ def printChrTimes(status, options):
     """
     if not options.printChrTimes:
         return
-    sortedChromTimes = getSortedChromTimesList(status)
+    sortedChromTimes, chromTimesDict = getSortedChromTimesList(status)
     chromTimesDictStep = getChromTimesDictStep(status)
+    chrTimeLengthStepTupleList = []
+    for c in sortedChromTimes:
+        for step in status.chromosomeLengthsDict[c]:
+            chrTimeLengthStepTupleList.append( (c, step, 
+                                                status.chromosomeLengthsDict[c][step], 
+                                                chromTimesDictStep[c][step]) )
+    order = sorted(chrTimeLengthStepTupleList, key = lambda x: x[2], reverse = True)
     if options.isHtml:
         print '<h3>Chromosome Lengths and Times</h3>'
         print '<table cellpadding="5" border="1" bordercolor="#cccccc"><thead>'
@@ -1548,16 +1560,15 @@ def printChrTimes(status, options):
         print '<tbody>'
     else:
         print 'Chromosome Lengths and Times'
-        print '#Length (bp)\tTime (s)'
-    for c in sortedChromTimes:
-        for n in status.chromosomeLengthsDict[c]:
-            if options.isHtml:
-                print ('<tr><td style="text-align:center;">%d</td>'
-                       '<td style="text-align:center;">%d</td></tr>'
-                       % (status.chromosomeLengthsDict[c][n], chromTimesDictStep[c][n]))
-            else:
-                print '%d\t%d' % (status.chromosomeLengthsDict[c][n], 
-                                  chromTimesDictStep[c][n])
+        print '#Length (bp)\tTime (s)\tChr\tStep'
+    
+    for c, step, length, seconds in order:
+        if options.isHtml:
+            print ('<tr><td style="text-align:center;">%d</td>'
+                   '<td style="text-align:center;">%.2f</td></tr>'
+                   % (length, seconds))
+        else:
+            print '%d\t%.2f\t%s\t%s' % (length, seconds, c, step)
     if options.isHtml:
         print '</tbody></table>'
 
