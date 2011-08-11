@@ -1,11 +1,11 @@
 #!/usr/bin/python
 
 import sys
-import evolver_gff
+import evolverSimControl.lib.evolver_gff as gff
 
 FileName = sys.argv[1]
 
 def DoRec():
-	evolver_gff.WriteRec(sys.stdout)
+	gff.WriteRec(sys.stdout)
 
-evolver_gff.GetSortedRecs(FileName, DoRec)
+gff.GetSortedRecs(FileName, DoRec)
