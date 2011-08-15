@@ -400,7 +400,7 @@ def updateChromLengthDict(name, status, options):
 def timeoutParse(filename, timeout = 0.5, retry = 0.1):
     """ timeoutParse() takes an xml filename and attemps to parse the xml
     every [retry] seconds for a total of [timeout] seconds. We use this because
-    the simulation must lock the xml to write data.
+    the simulation must lock the xml to write data, and it locks by moving the file.
     """
     s = 0.0
     tree = None
@@ -788,13 +788,9 @@ def timeHandler(status, options):
     totalElapsedTreeTime = sum(status.elapsedTreeTimeDict.values()) + sum(prgTimeDict.values())
     status.totalElapsedTreeTimeStr = prettyTime(totalElapsedTreeTime)
     
-    if status.numCompletedSteps == status.numTotalSteps:
-        # the simulation is complete
-        status.elapsedTime = howLongSimulationFinder(options.simDir, status.cycleDirs, 
-                                                     useNow = False)
-    else:
-        # simulation is in progress
-        status.elapsedTime = howLongSimulationFinder(options.simDir, status.cycleDirs)
+    # the simulation is complete = useNow False
+    status.elapsedTime = howLongSimulationFinder(options.simDir, status.cycleDirs, 
+                                                 useNow = not status.numCompletedSteps == status.numTotalSteps)
     if status.numCompletedSteps and status.numTotalSteps:
         status.aveBranchTime = completedElapsedTreeTime / float(status.numCompletedSteps)
         status.variables['aveBranchTime'] = True
@@ -874,7 +870,7 @@ pre, .code {
   margin: 5px 0 15px;
   border-left: 5px solid #CCCCCC;
   background: #FFFFFF; 
-  font: 1em / 1.5 "Courier News", monospace;
+  font: 1em / 1.5 monospace;
   color: #333333;
   overflow : auto;
 }
