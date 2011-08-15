@@ -53,9 +53,11 @@ def initOptions(parser):
     parser.add_option('--simDir', dest = 'simDir',
                       help = 'Simulation directory.')
     parser.add_option('--maxBlkWidth',dest = 'maxBlkWidth',
-                      default = 10000, type = 'int',
+                      default = 512, type = 'int',
                       help = ('Maximum mafJoin maf block output size. May be reduced '
-                              'towards 250 for complicated phylogenies. '
+                              'towards 250 (or lower) for complicated phylogenies '
+                              'with lots of dash characters in blocks or expanded out '
+                              'for simple phylogenies. '
                               'default=%default'))
     parser.add_option('--maxInputBlkWidth', dest = 'maxInputBlkWidth',
                       default = 1000, type = 'int',
