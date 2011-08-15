@@ -283,7 +283,6 @@ def unlockfile(filename):
     """ There will be only one process seeking to unlock a file at a time.
     """
     import os
-    import os
     if filename.endswith('.lock'):
         try:
             os.rename(filename, filename[:-5])
@@ -533,9 +532,11 @@ def runCommandsP(cmds, localTempDir, inPipes = [], outPipes = [], debug = False)
     """ runCommandsP uses the subprocess module
     to issue parallel processes from the cmds list.
     """
+    from libSimControl import handleReturnCode
     import os
     from sonLib.bioio import logger
     import subprocess
+    
     procs = []
     i = -1
     for c in cmds:
@@ -572,9 +573,11 @@ def runCommandsS(cmds, localTempDir, inPipes=[], outPipes=[], debug = False):
     """ runCommandsS uses the subprocess module
     to issue serial processes from the cmds list.
     """
+    from libSimControl import handleReturnCode
     import os
     from sonLib.bioio import logger
     import subprocess
+    
     i = -1
     for c in cmds:
         i += 1
