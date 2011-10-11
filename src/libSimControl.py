@@ -1843,8 +1843,8 @@ def transalignStep1Cmds_1(thisDir, thisParentDir, options):
     for f in [os.path.join(thisDir, 'seq.rev'), os.path.join(options.rootDir, 'seq.rev')]:
         verifyFileExists(f)
     
-    DRAW_REV_BLOCK_SIZE=10000
-    DRAW_REV_NT_PER_PIX=100000
+    DRAW_REV_BLOCK_SIZE = 10**4
+    DRAW_REV_NT_PER_PIX = 10**5
     
     pipes = []
     cmds  = []
@@ -1921,6 +1921,7 @@ def transalignStep1Cmds_1(thisDir, thisParentDir, options):
         pipes.append(None)
         cmds.append(cmd)
 
+    # draw the cycle chromosome map
     outname = os.path.join(thisDir, 'stats', 'img.cycle.cmap.pdf')
     if not os.path.exists(outname):
         cmd = [which('evolver_drawrev')]
@@ -1938,6 +1939,7 @@ def transalignStep1Cmds_1(thisDir, thisParentDir, options):
         pipes.append(None)
         cmds.append(cmd)
 
+    # draw the cycle dot plot
     outname = os.path.join(thisDir, 'stats', 'img.cycle.lmap.png')
     if not os.path.exists(outname):
         cmd = [which('evolver_drawrev')]
@@ -1987,6 +1989,7 @@ def transalignStep1Cmds_1(thisDir, thisParentDir, options):
         pipes.append(None)
         cmds.append(cmd)
     
+    # draw the branch chromosome map
     outname = os.path.join(thisDir, 'stats', 'img.branch.cmap.pdf')
     if not os.path.exists(outname):
         cmd = [which('evolver_drawrev')]
@@ -2004,6 +2007,7 @@ def transalignStep1Cmds_1(thisDir, thisParentDir, options):
         pipes.append(None)
         cmds.append(cmd)
     
+    # draw the branch dot plot
     outname = os.path.join(thisDir, 'stats', 'img.branch.lmap.png')
     if not os.path.exists(outname):
         cmd = [which('evolver_drawrev')]
