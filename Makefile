@@ -6,7 +6,7 @@ export SHELLOPTS=pipefail
 binPath = bin
 libPath = lib
 extPath = external
-py_progs = simCtrl_runSim.py simCtrl_checkSimStatus.py simCtrl_postSimAnnotDistExtractor.py simCtrl_postSimFastaExtractor.py simCtrl_postSimMafExtractor.py
+py_progs = simCtrl_runSim.py simCtrl_checkSimStatus.py simCtrl_postSimAnnotDistExtractor.py simCtrl_postSimFastaExtractor.py simCtrl_postSimMafExtractor.py simCtrl_postSimGFFtoBED.py
 externals= evolver_codon_report.pl evolver_drawrev evolver_evostats_report.py evolver_gene_deactivate.sh evolver_gff_cdsutr2exons.py evolver_gff_exons2introns.py evolver_gff_featurestats.py evolver_gff_featurestats2.py evolver_gff_featurestats2.sh evolver_gff_fixgeneix.py evolver_handle_mobiles.pl evolver_merge_evostats.py evolver_mobile_report.pl evolver_trf2gff.py evolver_gtfStopCodonMerger.py evolver_gff_sort.py
 libraries = libSimControl.py libSimControlClasses.py evolver_gff.py
 
