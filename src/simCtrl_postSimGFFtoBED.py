@@ -16,25 +16,30 @@ annots.tandem.bed
 """
 ##############################
 import os
-import re
 import sys
 from optparse import OptionParser
 
-def usage():
-    sys.stderr.write('USAGE: %s  < annots.gff\n' % (sys.argv[0]))
-    sys.exit(2)
-
 def initOptions(parser):
-    pass
+    parser.add_option('--gff', dest = 'gff', 
+                      help = 'gff to expand into beds')
+    parser.add_option('--speciesName', dest = 'speciesName', type = 'string',
+                      help = 'species name to append at the start of field one, i.e. "hg19.chr0 ..."')
+    parser.add_option('--outDir', dest = 'outDir', default = os.curdir,
+                      help = 'location to write out beds')
+    parser.add_option('--outPrefix', dest = 'outPrefix', default = '',
+                      help = 'prefix to put at front of file names, i.e. "hg19.annots.CDS.bed"')
 
-def checkOptions(options):
-    pass
+def checkOptions(options, args, parser):
+    if options.gff is None:
+        parser.error('specify --gff')
+    if not os.path.exists(options.gff):
+        parser.error('--gff %s does not exist' % options.gff)
 
 def closeFiles(fileHandleMap):
     for f in fileHandleMap:
         fileHandleMap[f].close()
 
-def convertGFFtoBED(line):
+def convertGFFtoBED(line, options):
     #      0       1             2                3        4           5      6      7
     # GFF: seqname source        feature          start(1) end(inclu.) score  strand frame
     # BED: chrom   chromStart(0) chromEnd(exclu.) name     score       strand 
@@ -46,31 +51,37 @@ def convertGFFtoBED(line):
     bed.append(t[2]) # feature name
     bed.append('0')
     bed.append(t[6])
+    if options.speciesName:
+        bed[0] = '%s.%s' % (options.speciesName, bed[0])
     bedLine = '\t'.join(bed)
     return '%s\n' % bedLine
 
-def recordLineToFile(fileHandleMap, name, bedLine):
+def recordLineToFile(fileHandleMap, name, bedLine, options):
     try:
         fileHandleMap[name].write(bedLine)
     except KeyError:
-        fileHandleMap[name] = open(os.path.abspath('annots.%s.bed' % name), 'w')
+        if options.outPrefix:
+            s = '%s.annots.%s.bed' % (options.outPrefix, name)
+        else:
+            s = 'annots.%s.bed' % name
+        fileHandleMap[name] = open(os.path.join(options.outDir, s), 'w')
         fileHandleMap[name].write(bedLine)
 
 def main():
-    parser=OptionParser()
+    parser = OptionParser()
     initOptions(parser)
     options, args = parser.parse_args()
-    checkOptions(options)
+    checkOptions(options, args, parser)
     
-    pat = re.compile(r'^.*?\t.*?\t(.*?)\t\d+')
-
     fileHandleMap = {}
     
-    for line in sys.stdin:
-        r = re.match(pat, line)
-        if r:
-            bedLine = convertGFFtoBED(line)
-            recordLineToFile(fileHandleMap, r.group(1), bedLine)
+    f = open(options.gff, 'r')
+    for line in f:
+        line = line.strip()
+        d = line.split('\t')
+        if len(d) == 9:
+            bedLine = convertGFFtoBED(line, options)
+            recordLineToFile(fileHandleMap, d[2], bedLine, options)
 
     closeFiles(fileHandleMap)
 
