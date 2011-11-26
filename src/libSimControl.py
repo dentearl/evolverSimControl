@@ -58,7 +58,7 @@ def verifyPrograms(programs, verbose = False):
        c=c+1
        p = which(prog)
        if p is None:
-           raise RuntimeError('Error verifyPrograms(): Could not locate "%s" '
+           raise RuntimeError('verifyPrograms(): Could not locate "%s" '
                               'in PATH.' %(prog))
        else:
            if verbose:
@@ -76,7 +76,7 @@ def verifyUnixLineEndings(prog, verbose = False):
         raise TypeError('verifyUnixLineEndings takes a string, not %s.' % prog.__class__)
     p = which(prog)
     if p is None:
-        raise RuntimeError('Error verifyUnixLineEndings(): '
+        raise RuntimeError('verifyUnixLineEndings(): '
                            'Could not locate "%s" in PATH' % prog)
     else:
         dat = open(p, 'rb').read()
@@ -85,7 +85,7 @@ def verifyUnixLineEndings(prog, verbose = False):
             return
         newDat = dat.replace("\r\n", "\n") # replace CRLF with LF
         if newDat != dat:
-            raise RuntimeError('Error verifyUnixLineEndings(): %s '
+            raise RuntimeError('verifyUnixLineEndings(): %s '
                                'contains CRLF line endings.' % p)
         else:
             if verbose:
@@ -96,16 +96,16 @@ def verifyDirExists(directory):
     """
     import os
     if not os.path.exists(directory):
-        raise RuntimeError('Error, unable to locate directory %s.' % directory)
+        raise RuntimeError('Unable to locate directory %s.' % directory)
     if not os.path.isdir(directory):
-        raise RuntimeError('Error, directory %s is not a directory.' % directory)
+        raise RuntimeError('Directory %s is not a directory.' % directory)
 
 def verifyFileExists(filename):
     """ Convenience function to verify the existence of a file
     """
     import os
     if not os.path.exists(filename):
-        raise RuntimeError('Error, unable to locate file %s.' % filename)
+        raise RuntimeError('Unable to locate file %s.' % filename)
 
 def which(program):
     """which() acts like the unix utility which, but is portable between os.
