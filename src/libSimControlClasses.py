@@ -349,7 +349,7 @@ class Stats(Target):
             return
         lsc.verifyDirExists(self.thisDir)
         self.addChildTarget(StatsStep1(self.thisDir, self.thisParentDir, self.options))
-        self.setFollowOnTarget(Transalign(self.parentDir, self.thisParentDir, self.options))
+        self.setFollowOnTarget(Transalign(self.thisDir, self.thisParentDir, self.options))
 
 class StatsStep1(Stats):
     """ StatsStep1 

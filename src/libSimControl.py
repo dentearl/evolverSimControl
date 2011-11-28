@@ -1697,7 +1697,7 @@ def lastOneOutTurnOffTheLightsCycle(thisDir):
     and if (1) both Stats and Transalign are finished and (2) it has not already
     been done, it adds an attribute (endEpochUTC) to the timestamps tag in the 
     xml file.
-    This is called by both StatsStep4 and TransalignStep2
+    This is called by both StatsStep4 and TransalignStep
     """
     from libSimControl import statsAndTransAreComplete, addEndTimeAttribute
     import os
