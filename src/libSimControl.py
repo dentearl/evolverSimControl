@@ -1822,7 +1822,7 @@ def extractLeafNames(nt):
         names.append(nt.iD)
     return names
 
-def transalignStep1Cmds_1(thisDir, thisParentDir, options):
+def transalignStepCmds_1(thisDir, thisParentDir, options):
     """ Produces a list of commands to run a stats step,
     called by StatsStep4
     """
@@ -2072,7 +2072,7 @@ def transalignStep1Cmds_1(thisDir, thisParentDir, options):
     
     return cmds, pipes
 
-def runTransalignStep1Cmds_2(thisDir, thisParentDir, localTempDir, options):
+def runTransalignStepCmds_2(thisDir, thisParentDir, localTempDir, options):
     """ Produces a list of commands to run a stats step,
     called by StatsStep4
     """

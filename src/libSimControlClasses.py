@@ -65,14 +65,14 @@ class Tree(Target):
         Target.__init__(self)
         (self.thisNewickStr, self.thisStepLength)  = lsc.takeNewickStep(thisNewickStr, options)
         self.parentDir = parentDir
-        self.thisBranchStr = branchStr # either 'left','right', 'stem'
+        self.thisBranchStr = branchStr # either 'left', 'right', 'stem'
         self.options = options
         
     def run(self):
         logger.info('Tree object running, %s' % self.parentDir)
         if self.thisBranchStr in ['left', 'stem']:
-            self.addChildTarget(Transalign(self.parentDir, lsc.getParentDir(self.parentDir), 
-                                           self.options))
+            # self.addChildTarget(Transalign(self.parentDir, lsc.getParentDir(self.parentDir), 
+            #                                self.options))
             self.addChildTarget(Stats(self.parentDir, lsc.getParentDir(self.parentDir), 
                                       self.options))
         self.addChildTarget(Cycle(self.thisNewickStr, self.parentDir, 
@@ -136,7 +136,7 @@ class LeafCleanUp(Target):
         self.options = options
     def run(self):
         logger.info('LeafCleanUp object running, %s' % self.thisDir)
-        self.addChildTarget(Transalign(self.thisDir, self.parentDir, self.options))
+        # self.addChildTarget(Transalign(self.thisDir, self.parentDir, self.options))
         self.addChildTarget(Stats(self.thisDir, self.parentDir, self.options))
 
 class Cycle(Target):
@@ -174,14 +174,12 @@ class CycleStep1(Cycle):
         logger.info('CycleStep1 object running, %s' % self.thisDir)
         lsc.verifyDirExists(self.thisDir)
         lsc.createTimestamp(os.path.join(self.thisDir, 'xml', 'cycle.step1.start.xml'))
-        # lsc.subTypeTimestamp(self.thisDir, 'cycle', 'CycleStep1_start')
         
         lsc.runEvolverInterCmds(self.thisDir, self.thisParentDir, self.theChild, self.theParent,
                                 self.thisStepLength, self.options.seed, self.options.paramsDir,
                                 self.getLocalTempDir(), self.options)
 
         lsc.createTimestamp(os.path.join(self.thisDir, 'xml', 'cycle.step1.end.xml'))
-        # lsc.subTypeTimestamp(self.thisDir, 'cycle', 'CycleStep1_end')
         self.setFollowOnTarget(CycleStep2(self.thisNewickStr, self.thisParentDir, 
                                             self.thisStepLength, self.options))
 
@@ -195,7 +193,6 @@ class CycleStep2(Cycle):
         logger.info('CycleStep2 object running, %s' % self.thisDir)
         lsc.verifyDirExists(self.thisDir)
         lsc.createTimestamp(os.path.join(self.thisDir, 'xml', 'cycle.step2.start.xml'))
-        #lsc.subTypeTimestamp(self.thisDir, 'cycle', 'CycleStep2_start')
         lsc.verifyDirExists(os.path.join(self.thisDir, 'inter'))
         lsc.verifyFileExists(os.path.join(self.thisDir, 'inter', 'inter.chrnames.txt'))
         f = open(os.path.join(self.thisDir, 'inter', 'inter.chrnames.txt'), 'r')
@@ -257,9 +254,6 @@ class CycleStep2Chromosome(Cycle):
         lsc.createTimestamp(os.path.join(self.thisDir, 'xml', 
                                          'cycle.step2.%s.end.xml' % chrNameDict[self.thisChr]),
                             extra = {'name': self.thisChr})
-        # lsc.subTypeTimestamp(self.thisDir, 'cycleChr', 
-        #                      'CycleStep2Chr_%s_end' % self.thisChr.replace('+', '-'), self.thisChr)
-        # lsc.addEndTimeAttribute(os.path.join(self.thisDir, 'xml', 'cycle.%s.xml' % self.thisChr))
 
 class CycleStep3(Cycle):
     """ CycleStep3 
@@ -270,11 +264,6 @@ class CycleStep3(Cycle):
         logger.info('CycleStep3 object running, %s' % self.thisDir)
         lsc.verifyDirExists(self.thisDir)
         lsc.createTimestamp(os.path.join(self.thisDir, 'xml', 'cycle.step3.start.xml'))
-        # lsc.subTypeTimestamp(self.thisDir, 'cycle', 'CycleStep2_end')
-        # lsc.subTypeTimestamp(self.thisDir, 'cycle', 'CycleStep3_start')
-
-        # trfBig
-        # lsc.runMergeTrfBedsToGff(self.thisDir)
 
         # trf
         regex = r'^(chr\S+)\.outseq\.fa.*\.dat'
@@ -309,7 +298,6 @@ class CycleStep3(Cycle):
         lsc.runCommands(followCmds, self.getLocalTempDir())
         
         lsc.createTimestamp(os.path.join(self.thisDir, 'xml', 'cycle.step3.end.xml'))
-        # lsc.subTypeTimestamp(self.thisDir, 'cycle', 'CycleStep3_end')
         self.setFollowOnTarget(CycleStep4(self.thisNewickStr, self.thisParentDir,
                                             self.thisStepLength, self.options))
 
@@ -345,9 +333,6 @@ class CycleStep4(Cycle):
                 cmds.append([lsc.which('touch'), outname])
                 lsc.runCommands(cmds, self.getLocalTempDir())
         lsc.createTimestamp(os.path.join(self.thisDir, 'xml', 'cycle.step4.end.xml'))
-        # lsc.subTypeTimestamp(self.thisDir, 'cycle', 'CycleStep4_end')
-        # lsc.typeTimestamp(os.path.join(self.thisDir), 'cycle', 'end')
-        # lsc.addEndTimeAttribute(os.path.join(self.thisDir, 'xml', 'cycle.xml'))
 
 class Stats(Target):
     """ The Stats object is a convenience class that launches
@@ -363,10 +348,8 @@ class Stats(Target):
             # happens when thisParentDir is the root
             return
         lsc.verifyDirExists(self.thisDir)
-        #lsc.newInfoXml(os.path.join(self.thisDir, 'xml', 'stats.xml'))
-        # lsc.typeTimestamp(os.path.join(self.thisDir), 'stats', 'start')
-
         self.addChildTarget(StatsStep1(self.thisDir, self.thisParentDir, self.options))
+        self.setFollowOnTarget(Transalign(self.parentDir, self.thisParentDir, self.options))
 
 class StatsStep1(Stats):
     """ StatsStep1 
@@ -377,7 +360,6 @@ class StatsStep1(Stats):
         logger.info('StatsStep1 object running, %s' % self.thisDir)
         lsc.verifyDirExists(self.thisDir)
         lsc.createTimestamp(os.path.join(self.thisDir, 'xml', 'stats.step1.start.xml'))
-        # lsc.subTypeTimestamp(self.thisDir, 'stats', 'StatsStep1_start')
         
         cmds, followCmds, outPipes = lsc.statsStep1CmdsP(self.thisDir, self.thisParentDir)
         lsc.runCommands(cmds, self.getLocalTempDir(), outPipes = outPipes, mode = 'p')
@@ -386,7 +368,6 @@ class StatsStep1(Stats):
         lsc.runCommands(cmds, self.getLocalTempDir(), outPipes = outPipes)
         
         lsc.createTimestamp(os.path.join(self.thisDir, 'xml', 'stats.step1.end.xml'))
-        # lsc.subTypeTimestamp(self.thisDir, 'stats', 'StatsStep1_end')
         self.setFollowOnTarget(StatsStep2(self.thisDir, self.thisParentDir, self.options))
 
 class StatsStep2(Stats):
@@ -398,13 +379,11 @@ class StatsStep2(Stats):
         logger.info('StatsStep2 object running, %s' % self.thisDir)
         lsc.verifyDirExists(self.thisDir)
         lsc.createTimestamp(os.path.join(self.thisDir, 'xml', 'stats.step2.start.xml'))
-        # lsc.subTypeTimestamp(self.thisDir, 'stats', 'StatsStep2_start')
 
         cmds, outPipes = lsc.statsStep2Cmds(self.thisDir, self.thisParentDir, self.options)
         lsc.runCommands(cmds, self.getLocalTempDir(), outPipes = outPipes)
 
         lsc.createTimestamp(os.path.join(self.thisDir, 'xml', 'stats.step2.end.xml'))
-        # lsc.subTypeTimestamp(self.thisDir, 'stats', 'StatsStep2_end')
         self.setFollowOnTarget(StatsStep3(self.thisDir, self.thisParentDir, self.options))
 
 class StatsStep3(Stats):
@@ -416,13 +395,11 @@ class StatsStep3(Stats):
         logger.info('StatsStep3 object running, %s' % self.thisDir)
         lsc.verifyDirExists(self.thisDir)
         lsc.createTimestamp(os.path.join(self.thisDir, 'xml', 'stats.step3.start.xml'))
-        # lsc.subTypeTimestamp(self.thisDir, 'stats', 'StatsStep3_start')
 
         cmds, pipes = lsc.statsStep3Cmds(self.thisDir, self.thisParentDir, self.options)
         lsc.runCommands(cmds, self.getLocalTempDir(), outPipes = pipes)
 
         lsc.createTimestamp(os.path.join(self.thisDir, 'xml', 'stats.step3.end.xml'))
-        # lsc.subTypeTimestamp(self.thisDir, 'stats', 'StatsStep3_end')
         self.setFollowOnTarget(StatsStep4(self.thisDir, self.thisParentDir, self.options))
 
 class StatsStep4(Stats):
@@ -434,22 +411,17 @@ class StatsStep4(Stats):
         logger.info('StatsStep4 object running, %s' % self.thisDir)
         lsc.verifyDirExists(self.thisDir)
         lsc.createTimestamp(os.path.join(self.thisDir, 'xml', 'stats.step4.start.xml'))
-        # lsc.subTypeTimestamp(self.thisDir, 'stats', 'StatsStep4_start')
         
         cmds, pipes = lsc.statsStep4Cmds(self.thisDir, self.thisParentDir, self.options)
         lsc.runCommands(cmds, self.getLocalTempDir(), outPipes = pipes)
 
         lsc.createTimestamp(os.path.join(self.thisDir, 'xml', 'stats.step4.end.xml'))
-        # lsc.subTypeTimestamp(self.thisDir, 'stats', 'StatsStep4_end')
-        # lsc.typeTimestamp(os.path.join(self.thisDir), 'stats', 'end')
-        # lsc.addEndTimeAttribute(os.path.join(self.thisDir, 'xml', 'stats.xml'))
-        # lsc.lastOneOutTurnOffTheLightsCycle(self.thisDir)
         if lsc.isLeaf(self.thisDir):
             lsc.lastOneOutTurnOffTheLightsSimulation(self.options.simDir, self.options)
 
 class Transalign(Target):
     """ The Transalign class is a convenience class that
-    launches the two TransalignStep classes.
+    launches the TransalignStep.
     """
     def __init__(self, thisDir, thisParentDir, options):
         Target.__init__(self)
@@ -463,33 +435,27 @@ class Transalign(Target):
             # happens when thisParentDir is the root
             return
         lsc.verifyDirExists(self.thisDir)
-        #lsc.newInfoXml(os.path.join(self.thisDir, 'xml', 'transalign.xml'))
-        # lsc.typeTimestamp(self.thisDir, 'transalign', 'start')
 
-        self.addChildTarget(TransalignStep1(self.thisDir, self.thisParentDir, self.options))
+        self.addChildTarget(TransalignStep(self.thisDir, self.thisParentDir, self.options))
 
-class TransalignStep1(Transalign):
-    """ TransalignStep1
+class TransalignStep(Transalign):
+    """ TransalignStep
     """
     def __init__(self, thisDir, thisParentDir, options):
         Transalign.__init__(self, thisDir, thisParentDir, options)
     def run(self):
-        logger.info('TransalignStep1 object running, thisDir: %s thisParentDir: %s' 
+        logger.info('TransalignStep object running, thisDir: %s thisParentDir: %s' 
                     % (self.thisDir, self.thisParentDir))
         lsc.verifyDirExists(self.thisDir)
         lsc.createTimestamp(os.path.join(self.thisDir, 'xml', 'transalign.start.xml'))
-        # lsc.subTypeTimestamp(self.thisDir, 'transalign', 'TransalignStep1_start')
         
-        cmds, pipes = lsc.transalignStep1Cmds_1(self.thisDir, self.thisParentDir, self.options)
+        cmds, pipes = lsc.transalignStepCmds_1(self.thisDir, self.thisParentDir, self.options)
         lsc.runCommands(cmds, self.getLocalTempDir(), outPipes = pipes)
         
-        lsc.runTransalignStep1Cmds_2(self.thisDir, self.thisParentDir, 
+        lsc.runTransalignStepCmds_2(self.thisDir, self.thisParentDir, 
                                      self.getLocalTempDir(), self.options)
         
         lsc.createTimestamp(os.path.join(self.thisDir, 'xml', 'transalign.end.xml'))
-        # lsc.subTypeTimestamp(self.thisDir, 'transalign', 'TransalignStep1_end')
-        # lsc.typeTimestamp(os.path.join(self.thisDir), 'transalign', 'end')
-        # lsc.addEndTimeAttribute(os.path.join(self.thisDir, 'xml', 'transalign.xml'))
         lsc.lastOneOutTurnOffTheLightsCycle(self.thisDir)
         if lsc.isLeaf(self.thisDir):
             lsc.lastOneOutTurnOffTheLightsSimulation(self.options.simDir, self.options)
@@ -725,7 +691,6 @@ class MergeMafsDown(MergeTree):
                                 self.name + '.maf')
             maf2 = os.path.join(self.options.simDir, self.nodeDict[self.name].children[1], 
                                 self.name + '.maf')
-            # drop = os.path.join(self.options.simDir, self.name, self.name + '.dropped.tab')
             cmds = lsc.buildMergeCommand(maf1, maf2, outname, treelessRootCmd, self.name, 
                                          self.options)
             lsc.runCommands(cmds, self.getLocalTempDir())
@@ -757,7 +722,6 @@ class MergeMafsUp(MergeTree):
             treelessRootCmd = ['-treelessRoot2=%s' % self.nodeParent]
             maf1 = os.path.join(self.options.simDir, self.name, self.name + '.maf')
             maf2 = os.path.join(self.options.simDir, self.name, self.nodeParent + '.tmp.maf')
-            # drop = os.path.join(self.options.simDir, self.name, self.nodeParent + '.dropped.tab')
             cmds = lsc.buildMergeCommand(maf1, maf2, outname, treelessRootCmd, 
                                          self.name, self.options)
             lsc.runCommands(cmds, self.getLocalTempDir())
