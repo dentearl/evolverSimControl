@@ -96,7 +96,7 @@ def verifyDirExists(directory):
     """
     import os
     if not os.path.exists(directory):
-        raise RuntimeError('Unable to locate directory %s.' % directory)
+        raise RuntimeError('Unable to locate directory %s' % directory)
     if not os.path.isdir(directory):
         raise RuntimeError('Directory %s is not a directory.' % directory)
 
@@ -105,7 +105,7 @@ def verifyFileExists(filename):
     """
     import os
     if not os.path.exists(filename):
-        raise RuntimeError('Unable to locate file %s.' % filename)
+        raise RuntimeError('Unable to locate file %s' % filename)
 
 def which(program):
     """which() acts like the unix utility which, but is portable between os.
