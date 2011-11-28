@@ -50,22 +50,20 @@ def verifyPrograms(programs, verbose = False):
     if not isinstance(programs, list):
        raise TypeError('verifyPrograms takes a list of program '
                        'names, not %s.' % programs.__class__)
-    c=-1
-    for prog in programs:
+    for i, prog in enumerate(programs, 0):
        if not isinstance(prog, str):
           raise TypeError('verifyPrograms list members should all be strings, '
                           '"%s" not a string, is a %s.' %(str(prog), prog.__class__))
-       c=c+1
        p = which(prog)
        if p is None:
            raise RuntimeError('verifyPrograms(): Could not locate "%s" '
-                              'in PATH.' %(prog))
+                              'in PATH.' % prog)
        else:
            if verbose:
                print '   located executable %s %s OK' % (p, (90 - len(p)) * '.')
            if prog.endswith('.py') or prog.endswith('.pl') or prog.endswith('.sh'):
                verifyUnixLineEndings(prog, verbose = verbose)
-           programs[c] = p
+           programs[i] = p
 
 def verifyUnixLineEndings(prog, verbose = False):
     """ verifyUnixLineEndngs takes a program (no path) and checks the line endings to
@@ -244,12 +242,10 @@ def extractChrNamesDict(cycleDir):
     revChrNameDict = {}
     if os.path.exists(os.path.join(cycleDir, 'inter', 'inter.chrnames.txt')):
         f = open(os.path.join(cycleDir, 'inter', 'inter.chrnames.txt'), 'r')
-        i = 0
-        for line in f:
+        for i, line in enumerate(f, 0):
             line = line.strip()
             chrNameDict[line] = 'chrS%d' % i # for chromosome Sim 
             revChrNameDict['chrS%d' % i] = line # might as well build this too.
-            i += 1
         f.close()
     return (chrNameDict, revChrNameDict)
 
@@ -538,9 +534,7 @@ def runCommandsP(cmds, localTempDir, inPipes = [], outPipes = [], debug = False)
     import subprocess
     
     procs = []
-    i = -1
-    for c in cmds:
-        i += 1
+    for i, c in enumerate(cmds, 0):
         if inPipes[i] is None:
             sin = None
         else:
@@ -551,9 +545,7 @@ def runCommandsP(cmds, localTempDir, inPipes = [], outPipes = [], debug = False)
             sout = subprocess.PIPE
         logger.info('Executing parallel %s < %s > %s' % (' '.join(c), inPipes[i], outPipes[i]))
         procs.append(subprocess.Popen(c, cwd = localTempDir, stdin = sin, stdout = sout))
-    i = -1
-    for p in procs:
-        i += 1
+    for i, p in enumerate(procs, 0):
         if inPipes[i] is None:
             sin = None
         else:
@@ -578,9 +570,7 @@ def runCommandsS(cmds, localTempDir, inPipes=[], outPipes=[], debug = False):
     from sonLib.bioio import logger
     import subprocess
     
-    i = -1
-    for c in cmds:
-        i += 1
+    for i, c in enumerate(cmds, 0):
         if inPipes[i] is None:
             sin = None
         else:
@@ -2147,9 +2137,7 @@ def runTransalignStep1Cmds_2(thisDir, thisParentDir, localTempDir, options):
         outPipes.append(outname + '.tmp')
         outnames.append(outname)
     
-    i = -1
-    for c in cmds:
-        i += 1
+    for i, c in enumerate(cmds, 0):
         if inPipes[i] is None:
             p = subprocess.Popen(c, cwd = localTempDir, stdout = subprocess.PIPE)
             f = open(outPipes[i], 'w')
@@ -2162,9 +2150,7 @@ def runTransalignStep1Cmds_2(thisDir, thisParentDir, localTempDir, options):
             f.write(p.communicate(open(inPipes[i]).read())[0])
             f.close()
             handleReturnCode(p.returncode, c)
-    i = -1
-    for out in outnames:
-        i += 1
+    for i, out in enumerate(outnames, 0):
         c = [which('mv'), outnames[i] + '.tmp', outnames[i]]
         p = subprocess.Popen(c)
         p.wait()
