@@ -23,11 +23,13 @@ def initOptions(parser):
     parser.add_option('--gff', dest = 'gff', 
                       help = 'gff to expand into beds')
     parser.add_option('--speciesName', dest = 'speciesName', type = 'string',
-                      help = 'species name to append at the start of field one, i.e. "hg19.chr0 ..."')
+                      help = ('species name to append at the start of field one, i.e. '
+                              'hg19 yields "hg19.chr0 ..."'))
     parser.add_option('--outDir', dest = 'outDir', default = os.curdir,
                       help = 'location to write out beds')
     parser.add_option('--outPrefix', dest = 'outPrefix', default = '',
-                      help = 'prefix to put at front of file names, i.e. "hg19.annots.CDS.bed"')
+                      help = ('prefix to put at front of file names, i.e. hg19 yields '
+                              '"hg19.annots.CDS.bed"'))
 
 def checkOptions(options, args, parser):
     if options.gff is None:
