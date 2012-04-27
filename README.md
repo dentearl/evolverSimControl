@@ -1,5 +1,5 @@
 # evolverSimControl
-(c) 2009 - 2011 The Authors, see LICENSE.txt for details.
+(c) 2009 - 2012 The Authors, see LICENSE.txt for details.
 
 ## Authors
 [Dent Earl](https://github.com/dentearl/), [Benedict Paten](https://github.com/dentearl/), Mark Diekhans
